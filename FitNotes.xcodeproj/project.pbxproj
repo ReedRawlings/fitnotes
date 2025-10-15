@@ -1,0 +1,605 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250B2E9F733D0099C49A /* FitNotesApp.swift */; };
+		7413250E2E9F733D0099C49A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250D2E9F733D0099C49A /* ContentView.swift */; };
+		741325102E9F733D0099C49A /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250F2E9F733D0099C49A /* Item.swift */; };
+		741325122E9F73400099C49A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325112E9F73400099C49A /* Assets.xcassets */; };
+		741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325142E9F73400099C49A /* Preview Assets.xcassets */; };
+		741325212E9F73400099C49A /* FitNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325202E9F73400099C49A /* FitNotesTests.swift */; };
+		7413252B2E9F73400099C49A /* FitNotesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413252A2E9F73400099C49A /* FitNotesUITests.swift */; };
+		7413252D2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7413251D2E9F73400099C49A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 741325002E9F733D0099C49A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 741325072E9F733D0099C49A;
+			remoteInfo = FitNotes;
+		};
+		741325272E9F73400099C49A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 741325002E9F733D0099C49A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 741325072E9F733D0099C49A;
+			remoteInfo = FitNotes;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		741325082E9F733D0099C49A /* FitNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7413250B2E9F733D0099C49A /* FitNotesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesApp.swift; sourceTree = "<group>"; };
+		7413250D2E9F733D0099C49A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		7413250F2E9F733D0099C49A /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		741325112E9F73400099C49A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		741325142E9F73400099C49A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		741325162E9F73400099C49A /* FitNotes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitNotes.entitlements; sourceTree = "<group>"; };
+		741325172E9F73400099C49A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7413251C2E9F73400099C49A /* FitNotesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FitNotesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		741325202E9F73400099C49A /* FitNotesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesTests.swift; sourceTree = "<group>"; };
+		741325262E9F73400099C49A /* FitNotesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FitNotesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7413252A2E9F73400099C49A /* FitNotesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesUITests.swift; sourceTree = "<group>"; };
+		7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		741325052E9F733D0099C49A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		741325192E9F73400099C49A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		741325232E9F73400099C49A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		741324FF2E9F733D0099C49A = {
+			isa = PBXGroup;
+			children = (
+				7413250A2E9F733D0099C49A /* FitNotes */,
+				7413251F2E9F73400099C49A /* FitNotesTests */,
+				741325292E9F73400099C49A /* FitNotesUITests */,
+				741325092E9F733D0099C49A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		741325092E9F733D0099C49A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				741325082E9F733D0099C49A /* FitNotes.app */,
+				7413251C2E9F73400099C49A /* FitNotesTests.xctest */,
+				741325262E9F73400099C49A /* FitNotesUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7413250A2E9F733D0099C49A /* FitNotes */ = {
+			isa = PBXGroup;
+			children = (
+				7413250B2E9F733D0099C49A /* FitNotesApp.swift */,
+				7413250D2E9F733D0099C49A /* ContentView.swift */,
+				7413250F2E9F733D0099C49A /* Item.swift */,
+				741325112E9F73400099C49A /* Assets.xcassets */,
+				741325162E9F73400099C49A /* FitNotes.entitlements */,
+				741325172E9F73400099C49A /* Info.plist */,
+				741325132E9F73400099C49A /* Preview Content */,
+			);
+			path = FitNotes;
+			sourceTree = "<group>";
+		};
+		741325132E9F73400099C49A /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				741325142E9F73400099C49A /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		7413251F2E9F73400099C49A /* FitNotesTests */ = {
+			isa = PBXGroup;
+			children = (
+				741325202E9F73400099C49A /* FitNotesTests.swift */,
+			);
+			path = FitNotesTests;
+			sourceTree = "<group>";
+		};
+		741325292E9F73400099C49A /* FitNotesUITests */ = {
+			isa = PBXGroup;
+			children = (
+				7413252A2E9F73400099C49A /* FitNotesUITests.swift */,
+				7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */,
+			);
+			path = FitNotesUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		741325072E9F733D0099C49A /* FitNotes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 741325302E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotes" */;
+			buildPhases = (
+				741325042E9F733D0099C49A /* Sources */,
+				741325052E9F733D0099C49A /* Frameworks */,
+				741325062E9F733D0099C49A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FitNotes;
+			productName = FitNotes;
+			productReference = 741325082E9F733D0099C49A /* FitNotes.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7413251B2E9F73400099C49A /* FitNotesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 741325332E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotesTests" */;
+			buildPhases = (
+				741325182E9F73400099C49A /* Sources */,
+				741325192E9F73400099C49A /* Frameworks */,
+				7413251A2E9F73400099C49A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7413251E2E9F73400099C49A /* PBXTargetDependency */,
+			);
+			name = FitNotesTests;
+			productName = FitNotesTests;
+			productReference = 7413251C2E9F73400099C49A /* FitNotesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		741325252E9F73400099C49A /* FitNotesUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 741325362E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotesUITests" */;
+			buildPhases = (
+				741325222E9F73400099C49A /* Sources */,
+				741325232E9F73400099C49A /* Frameworks */,
+				741325242E9F73400099C49A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				741325282E9F73400099C49A /* PBXTargetDependency */,
+			);
+			name = FitNotesUITests;
+			productName = FitNotesUITests;
+			productReference = 741325262E9F73400099C49A /* FitNotesUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		741325002E9F733D0099C49A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					741325072E9F733D0099C49A = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					7413251B2E9F73400099C49A = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 741325072E9F733D0099C49A;
+					};
+					741325252E9F73400099C49A = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 741325072E9F733D0099C49A;
+					};
+				};
+			};
+			buildConfigurationList = 741325032E9F733D0099C49A /* Build configuration list for PBXProject "FitNotes" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 741324FF2E9F733D0099C49A;
+			productRefGroup = 741325092E9F733D0099C49A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				741325072E9F733D0099C49A /* FitNotes */,
+				7413251B2E9F73400099C49A /* FitNotesTests */,
+				741325252E9F73400099C49A /* FitNotesUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		741325062E9F733D0099C49A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */,
+				741325122E9F73400099C49A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7413251A2E9F73400099C49A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		741325242E9F73400099C49A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		741325042E9F733D0099C49A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7413250E2E9F733D0099C49A /* ContentView.swift in Sources */,
+				741325102E9F733D0099C49A /* Item.swift in Sources */,
+				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		741325182E9F73400099C49A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				741325212E9F73400099C49A /* FitNotesTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		741325222E9F73400099C49A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7413252D2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift in Sources */,
+				7413252B2E9F73400099C49A /* FitNotesUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7413251E2E9F73400099C49A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 741325072E9F733D0099C49A /* FitNotes */;
+			targetProxy = 7413251D2E9F73400099C49A /* PBXContainerItemProxy */;
+		};
+		741325282E9F73400099C49A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 741325072E9F733D0099C49A /* FitNotes */;
+			targetProxy = 741325272E9F73400099C49A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		7413252E2E9F73400099C49A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7413252F2E9F73400099C49A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		741325312E9F73400099C49A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FitNotes/FitNotes.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotes";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		741325322E9F73400099C49A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FitNotes/FitNotes.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotes";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		741325342E9F73400099C49A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FitNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FitNotes";
+			};
+			name = Debug;
+		};
+		741325352E9F73400099C49A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FitNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FitNotes";
+			};
+			name = Release;
+		};
+		741325372E9F73400099C49A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FitNotes;
+			};
+			name = Debug;
+		};
+		741325382E9F73400099C49A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FitNotes;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		741325032E9F733D0099C49A /* Build configuration list for PBXProject "FitNotes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7413252E2E9F73400099C49A /* Debug */,
+				7413252F2E9F73400099C49A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		741325302E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				741325312E9F73400099C49A /* Debug */,
+				741325322E9F73400099C49A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		741325332E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				741325342E9F73400099C49A /* Debug */,
+				741325352E9F73400099C49A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		741325362E9F73400099C49A /* Build configuration list for PBXNativeTarget "FitNotesUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				741325372E9F73400099C49A /* Debug */,
+				741325382E9F73400099C49A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 741325002E9F733D0099C49A /* Project object */;
+}
