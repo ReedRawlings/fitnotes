@@ -8,6 +8,10 @@
 import SwiftUI
 import SwiftData
 
+// Import model classes
+// Note: In a real project, you might want to create a single Models.swift file
+// or use a different import strategy, but for now we'll reference them directly
+
 @main
 struct FitNotesApp: App {
     let sharedModelContainer: ModelContainer = {
