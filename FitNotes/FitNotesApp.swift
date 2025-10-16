@@ -10,9 +10,13 @@ import SwiftData
 
 @main
 struct FitNotesApp: App {
-    var sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Exercise.self,
+            Workout.self,
+            WorkoutSet.self,
+            Program.self,
+            BodyMetric.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
