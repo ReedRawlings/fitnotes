@@ -201,8 +201,8 @@ struct RoutineExerciseRowView: View {
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 8) {
-                    if let sets = routineExercise.sets, sets > 0 {
-                        Text("\(sets) sets")
+                    if routineExercise.sets > 0 {
+                        Text("\(routineExercise.sets) sets")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

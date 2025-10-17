@@ -11,6 +11,12 @@
 		7413250E2E9F733D0099C49A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250D2E9F733D0099C49A /* ContentView.swift */; };
 		741325102E9F733D0099C49A /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250F2E9F733D0099C49A /* Item.swift */; };
 		7413252F2E9F733D0099C49A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413252E2E9F733D0099C49A /* Models.swift */; };
+		741325302E9F733D0099C49A /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325312E9F733D0099C49A /* Exercise.swift */; };
+		741325322E9F733D0099C49A /* DailyRoutine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325332E9F733D0099C49A /* DailyRoutine.swift */; };
+		741325342E9F733D0099C49A /* ExerciseDatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */; };
+		741325362E9F733D0099C49A /* DailyRoutineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325372E9F733D0099C49A /* DailyRoutineService.swift */; };
+		741325382E9F733D0099C49A /* ExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325392E9F733D0099C49A /* ExercisesView.swift */; };
+		7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253B2E9F733D0099C49A /* DailyRoutineView.swift */; };
 		741325122E9F73400099C49A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325112E9F73400099C49A /* Assets.xcassets */; };
 		741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325142E9F73400099C49A /* Preview Assets.xcassets */; };
 		741325212E9F73400099C49A /* FitNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325202E9F73400099C49A /* FitNotesTests.swift */; };
@@ -41,6 +47,12 @@
 		7413250D2E9F733D0099C49A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7413250F2E9F733D0099C49A /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		7413252E2E9F733D0099C49A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		741325312E9F733D0099C49A /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		741325332E9F733D0099C49A /* DailyRoutine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutine.swift; sourceTree = "<group>"; };
+		741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabaseService.swift; sourceTree = "<group>"; };
+		741325372E9F733D0099C49A /* DailyRoutineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineService.swift; sourceTree = "<group>"; };
+		741325392E9F733D0099C49A /* ExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisesView.swift; sourceTree = "<group>"; };
+		7413253B2E9F733D0099C49A /* DailyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineView.swift; sourceTree = "<group>"; };
 		741325112E9F73400099C49A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		741325142E9F73400099C49A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		741325162E9F73400099C49A /* FitNotes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitNotes.entitlements; sourceTree = "<group>"; };
@@ -104,6 +116,12 @@
 				7413250D2E9F733D0099C49A /* ContentView.swift */,
 				7413250F2E9F733D0099C49A /* Item.swift */,
 				7413252E2E9F733D0099C49A /* Models.swift */,
+				741325312E9F733D0099C49A /* Exercise.swift */,
+				741325332E9F733D0099C49A /* DailyRoutine.swift */,
+				741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */,
+				741325372E9F733D0099C49A /* DailyRoutineService.swift */,
+				741325392E9F733D0099C49A /* ExercisesView.swift */,
+				7413253B2E9F733D0099C49A /* DailyRoutineView.swift */,
 				741325112E9F73400099C49A /* Assets.xcassets */,
 				741325162E9F73400099C49A /* FitNotes.entitlements */,
 				741325172E9F73400099C49A /* Info.plist */,
@@ -270,6 +288,12 @@
 				7413250E2E9F733D0099C49A /* ContentView.swift in Sources */,
 				741325102E9F733D0099C49A /* Item.swift in Sources */,
 				7413252F2E9F733D0099C49A /* Models.swift in Sources */,
+				741325302E9F733D0099C49A /* Exercise.swift in Sources */,
+				741325322E9F733D0099C49A /* DailyRoutine.swift in Sources */,
+				741325342E9F733D0099C49A /* ExerciseDatabaseService.swift in Sources */,
+				741325362E9F733D0099C49A /* DailyRoutineService.swift in Sources */,
+				741325382E9F733D0099C49A /* ExercisesView.swift in Sources */,
+				7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -110,10 +110,11 @@ public final class DailyRoutineService {
     public func getTodaysRoutine(modelContext: ModelContext) -> DailyRoutine? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
         
         let descriptor = FetchDescriptor<DailyRoutine>(
             predicate: #Predicate { routine in
-                calendar.isDate(routine.date, inSameDayAs: today)
+                routine.date >= today && routine.date < tomorrow
             },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
