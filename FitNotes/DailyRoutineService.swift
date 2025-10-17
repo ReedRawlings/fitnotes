@@ -251,6 +251,43 @@ public final class RoutineService {
         }
     }
     
+    // MARK: - Last Completed Date Queries
+    
+    public func getLastCompletedDate(for routine: Routine, modelContext: ModelContext) -> Date? {
+        let routineId = routine.id
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate<Workout> { workout in
+                workout.routineTemplateId == routineId && workout.isCompleted == true
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        
+        do {
+            let workouts = try modelContext.fetch(descriptor)
+            return workouts.first?.date
+        } catch {
+            print("Error fetching last completed date: \(error)")
+            return nil
+        }
+    }
+    
+    public func getDaysSinceLastCompletion(for routine: Routine, modelContext: ModelContext) -> String {
+        guard let lastCompletedDate = getLastCompletedDate(for: routine, modelContext: modelContext) else {
+            return "Never completed"
+        }
+        
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: lastCompletedDate, to: Date()).day ?? 0
+        
+        if days == 0 {
+            return "Last done: Today"
+        } else if days == 1 {
+            return "Last done: 1 day ago"
+        } else {
+            return "Last done: \(days) days ago"
+        }
+    }
+    
     // MARK: - Create Workout from Routine Template
     
     public func createWorkoutFromTemplate(
