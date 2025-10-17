@@ -135,7 +135,13 @@ struct NewWorkoutView: View {
 
 struct WorkoutsView: View { var body: some View { Text("Workouts") } }
 struct ProgramsView: View { var body: some View { Text("Programs") } }
-struct ExercisesView: View { var body: some View { Text("Exercises") } }
+struct ExercisesView: View {
+    @StateObject private var exerciseLibraryService = ExerciseLibraryService(exerciseRepository: InMemoryExerciseRepository())
+    
+    var body: some View {
+        ExerciseLibraryView(exerciseLibraryService: exerciseLibraryService)
+    }
+}
 struct InsightsView: View { var body: some View { Text("Insights") } }
 struct SettingsView: View { var body: some View { Text("Settings") } }
 

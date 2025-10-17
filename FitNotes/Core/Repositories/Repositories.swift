@@ -3,6 +3,8 @@ import Foundation
 public protocol ExerciseRepository {
     func all() -> [Exercise]
     func upsert(_ exercise: Exercise)
+    func delete(_ exercise: Exercise)
+    func deleteAll()
 }
 
 public protocol WorkoutRepository {
@@ -26,6 +28,14 @@ public final class InMemoryExerciseRepository: ExerciseRepository {
         var updated = exercise
         updated.updatedAt = Date()
         store[updated.id] = updated
+    }
+    
+    public func delete(_ exercise: Exercise) {
+        store.removeValue(forKey: exercise.id)
+    }
+    
+    public func deleteAll() {
+        store.removeAll()
     }
 }
 
