@@ -1,34 +1,35 @@
 import Foundation
 import SwiftData
 
-public final class DailyRoutineService {
-    public static let shared = DailyRoutineService()
+// MARK: - WorkoutService (Individual Day's Exercises)
+public final class WorkoutService {
+    public static let shared = WorkoutService()
     private init() {}
-    
-    public func createDailyRoutine(
+
+    public func createWorkout(
         name: String,
         date: Date = Date(),
         notes: String? = nil,
         modelContext: ModelContext
-    ) -> DailyRoutine {
-        let routine = DailyRoutine(
+    ) -> Workout {
+        let workout = Workout(
             name: name,
             date: date,
             notes: notes
         )
-        modelContext.insert(routine)
+        modelContext.insert(workout)
         
         do {
             try modelContext.save()
         } catch {
-            print("Error saving daily routine: \(error)")
+            print("Error saving workout: \(error)")
         }
         
-        return routine
+        return workout
     }
     
-    public func addExerciseToRoutine(
-        routine: DailyRoutine,
+    public func addExerciseToWorkout(
+        workout: Workout,
         exerciseId: UUID,
         sets: Int = 1,
         reps: Int? = nil,
@@ -37,10 +38,10 @@ public final class DailyRoutineService {
         distance: Double? = nil,
         notes: String? = nil,
         modelContext: ModelContext
-    ) -> RoutineExercise {
-        let order = routine.exercises.count + 1
+    ) -> WorkoutExercise {
+        let order = workout.exercises.count + 1
         
-        let routineExercise = RoutineExercise(
+        let workoutExercise = WorkoutExercise(
             exerciseId: exerciseId,
             order: order,
             sets: sets,
@@ -51,28 +52,28 @@ public final class DailyRoutineService {
             notes: notes
         )
         
-        routineExercise.dailyRoutine = routine
-        modelContext.insert(routineExercise)
+        workoutExercise.workout = workout
+        modelContext.insert(workoutExercise)
         
         do {
             try modelContext.save()
         } catch {
-            print("Error saving routine exercise: \(error)")
+            print("Error saving workout exercise: \(error)")
         }
         
-        return routineExercise
+        return workoutExercise
     }
     
-    public func removeExerciseFromRoutine(
-        routineExercise: RoutineExercise,
+    public func removeExerciseFromWorkout(
+        workoutExercise: WorkoutExercise,
         modelContext: ModelContext
     ) {
-        modelContext.delete(routineExercise)
+        modelContext.delete(workoutExercise)
         
         // Reorder remaining exercises
-        if let routine = routineExercise.dailyRoutine {
-            let remainingExercises = routine.exercises
-                .filter { $0.id != routineExercise.id }
+        if let workout = workoutExercise.workout {
+            let remainingExercises = workout.exercises
+                .filter { $0.id != workoutExercise.id }
                 .sorted { $0.order < $1.order }
             
             for (index, exercise) in remainingExercises.enumerated() {
@@ -83,20 +84,20 @@ public final class DailyRoutineService {
         do {
             try modelContext.save()
         } catch {
-            print("Error removing routine exercise: \(error)")
+            print("Error removing workout exercise: \(error)")
         }
     }
     
     public func reorderExercises(
-        routine: DailyRoutine,
+        workout: Workout,
         from: IndexSet,
         to: Int,
         modelContext: ModelContext
     ) {
-        routine.exercises.move(fromOffsets: from, toOffset: to)
+        workout.exercises.move(fromOffsets: from, toOffset: to)
         
         // Update order values
-        for (index, exercise) in routine.exercises.enumerated() {
+        for (index, exercise) in workout.exercises.enumerated() {
             exercise.order = index + 1
         }
         
@@ -107,36 +108,36 @@ public final class DailyRoutineService {
         }
     }
     
-    public func getTodaysRoutine(modelContext: ModelContext) -> DailyRoutine? {
+    public func getTodaysWorkout(modelContext: ModelContext) -> Workout? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
         
-        let descriptor = FetchDescriptor<DailyRoutine>(
-            predicate: #Predicate { routine in
-                routine.date >= today && routine.date < tomorrow
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate { workout in
+                workout.date >= today && workout.date < tomorrow
             },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         
         do {
-            let routines = try modelContext.fetch(descriptor)
-            return routines.first
+            let workouts = try modelContext.fetch(descriptor)
+            return workouts.first
         } catch {
-            print("Error fetching today's routine: \(error)")
+            print("Error fetching today's workout: \(error)")
             return nil
         }
     }
     
-    public func getRoutinesForWeek(modelContext: ModelContext) -> [DailyRoutine] {
+    public func getWorkoutsForWeek(modelContext: ModelContext) -> [Workout] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
         let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? today
         
-        let descriptor = FetchDescriptor<DailyRoutine>(
-            predicate: #Predicate { routine in
-                routine.date >= weekStart && routine.date < weekEnd
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate { workout in
+                workout.date >= weekStart && workout.date < weekEnd
             },
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
@@ -144,19 +145,19 @@ public final class DailyRoutineService {
         do {
             return try modelContext.fetch(descriptor)
         } catch {
-            print("Error fetching week's routines: \(error)")
+            print("Error fetching week's workouts: \(error)")
             return []
         }
     }
     
-    public func completeRoutine(_ routine: DailyRoutine, modelContext: ModelContext) {
-        routine.isCompleted = true
-        routine.updatedAt = Date()
+    public func completeWorkout(_ workout: Workout, modelContext: ModelContext) {
+        workout.isCompleted = true
+        workout.updatedAt = Date()
         
         do {
             try modelContext.save()
         } catch {
-            print("Error completing routine: \(error)")
+            print("Error completing workout: \(error)")
         }
     }
 }
@@ -250,25 +251,25 @@ public final class RoutineService {
         }
     }
     
-    // MARK: - Create DailyRoutine from Routine Template
+    // MARK: - Create Workout from Routine Template
     
-    public func createDailyRoutineFromTemplate(
+    public func createWorkoutFromTemplate(
         routine: Routine,
         date: Date = Date(),
         notes: String? = nil,
         modelContext: ModelContext
-    ) -> DailyRoutine {
-        let dailyRoutine = DailyRoutine(
+    ) -> Workout {
+        let workout = Workout(
             name: routine.name,
             date: date,
             notes: notes,
             routineTemplateId: routine.id
         )
-        modelContext.insert(dailyRoutine)
+        modelContext.insert(workout)
         
         // Copy exercises from template
         for templateExercise in routine.exercises.sorted(by: { $0.order < $1.order }) {
-            let dailyExercise = RoutineExercise(
+            let workoutExercise = WorkoutExercise(
                 exerciseId: templateExercise.exerciseId,
                 order: templateExercise.order,
                 sets: templateExercise.sets,
@@ -278,16 +279,16 @@ public final class RoutineService {
                 distance: templateExercise.distance,
                 notes: templateExercise.notes
             )
-            dailyExercise.dailyRoutine = dailyRoutine
-            modelContext.insert(dailyExercise)
+            workoutExercise.workout = workout
+            modelContext.insert(workoutExercise)
         }
         
         do {
             try modelContext.save()
         } catch {
-            print("Error creating daily routine from template: \(error)")
+            print("Error creating workout from template: \(error)")
         }
         
-        return dailyRoutine
+        return workout
     }
 }

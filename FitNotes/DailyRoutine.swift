@@ -26,9 +26,9 @@ public final class Routine {
     }
 }
 
-// MARK: - DailyRoutine Model (Workout Instances)
+// MARK: - Workout Model (Individual Day's Exercises)
 @Model
-public final class DailyRoutine {
+public final class Workout {
     @Attribute(.unique) public var id: UUID
     public var name: String
     public var date: Date
@@ -37,7 +37,7 @@ public final class DailyRoutine {
     public var routineTemplateId: UUID? // Reference to the template routine
     public var createdAt: Date
     public var updatedAt: Date
-    @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
+    @Relationship(deleteRule: .cascade) public var exercises: [WorkoutExercise] = []
 
     public init(
         id: UUID = UUID(),
@@ -60,8 +60,52 @@ public final class DailyRoutine {
     }
 }
 
+// MARK: - RoutineExercise (for Routine templates)
 @Model
 public final class RoutineExercise {
+    @Attribute(.unique) public var id: UUID
+    public var exerciseId: UUID
+    public var order: Int
+    public var sets: Int
+    public var reps: Int?
+    public var weight: Double?
+    public var duration: Int? // For time-based exercises
+    public var distance: Double? // For distance-based exercises
+    public var notes: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var routine: Routine?
+
+    public init(
+        id: UUID = UUID(),
+        exerciseId: UUID,
+        order: Int,
+        sets: Int = 1,
+        reps: Int? = nil,
+        weight: Double? = nil,
+        duration: Int? = nil,
+        distance: Double? = nil,
+        notes: String? = nil,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.id = id
+        self.exerciseId = exerciseId
+        self.order = order
+        self.sets = sets
+        self.reps = reps
+        self.weight = weight
+        self.duration = duration
+        self.distance = distance
+        self.notes = notes
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}
+
+// MARK: - WorkoutExercise (for individual workouts)
+@Model
+public final class WorkoutExercise {
     @Attribute(.unique) public var id: UUID
     public var exerciseId: UUID
     public var order: Int
@@ -74,8 +118,7 @@ public final class RoutineExercise {
     public var isCompleted: Bool
     public var createdAt: Date
     public var updatedAt: Date
-    public var routine: Routine?
-    public var dailyRoutine: DailyRoutine?
+    public var workout: Workout?
 
     public init(
         id: UUID = UUID(),

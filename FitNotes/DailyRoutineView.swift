@@ -1,16 +1,16 @@
 import SwiftUI
 import SwiftData
 
-struct DailyRoutineView: View {
+struct WorkoutView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \DailyRoutine.date, order: .reverse) private var routines: [DailyRoutine]
-    @State private var showingAddRoutine = false
+    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
+    @State private var showingAddExercise = false
     @State private var selectedDate = Date()
     
-    var todaysRoutine: DailyRoutine? {
+    var todaysWorkout: Workout? {
         let calendar = Calendar.current
-        return routines.first { routine in
-            calendar.isDate(routine.date, inSameDayAs: Date())
+        return workouts.first { workout in
+            calendar.isDate(workout.date, inSameDayAs: Date())
         }
     }
     
@@ -24,18 +24,18 @@ struct DailyRoutineView: View {
                 
                 Divider()
                 
-                if let routine = getRoutineForDate(selectedDate) {
-                    DailyRoutineDetailView(routine: routine)
+                if let workout = getWorkoutForDate(selectedDate) {
+                    WorkoutDetailView(workout: workout)
                 } else {
-                    EmptyRoutineView(selectedDate: selectedDate) {
-                        showingAddRoutine = true
+                    EmptyWorkoutView(selectedDate: selectedDate) {
+                        showingAddExercise = true
                     }
                 }
             }
-            .navigationTitle("Daily Routine")
+            .navigationTitle("Today")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddRoutine = true }) {
+                    Button(action: { showingAddExercise = true }) {
                         Image(systemName: "plus")
                             .font(.title2)
                             .foregroundColor(.accentColor)
@@ -43,52 +43,52 @@ struct DailyRoutineView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingAddRoutine) {
-            AddDailyRoutineView(selectedDate: selectedDate)
+        .sheet(isPresented: $showingAddExercise) {
+            AddExerciseToWorkoutView(selectedDate: selectedDate)
         }
     }
     
-    private func getRoutineForDate(_ date: Date) -> DailyRoutine? {
+    private func getWorkoutForDate(_ date: Date) -> Workout? {
         let calendar = Calendar.current
-        return routines.first { routine in
-            calendar.isDate(routine.date, inSameDayAs: date)
+        return workouts.first { workout in
+            calendar.isDate(workout.date, inSameDayAs: date)
         }
     }
 }
 
-// MARK: - DailyRoutineDetailView
-struct DailyRoutineDetailView: View {
-    let routine: DailyRoutine
+// MARK: - WorkoutDetailView
+struct WorkoutDetailView: View {
+    let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddExercise = false
-    @State private var showingEditRoutine = false
+    @State private var showingEditWorkout = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Routine Header
+                // Workout Header
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(routine.name)
+                            Text(workout.name)
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
-                            Text(routine.date, style: .date)
+                            Text(workout.date, style: .date)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
                         
                         Spacer()
                         
-                        if routine.isCompleted {
+                        if workout.isCompleted {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.title2)
                                 .foregroundColor(.green)
                         }
                     }
                     
-                    if let notes = routine.notes, !notes.isEmpty {
+                    if let notes = workout.notes, !notes.isEmpty {
                         Text(notes)
                             .font(.body)
                             .foregroundColor(.secondary)
@@ -116,7 +116,7 @@ struct DailyRoutineDetailView: View {
                     }
                     .padding(.horizontal)
                     
-                    if routine.exercises.isEmpty {
+                    if workout.exercises.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "dumbbell")
                                 .font(.system(size: 32))
@@ -126,7 +126,7 @@ struct DailyRoutineDetailView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            Text("Add exercises to start your routine")
+                            Text("Add exercises to start your workout")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -137,8 +137,8 @@ struct DailyRoutineDetailView: View {
                         .padding(.horizontal)
                     } else {
                         LazyVStack(spacing: 8) {
-                            ForEach(routine.exercises.sorted { $0.order < $1.order }, id: \.id) { routineExercise in
-                                RoutineExerciseRowView(routineExercise: routineExercise)
+                            ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                                WorkoutExerciseRowView(workoutExercise: workoutExercise)
                             }
                         }
                         .padding(.horizontal)
@@ -147,27 +147,27 @@ struct DailyRoutineDetailView: View {
                 
                 // Action Buttons
                 VStack(spacing: 12) {
-                    if !routine.exercises.isEmpty {
+                    if !workout.exercises.isEmpty {
                         Button(action: {
-                            DailyRoutineService.shared.completeRoutine(routine, modelContext: modelContext)
+                            WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
                         }) {
                             HStack {
-                                Image(systemName: routine.isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
-                                Text(routine.isCompleted ? "Completed" : "Mark Complete")
+                                Image(systemName: workout.isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
+                                Text(workout.isCompleted ? "Completed" : "Mark Complete")
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(routine.isCompleted ? Color.green : Color.accentColor)
+                            .background(workout.isCompleted ? Color.green : Color.accentColor)
                             .foregroundColor(.white)
                             .cornerRadius(12)
                         }
-                        .disabled(routine.isCompleted)
+                        .disabled(workout.isCompleted)
                     }
                     
-                    Button(action: { showingEditRoutine = true }) {
+                    Button(action: { showingEditWorkout = true }) {
                         HStack {
                             Image(systemName: "pencil")
-                            Text("Edit Routine")
+                            Text("Edit Workout")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -182,19 +182,18 @@ struct DailyRoutineDetailView: View {
             }
         }
         .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToRoutineView(routine: routine)
+            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
         }
     }
 }
 
-
-struct RoutineExerciseRowView: View {
-    let routineExercise: RoutineExercise
+struct WorkoutExerciseRowView: View {
+    let workoutExercise: WorkoutExercise
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     
     private var exercise: Exercise? {
-        exercises.first { $0.id == routineExercise.exerciseId }
+        exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
     var body: some View {
@@ -206,25 +205,25 @@ struct RoutineExerciseRowView: View {
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 8) {
-                    if routineExercise.sets > 0 {
-                        Text("\(routineExercise.sets) sets")
+                    if workoutExercise.sets > 0 {
+                        Text("\(workoutExercise.sets) sets")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
-                    if let reps = routineExercise.reps {
+                    if let reps = workoutExercise.reps {
                         Text("\(reps) reps")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
-                    if let weight = routineExercise.weight {
+                    if let weight = workoutExercise.weight {
                         Text("\(Int(weight)) kg")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
-                    if let duration = routineExercise.duration {
+                    if let duration = workoutExercise.duration {
                         Text("\(duration) sec")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -236,19 +235,19 @@ struct RoutineExerciseRowView: View {
             
             // Complete Button
             Button(action: {
-                routineExercise.isCompleted.toggle()
+                workoutExercise.isCompleted.toggle()
                 try? modelContext.save()
             }) {
-                Image(systemName: routineExercise.isCompleted ? "checkmark.circle.fill" : "circle")
+                Image(systemName: workoutExercise.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundColor(routineExercise.isCompleted ? .green : .gray)
+                    .foregroundColor(workoutExercise.isCompleted ? .green : .gray)
             }
             
             // Delete Button
             Button(action: {
-                if routineExercise.dailyRoutine != nil {
-                    DailyRoutineService.shared.removeExerciseFromRoutine(
-                        routineExercise: routineExercise,
+                if workoutExercise.workout != nil {
+                    WorkoutService.shared.removeExerciseFromWorkout(
+                        workoutExercise: workoutExercise,
                         modelContext: modelContext
                     )
                 }
@@ -264,35 +263,35 @@ struct RoutineExerciseRowView: View {
     }
 }
 
-struct EmptyRoutineView: View {
+struct EmptyWorkoutView: View {
     let selectedDate: Date
-    let onAddRoutine: () -> Void
+    let onAddExercise: () -> Void
     @State private var showingRoutineTemplates = false
     
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
             
-            Image(systemName: "calendar.badge.plus")
+            Image(systemName: "dumbbell")
                 .font(.system(size: 64))
                 .foregroundColor(.secondary)
             
-            Text("No routine for this day")
+            Text("No workout for this day")
                 .font(.title2)
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
             
-            Text("Create a daily routine or use a template")
+            Text("Start adding exercises or use a routine template")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             
             VStack(spacing: 12) {
-                Button(action: onAddRoutine) {
+                Button(action: onAddExercise) {
                     HStack {
                         Image(systemName: "plus")
-                        Text("Create New Routine")
+                        Text("Add Exercise")
                     }
                     .font(.headline)
                     .foregroundColor(.white)
@@ -304,7 +303,7 @@ struct EmptyRoutineView: View {
                 Button(action: { showingRoutineTemplates = true }) {
                     HStack {
                         Image(systemName: "list.bullet.rectangle")
-                        Text("Use Template")
+                        Text("Use Routine Template")
                     }
                     .font(.headline)
                     .foregroundColor(.accentColor)
@@ -323,68 +322,14 @@ struct EmptyRoutineView: View {
     }
 }
 
-// MARK: - AddDailyRoutineView
-struct AddDailyRoutineView: View {
+// MARK: - AddExerciseToWorkoutView
+struct AddExerciseToWorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
     let selectedDate: Date
-    @State private var name = ""
-    @State private var notes = ""
-    @State private var date = Date()
+    var workout: Workout?
     
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Routine Details") {
-                    TextField("Routine Name", text: $name)
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
-                
-                Section("Notes") {
-                    TextField("Notes (optional)", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-            }
-            .navigationTitle("New Routine")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Create") {
-                        createRoutine()
-                    }
-                    .disabled(name.isEmpty)
-                }
-            }
-        }
-        .onAppear {
-            date = selectedDate
-        }
-    }
-    
-    private func createRoutine() {
-        _ = DailyRoutineService.shared.createDailyRoutine(
-            name: name,
-            date: date,
-            notes: notes.isEmpty ? nil : notes,
-            modelContext: modelContext
-        )
-        
-        dismiss()
-    }
-}
-
-struct AddExerciseToRoutineView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    
-    let routine: DailyRoutine
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
     @State private var selectedExercise: Exercise?
@@ -509,8 +454,20 @@ struct AddExerciseToRoutineView: View {
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
         
-        _ = DailyRoutineService.shared.addExerciseToRoutine(
-            routine: routine,
+        // Create workout if it doesn't exist
+        let currentWorkout: Workout
+        if let existingWorkout = workout {
+            currentWorkout = existingWorkout
+        } else {
+            currentWorkout = WorkoutService.shared.createWorkout(
+                name: "Workout - \(selectedDate.formatted(date: .abbreviated, time: .omitted))",
+                date: selectedDate,
+                modelContext: modelContext
+            )
+        }
+        
+        _ = WorkoutService.shared.addExerciseToWorkout(
+            workout: currentWorkout,
             exerciseId: exercise.id,
             sets: sets,
             reps: exercise.type == "Strength" ? reps : nil,
@@ -606,7 +563,7 @@ struct RoutineTemplateSelectorView: View {
     }
     
     private func useRoutineTemplate(_ routine: Routine) {
-        _ = RoutineService.shared.createDailyRoutineFromTemplate(
+        _ = RoutineService.shared.createWorkoutFromTemplate(
             routine: routine,
             date: selectedDate,
             modelContext: modelContext
@@ -617,6 +574,6 @@ struct RoutineTemplateSelectorView: View {
 }
 
 #Preview {
-    DailyRoutineView()
-        .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, Program.self, BodyMetric.self, DailyRoutine.self, RoutineExercise.self, Routine.self], inMemory: true)
+    WorkoutView()
+        .modelContainer(for: [Exercise.self, Workout.self, Program.self, BodyMetric.self, WorkoutExercise.self, RoutineExercise.self, Routine.self], inMemory: true)
 }
