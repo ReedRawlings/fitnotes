@@ -25,7 +25,7 @@ struct DailyRoutineView: View {
                 Divider()
                 
                 if let routine = getRoutineForDate(selectedDate) {
-                    RoutineDetailView(routine: routine)
+                    DailyRoutineDetailView(routine: routine)
                 } else {
                     EmptyRoutineView(selectedDate: selectedDate) {
                         showingAddRoutine = true
@@ -44,7 +44,7 @@ struct DailyRoutineView: View {
             }
         }
         .sheet(isPresented: $showingAddRoutine) {
-            AddRoutineView(selectedDate: selectedDate)
+            AddDailyRoutineView(selectedDate: selectedDate)
         }
     }
     
@@ -56,7 +56,8 @@ struct DailyRoutineView: View {
     }
 }
 
-struct RoutineDetailView: View {
+// MARK: - DailyRoutineDetailView
+struct DailyRoutineDetailView: View {
     let routine: DailyRoutine
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddExercise = false
@@ -180,8 +181,12 @@ struct RoutineDetailView: View {
                 Spacer(minLength: 20)
             }
         }
+        .sheet(isPresented: $showingAddExercise) {
+            AddExerciseToRoutineView(routine: routine)
+        }
     }
 }
+
 
 struct RoutineExerciseRowView: View {
     let routineExercise: RoutineExercise
@@ -241,7 +246,7 @@ struct RoutineExerciseRowView: View {
             
             // Delete Button
             Button(action: {
-                if let routine = routineExercise.dailyRoutine {
+                if routineExercise.dailyRoutine != nil {
                     DailyRoutineService.shared.removeExerciseFromRoutine(
                         routineExercise: routineExercise,
                         modelContext: modelContext
@@ -262,6 +267,7 @@ struct RoutineExerciseRowView: View {
 struct EmptyRoutineView: View {
     let selectedDate: Date
     let onAddRoutine: () -> Void
+    @State private var showingRoutineTemplates = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -276,31 +282,49 @@ struct EmptyRoutineView: View {
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
             
-            Text("Create a daily routine to track your exercises")
+            Text("Create a daily routine or use a template")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             
-            Button(action: onAddRoutine) {
-                HStack {
-                    Image(systemName: "plus")
-                    Text("Create Routine")
+            VStack(spacing: 12) {
+                Button(action: onAddRoutine) {
+                    HStack {
+                        Image(systemName: "plus")
+                        Text("Create New Routine")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.accentColor)
+                    .cornerRadius(12)
                 }
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding()
-                .background(Color.accentColor)
-                .cornerRadius(12)
+                
+                Button(action: { showingRoutineTemplates = true }) {
+                    HStack {
+                        Image(systemName: "list.bullet.rectangle")
+                        Text("Use Template")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.accentColor)
+                    .padding()
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(12)
+                }
             }
             
             Spacer()
         }
         .padding()
+        .sheet(isPresented: $showingRoutineTemplates) {
+            RoutineTemplateSelectorView(selectedDate: selectedDate)
+        }
     }
 }
 
-struct AddRoutineView: View {
+// MARK: - AddDailyRoutineView
+struct AddDailyRoutineView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
@@ -345,7 +369,7 @@ struct AddRoutineView: View {
     }
     
     private func createRoutine() {
-        let routine = DailyRoutineService.shared.createDailyRoutine(
+        _ = DailyRoutineService.shared.createDailyRoutine(
             name: name,
             date: date,
             notes: notes.isEmpty ? nil : notes,
@@ -485,7 +509,7 @@ struct AddExerciseToRoutineView: View {
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
         
-        DailyRoutineService.shared.addExerciseToRoutine(
+        _ = DailyRoutineService.shared.addExerciseToRoutine(
             routine: routine,
             exerciseId: exercise.id,
             sets: sets,
@@ -500,7 +524,99 @@ struct AddExerciseToRoutineView: View {
     }
 }
 
+// MARK: - RoutineTemplateSelectorView
+struct RoutineTemplateSelectorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Routine.name) private var routines: [Routine]
+    
+    let selectedDate: Date
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                if routines.isEmpty {
+                    VStack(spacing: 20) {
+                        Spacer()
+                        
+                        Image(systemName: "list.bullet.rectangle")
+                            .font(.system(size: 64))
+                            .foregroundColor(.secondary)
+                        
+                        Text("No routine templates")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        Text("Create routine templates in the Routines tab first")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        
+                        Spacer()
+                    }
+                    .padding()
+                } else {
+                    List(routines) { routine in
+                        Button(action: {
+                            useRoutineTemplate(routine)
+                        }) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(routine.name)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    
+                                    if let description = routine.routineDescription, !description.isEmpty {
+                                        Text(description)
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(2)
+                                    }
+                                    
+                                    Text("\(routine.exercises.count) exercises")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.accentColor)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .listStyle(PlainListStyle())
+                }
+            }
+            .navigationTitle("Use Template")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func useRoutineTemplate(_ routine: Routine) {
+        _ = RoutineService.shared.createDailyRoutineFromTemplate(
+            routine: routine,
+            date: selectedDate,
+            modelContext: modelContext
+        )
+        
+        dismiss()
+    }
+}
+
 #Preview {
     DailyRoutineView()
-        .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, Program.self, BodyMetric.self, DailyRoutine.self, RoutineExercise.self], inMemory: true)
+        .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, Program.self, BodyMetric.self, DailyRoutine.self, RoutineExercise.self, Routine.self], inMemory: true)
 }

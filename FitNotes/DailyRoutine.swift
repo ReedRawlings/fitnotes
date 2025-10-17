@@ -1,6 +1,32 @@
 import Foundation
 import SwiftData
 
+// MARK: - Routine Model (Reusable Templates)
+@Model
+public final class Routine {
+    @Attribute(.unique) public var id: UUID
+    public var name: String
+    public var routineDescription: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
+
+    public init(
+        id: UUID = UUID(),
+        name: String,
+        routineDescription: String? = nil,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.id = id
+        self.name = name
+        self.routineDescription = routineDescription
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}
+
+// MARK: - DailyRoutine Model (Workout Instances)
 @Model
 public final class DailyRoutine {
     @Attribute(.unique) public var id: UUID
@@ -8,6 +34,7 @@ public final class DailyRoutine {
     public var date: Date
     public var notes: String?
     public var isCompleted: Bool
+    public var routineTemplateId: UUID? // Reference to the template routine
     public var createdAt: Date
     public var updatedAt: Date
     @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
@@ -18,6 +45,7 @@ public final class DailyRoutine {
         date: Date = Date(),
         notes: String? = nil,
         isCompleted: Bool = false,
+        routineTemplateId: UUID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -26,6 +54,7 @@ public final class DailyRoutine {
         self.date = date
         self.notes = notes
         self.isCompleted = isCompleted
+        self.routineTemplateId = routineTemplateId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -45,6 +74,7 @@ public final class RoutineExercise {
     public var isCompleted: Bool
     public var createdAt: Date
     public var updatedAt: Date
+    public var routine: Routine?
     public var dailyRoutine: DailyRoutine?
 
     public init(

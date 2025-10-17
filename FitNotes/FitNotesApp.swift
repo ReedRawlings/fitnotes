@@ -18,7 +18,8 @@ struct FitNotesApp: App {
             Program.self,
             BodyMetric.self,
             DailyRoutine.self,
-            RoutineExercise.self
+            RoutineExercise.self,
+            Routine.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
