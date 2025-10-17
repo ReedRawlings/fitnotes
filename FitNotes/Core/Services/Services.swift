@@ -19,3 +19,7 @@ public final class SettingsManager: ObservableObject {
     @Published public var isCloudSyncEnabled: Bool = false
     public init() {}
 }
+
+// Re-export the new services
+public typealias ExerciseDBService = ExerciseDatabaseService
+public typealias RoutineService = DailyRoutineService

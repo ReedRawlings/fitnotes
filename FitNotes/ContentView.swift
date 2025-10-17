@@ -135,7 +135,7 @@ struct NewWorkoutView: View {
 
 struct WorkoutsView: View { var body: some View { Text("Workouts") } }
 struct ProgramsView: View { var body: some View { Text("Programs") } }
-struct ExercisesView: View { var body: some View { Text("Exercises") } }
+// ExercisesView is now in its own file
 struct InsightsView: View { var body: some View { Text("Insights") } }
 struct SettingsView: View { var body: some View { Text("Settings") } }
 
@@ -144,21 +144,21 @@ struct ContentView: View {
         TabView {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house") }
+            DailyRoutineView()
+                .tabItem { Label("Routine", systemImage: "calendar") }
             WorkoutsView()
-                .tabItem { Label("Workouts", systemImage: "calendar") }
+                .tabItem { Label("Workouts", systemImage: "list.bullet") }
             ProgramsView()
                 .tabItem { Label("Programs", systemImage: "list.bullet.rectangle") }
             ExercisesView()
                 .tabItem { Label("Exercises", systemImage: "dumbbell") }
             InsightsView()
                 .tabItem { Label("Insights", systemImage: "chart.xyaxis.line") }
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gear") }
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, Program.self, BodyMetric.self], inMemory: true)
+        .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, Program.self, BodyMetric.self, DailyRoutine.self, RoutineExercise.self], inMemory: true)
 }

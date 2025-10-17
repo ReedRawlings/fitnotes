@@ -8,10 +8,6 @@
 import SwiftUI
 import SwiftData
 
-// Import model classes
-// Note: In a real project, you might want to create a single Models.swift file
-// or use a different import strategy, but for now we'll reference them directly
-
 @main
 struct FitNotesApp: App {
     let sharedModelContainer: ModelContainer = {
@@ -20,12 +16,25 @@ struct FitNotesApp: App {
             Workout.self,
             WorkoutSet.self,
             Program.self,
-            BodyMetric.self
+            BodyMetric.self,
+            DailyRoutine.self,
+            RoutineExercise.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            
+            // Initialize default exercises if none exist
+            let context = container.mainContext
+            let exerciseDescriptor = FetchDescriptor<Exercise>()
+            let existingExercises = try context.fetch(exerciseDescriptor)
+            
+            if existingExercises.isEmpty {
+                ExerciseDatabaseService.shared.createDefaultExercises(modelContext: context)
+            }
+            
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
