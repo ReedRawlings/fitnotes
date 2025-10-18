@@ -99,42 +99,52 @@ struct HomeView: View {
             )
             .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 12) {
-                    // Routine cards
-                    LazyVStack(spacing: 12) {
-                        ForEach(routines) { routine in
-                            RoutineCardView(
-                                routine: routine,
-                                isExpanded: expandedRoutineId == routine.id,
-                                isActiveWorkout: appState.activeWorkout != nil,
-                                lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
-                                    for: routine,
-                                    modelContext: modelContext
-                                ),
-                                onTap: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        if expandedRoutineId == routine.id {
-                                            expandedRoutineId = nil
-                                        } else {
-                                            expandedRoutineId = routine.id
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // Routine cards
+                        LazyVStack(spacing: 12) {
+                            ForEach(routines) { routine in
+                                RoutineCardView(
+                                    routine: routine,
+                                    isExpanded: expandedRoutineId == routine.id,
+                                    isActiveWorkout: appState.activeWorkout != nil,
+                                    lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
+                                        for: routine,
+                                        modelContext: modelContext
+                                    ),
+                                    onTap: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            if expandedRoutineId == routine.id {
+                                                expandedRoutineId = nil
+                                            } else {
+                                                expandedRoutineId = routine.id
+                                            }
                                         }
+                                    },
+                                    onView: {
+                                        showingRoutineDetail = routine
+                                    },
+                                    onStart: {
+                                        startWorkout(from: routine)
                                     }
-                                },
-                                onView: {
-                                    showingRoutineDetail = routine
-                                },
-                                onStart: {
-                                    startWorkout(from: routine)
-                                }
-                            )
+                                )
+                            }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        Spacer(minLength: 100) // Space for bottom button and tab bar
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    // New Workout / Continue Workout button
-                    Button(action: {
+                }
+                
+                // Fixed bottom button
+                VStack {
+                    Spacer()
+                    PrimaryActionButton(
+                        title: appState.activeWorkout != nil ? "Continue \(appState.activeWorkout?.routineName ?? "")" : "New Workout",
+                        icon: appState.activeWorkout != nil ? "play.circle.fill" : "plus"
+                    ) {
                         if appState.activeWorkout != nil {
                             showingActiveWorkout = true
                         } else {
@@ -144,37 +154,8 @@ struct HomeView: View {
                                 startWorkout(from: firstRoutine)
                             }
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: appState.activeWorkout != nil ? "play.circle.fill" : "plus")
-                                .font(.title2)
-                            
-                            if let activeWorkout = appState.activeWorkout {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Continue \(activeWorkout.routineName)")
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
-                                    Text(activeWorkout.progressText)
-                                        .font(.subheadline)
-                                        .opacity(0.8)
-                                }
-                            } else {
-                                Text("New Workout")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                            }
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.purple)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    Spacer(minLength: 100) // Space for bottom navigation
+                    .padding(.bottom, 8) // Small padding above tab bar
                 }
             }
         }
@@ -214,7 +195,95 @@ struct HomeView: View {
     }
 }
 
-// MARK: - RoutineCardView Component
+// MARK: - UnifiedCardView Component
+struct UnifiedCardView: View {
+    let title: String
+    let subtitle: String?
+    let showChevron: Bool
+    let onTap: () -> Void
+    
+    init(title: String, subtitle: String? = nil, showChevron: Bool = false, onTap: @escaping () -> Void) {
+        self.title = title
+        self.subtitle = subtitle
+        self.showChevron = showChevron
+        self.onTap = onTap
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                if showChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color.white)
+            .cornerRadius(24)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(1.0)
+        .animation(.easeInOut(duration: 0.1), value: false)
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.1)) {
+                // Scale down effect on tap
+            }
+        }
+    }
+}
+
+// MARK: - PrimaryActionButton Component
+struct PrimaryActionButton: View {
+    let title: String
+    let icon: String
+    let onTap: () -> Void
+    
+    init(title: String, icon: String = "plus", onTap: @escaping () -> Void) {
+        self.title = title
+        self.icon = icon
+        self.onTap = onTap
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color.purple)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - RoutineCardView Component (Homepage specific)
 struct RoutineCardView: View {
     let routine: Routine
     let isExpanded: Bool
@@ -650,29 +719,54 @@ struct RoutinesView: View {
     @State private var selectedRoutine: Routine?
     
     var body: some View {
-        VStack(spacing: 0) {
-            if routines.isEmpty {
-                EmptyRoutinesView {
-                    showingAddRoutine = true
-                }
-            } else {
-                List {
-                    ForEach(routines) { routine in
-                        RoutineRowView(routine: routine) {
-                            selectedRoutine = routine
+        ZStack {
+            // Blue gradient background
+            LinearGradient(
+                colors: [
+                    Color.blue.opacity(0.3),
+                    Color.blue.opacity(0.6)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if routines.isEmpty {
+                    EmptyRoutinesView {
+                        showingAddRoutine = true
+                    }
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            LazyVStack(spacing: 12) {
+                                ForEach(routines) { routine in
+                                    UnifiedCardView(
+                                        title: routine.name,
+                                        subtitle: RoutineService.shared.getDaysSinceLastCompletion(
+                                            for: routine,
+                                            modelContext: modelContext
+                                        )
+                                    ) {
+                                        selectedRoutine = routine
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            
+                            Spacer(minLength: 100) // Space for bottom button and tab bar
                         }
                     }
-                    .onDelete(perform: deleteRoutines)
                 }
-                .listStyle(PlainListStyle())
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddRoutine = true }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.accentColor)
+                
+                // Fixed bottom button
+                VStack {
+                    Spacer()
+                    PrimaryActionButton(title: "New Routine") {
+                        showingAddRoutine = true
+                    }
+                    .padding(.bottom, 8) // Small padding above tab bar
                 }
             }
         }
@@ -681,13 +775,6 @@ struct RoutinesView: View {
         }
         .sheet(item: $selectedRoutine) { routine in
             RoutineDetailView(routine: routine)
-        }
-    }
-    
-    private func deleteRoutines(offsets: IndexSet) {
-        for index in offsets {
-            let routine = routines[index]
-            RoutineService.shared.deleteRoutine(routine: routine, modelContext: modelContext)
         }
     }
 }
@@ -749,18 +836,6 @@ struct EmptyRoutinesView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            
-            Button(action: onCreateRoutine) {
-                HStack {
-                    Image(systemName: "plus")
-                    Text("Create Routine")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding()
-                .background(Color.accentColor)
-                .cornerRadius(12)
-            }
             
             Spacer()
         }

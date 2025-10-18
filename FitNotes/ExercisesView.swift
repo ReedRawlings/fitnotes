@@ -4,14 +4,15 @@ import SwiftData
 struct ExercisesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
-    @State private var selectedMuscleGroup: String = "All"
+    @State private var selectedMuscleGroup: String = ""
     @State private var searchText = ""
     @State private var showingAddExercise = false
+    @State private var selectedExercise: Exercise?
     
     private var filteredExercises: [Exercise] {
         var exercises = allExercises
         
-        if selectedMuscleGroup != "All" {
+        if !selectedMuscleGroup.isEmpty {
             exercises = exercises.filter { $0.category == selectedMuscleGroup }
         }
         
@@ -24,89 +25,116 @@ struct ExercisesView: View {
     
     private var muscleGroups: [String] {
         let groups = Set(allExercises.map { $0.category })
-        return ["All"] + groups.sorted()
+        return groups.sorted()
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Search and Filter Section
-            VStack(spacing: 12) {
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
-                    TextField("Search exercises...", text: $searchText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                .padding(.horizontal)
-                
-                // Muscle Group Filter
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(muscleGroups, id: \.self) { group in
-                            Button(action: {
-                                selectedMuscleGroup = group
-                            }) {
-                                Text(group)
-                                    .font(.caption)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        selectedMuscleGroup == group
-                                            ? Color.accentColor
-                                            : Color(.systemGray5)
-                                    )
-                                    .foregroundColor(
-                                        selectedMuscleGroup == group
-                                            ? .white
-                                            : .primary
-                                    )
-                                    .cornerRadius(16)
-                            }
-                        }
+        ZStack {
+            // Blue gradient background
+            LinearGradient(
+                colors: [
+                    Color.blue.opacity(0.3),
+                    Color.blue.opacity(0.6)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Search and Filter Section
+                VStack(spacing: 12) {
+                    // Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        TextField("Search exercises...", text: $searchText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
                     .padding(.horizontal)
+                    
+                    // Muscle Group Filter
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(muscleGroups, id: \.self) { group in
+                                Button(action: {
+                                    selectedMuscleGroup = selectedMuscleGroup == group ? "" : group
+                                }) {
+                                    Text(group)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            selectedMuscleGroup == group
+                                                ? Color.accentColor
+                                                : Color(.systemGray5)
+                                        )
+                                        .foregroundColor(
+                                            selectedMuscleGroup == group
+                                                ? .white
+                                                : .primary
+                                        )
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                 }
-            }
-            .padding(.vertical, 8)
-            .background(Color(.systemBackground))
-            
-            Divider()
-            
-            // Exercises List
-            if filteredExercises.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "dumbbell")
-                        .font(.system(size: 48))
-                        .foregroundColor(.secondary)
-                    Text("No exercises found")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    Text("Try adjusting your search or filter")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                .padding(.vertical, 8)
+                .background(Color.clear)
+                
+                // Exercises List
+                if filteredExercises.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "dumbbell")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("No exercises found")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        Text("Try adjusting your search or filter")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredExercises) { exercise in
+                                    UnifiedCardView(
+                                        title: exercise.name,
+                                        subtitle: exercise.category
+                                    ) {
+                                        selectedExercise = exercise
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            
+                            Spacer(minLength: 100) // Space for bottom button and tab bar
+                        }
+                    }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(.systemBackground))
-            } else {
-                List(filteredExercises) { exercise in
-                    ExerciseRowView(exercise: exercise)
-                }
-                .listStyle(PlainListStyle())
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddExercise = true }) {
-                    Image(systemName: "plus")
-                        .font(.title2)
-                        .foregroundColor(.accentColor)
+                
+                // Fixed bottom button
+                VStack {
+                    Spacer()
+                    PrimaryActionButton(title: "Add Exercise") {
+                        showingAddExercise = true
+                    }
+                    .padding(.bottom, 8) // Small padding above tab bar
                 }
             }
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseView()
+        }
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
         }
         .onAppear {
             // Initialize default exercises if none exist
