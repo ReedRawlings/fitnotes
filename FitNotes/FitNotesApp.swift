@@ -14,7 +14,6 @@ struct FitNotesApp: App {
             let schema = Schema([
                 Exercise.self,
                 Workout.self,
-                Program.self,
                 BodyMetric.self,
                 WorkoutExercise.self,
                 RoutineExercise.self,
