@@ -119,15 +119,15 @@ struct ExercisesView: View {
                         }
                     }
                 }
-                
-                // Fixed bottom button
-                VStack {
-                    Spacer()
-                    PrimaryActionButton(title: "Add Exercise") {
-                        showingAddExercise = true
-                    }
-                    .padding(.bottom, 8) // Small padding above tab bar
+            }
+            
+            // Fixed bottom button - overlay on top
+            VStack {
+                Spacer()
+                PrimaryActionButton(title: "Add Exercise") {
+                    showingAddExercise = true
                 }
+                .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .sheet(isPresented: $showingAddExercise) {

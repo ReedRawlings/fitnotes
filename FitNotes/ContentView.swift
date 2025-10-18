@@ -137,26 +137,26 @@ struct HomeView: View {
                         Spacer(minLength: 100) // Space for bottom button and tab bar
                     }
                 }
-                
-                // Fixed bottom button
-                VStack {
-                    Spacer()
-                    PrimaryActionButton(
-                        title: appState.activeWorkout != nil ? "Continue \(appState.activeWorkout?.routineName ?? "")" : "New Workout",
-                        icon: appState.activeWorkout != nil ? "play.circle.fill" : "plus"
-                    ) {
-                        if appState.activeWorkout != nil {
-                            showingActiveWorkout = true
-                        } else {
-                            // Show routine selection for new workout
-                            // For now, we'll just show the first routine
-                            if let firstRoutine = routines.first {
-                                startWorkout(from: firstRoutine)
-                            }
+            }
+            
+            // Fixed bottom button - overlay on top
+            VStack {
+                Spacer()
+                PrimaryActionButton(
+                    title: appState.activeWorkout != nil ? "Continue \(appState.activeWorkout?.routineName ?? "")" : "New Workout",
+                    icon: appState.activeWorkout != nil ? "play.circle.fill" : "plus"
+                ) {
+                    if appState.activeWorkout != nil {
+                        showingActiveWorkout = true
+                    } else {
+                        // Show routine selection for new workout
+                        // For now, we'll just show the first routine
+                        if let firstRoutine = routines.first {
+                            startWorkout(from: firstRoutine)
                         }
                     }
-                    .padding(.bottom, 8) // Small padding above tab bar
                 }
+                .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .navigationBarHidden(true)
@@ -759,15 +759,15 @@ struct RoutinesView: View {
                         }
                     }
                 }
-                
-                // Fixed bottom button
-                VStack {
-                    Spacer()
-                    PrimaryActionButton(title: "New Routine") {
-                        showingAddRoutine = true
-                    }
-                    .padding(.bottom, 8) // Small padding above tab bar
+            }
+            
+            // Fixed bottom button - overlay on top
+            VStack {
+                Spacer()
+                PrimaryActionButton(title: "New Routine") {
+                    showingAddRoutine = true
                 }
+                .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .sheet(isPresented: $showingAddRoutine) {
