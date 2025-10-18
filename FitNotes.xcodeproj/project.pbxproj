@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250B2E9F733D0099C49A /* FitNotesApp.swift */; };
 		7413250E2E9F733D0099C49A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250D2E9F733D0099C49A /* ContentView.swift */; };
-		741325102E9F733D0099C49A /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413250F2E9F733D0099C49A /* Item.swift */; };
 		7413252F2E9F733D0099C49A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413252E2E9F733D0099C49A /* Models.swift */; };
 		741325302E9F733D0099C49A /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325312E9F733D0099C49A /* Exercise.swift */; };
 		741325322E9F733D0099C49A /* DailyRoutine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325332E9F733D0099C49A /* DailyRoutine.swift */; };
@@ -45,7 +44,6 @@
 		741325082E9F733D0099C49A /* FitNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7413250B2E9F733D0099C49A /* FitNotesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesApp.swift; sourceTree = "<group>"; };
 		7413250D2E9F733D0099C49A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		7413250F2E9F733D0099C49A /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		7413252E2E9F733D0099C49A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		741325312E9F733D0099C49A /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		741325332E9F733D0099C49A /* DailyRoutine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutine.swift; sourceTree = "<group>"; };
@@ -114,7 +112,6 @@
 			children = (
 				7413250B2E9F733D0099C49A /* FitNotesApp.swift */,
 				7413250D2E9F733D0099C49A /* ContentView.swift */,
-				7413250F2E9F733D0099C49A /* Item.swift */,
 				7413252E2E9F733D0099C49A /* Models.swift */,
 				741325312E9F733D0099C49A /* Exercise.swift */,
 				741325332E9F733D0099C49A /* DailyRoutine.swift */,
@@ -286,7 +283,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				7413250E2E9F733D0099C49A /* ContentView.swift in Sources */,
-				741325102E9F733D0099C49A /* Item.swift in Sources */,
 				7413252F2E9F733D0099C49A /* Models.swift in Sources */,
 				741325302E9F733D0099C49A /* Exercise.swift in Sources */,
 				741325322E9F733D0099C49A /* DailyRoutine.swift in Sources */,
