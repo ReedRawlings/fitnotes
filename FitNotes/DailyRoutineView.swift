@@ -35,13 +35,40 @@ struct WorkoutView: View {
                        Calendar.current.isDateInToday(selectedDate) {
                         ActiveWorkoutContentView(workoutId: activeWorkout.workoutId)
                     } else {
-                        // Date Picker
-                        DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                            .datePickerStyle(CompactDatePickerStyle())
-                            .padding()
+                        // Minimal date header
+                        HStack {
+                            if Calendar.current.isDateInToday(selectedDate) {
+                                Text("Today")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                HStack(spacing: 12) {
+                                    Button(action: { goToPreviousDay() }) {
+                                        Image(systemName: "chevron.left")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Text(selectedDate.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Button(action: { goToNextDay() }) {
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
                         
                         Divider()
                         
+                        // Exercise list directly below
                         if let workout = getWorkoutForDate(selectedDate) {
                             WorkoutDetailView(workout: workout)
                         } else {
@@ -52,13 +79,18 @@ struct WorkoutView: View {
                     }
                 }
             }
-            .navigationTitle("Workout")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Workout")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                }
+                
                 if appState.activeWorkout == nil || !Calendar.current.isDateInToday(selectedDate) {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: { showingAddExercise = true }) {
                             Image(systemName: "plus")
-                                .font(.title2)
                                 .foregroundColor(.accentColor)
                         }
                     }
@@ -68,6 +100,14 @@ struct WorkoutView: View {
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToWorkoutView(selectedDate: selectedDate)
         }
+    }
+    
+    private func goToPreviousDay() {
+        selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
+    }
+    
+    private func goToNextDay() {
+        selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
     }
     
     private func getWorkoutForDate(_ date: Date) -> Workout? {
@@ -83,47 +123,34 @@ struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddExercise = false
+    @State private var selectedExercise: WorkoutExercise?
+    @State private var showingEditExercise = false
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Minimal Header
-                HStack {
-                    Text(workout.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Button(action: { showingAddExercise = true }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                            Text("Add Exercise")
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.accentColor)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                
-                // Exercises Section
+            VStack(alignment: .leading, spacing: 12) {
                 if workout.exercises.isEmpty {
                     EmptyStateView(
                         icon: "dumbbell",
-                        title: "No exercises in this workout",
-                        subtitle: "Add exercises to get started"
+                        title: "No exercises",
+                        subtitle: "Add exercises to get started",
+                        actionTitle: "Add Exercise",
+                        onAction: { showingAddExercise = true }
                     )
                     .padding(.horizontal)
                 } else {
                     CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
-                        WorkoutExerciseRowView(workoutExercise: workoutExercise)
+                        NavigationLink(destination: EditWorkoutExerciseView(
+                            workoutExercise: workoutExercise,
+                            workout: workout
+                        )) {
+                            WorkoutExerciseRowView(workoutExercise: workoutExercise)
+                        }
                     }
                 }
-                
-                Spacer(minLength: 20)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
@@ -147,16 +174,14 @@ struct WorkoutExerciseRowView: View {
     var body: some View {
         BaseCardView {
             VStack(alignment: .leading, spacing: 8) {
-                // Exercise name and delete button
+                // Header with delete
                 HStack {
                     Text(exercise?.name ?? "Unknown Exercise")
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.primary)
                     
                     Spacer()
                     
-                    // Delete button
                     Button(action: { deleteExercise() }) {
                         Image(systemName: "trash")
                             .font(.subheadline)
@@ -164,14 +189,12 @@ struct WorkoutExerciseRowView: View {
                     }
                 }
                 
-                // Divider line
                 Divider()
                 
-                // Individual sets
+                // Sets list
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(sortedSets, id: \.id) { set in
                         HStack(spacing: 0) {
-                            // Weight
                             Text("\(Int(set.weight)).0 kg")
                                 .font(.body)
                                 .fontWeight(.semibold)
@@ -180,7 +203,6 @@ struct WorkoutExerciseRowView: View {
                             Spacer()
                                 .frame(minWidth: 16)
                             
-                            // Separator
                             Text("×")
                                 .font(.body)
                                 .foregroundColor(.secondary)
@@ -188,7 +210,6 @@ struct WorkoutExerciseRowView: View {
                             Spacer()
                                 .frame(minWidth: 16)
                             
-                            // Reps
                             Text("\(set.reps) reps")
                                 .font(.body)
                                 .foregroundColor(.secondary)
@@ -199,6 +220,7 @@ struct WorkoutExerciseRowView: View {
             }
             .padding(12)
         }
+        .contentShape(Rectangle()) // Make entire card tappable
     }
     
     private func deleteExercise() {
@@ -208,6 +230,145 @@ struct WorkoutExerciseRowView: View {
                 modelContext: modelContext
             )
         }
+    }
+}
+
+// MARK: - EditWorkoutExerciseView
+struct EditWorkoutExerciseView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query private var exercises: [Exercise]
+    
+    let workoutExercise: WorkoutExercise
+    let workout: Workout
+    
+    private var exercise: Exercise? {
+        exercises.first { $0.id == workoutExercise.exerciseId }
+    }
+    
+    private var sortedSets: [WorkoutSet] {
+        workoutExercise.sets.sorted { $0.order < $1.order }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Exercise name header
+                    Text(exercise?.name ?? "Unknown Exercise")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal)
+                    
+                    // Sets editor
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Sets")
+                            .font(.headline)
+                            .padding(.horizontal)
+                        
+                        ForEach(Array(sortedSets.enumerated()), id: \.element.id) { index, set in
+                            VStack(spacing: 8) {
+                                HStack(spacing: 12) {
+                                    Text("Set \(index + 1)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Spacer()
+                                    
+                                    HStack(spacing: 8) {
+                                        TextField("Weight", value: Binding(
+                                            get: { set.weight },
+                                            set: { newValue in
+                                                if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
+                                                    workoutExercise.sets[idx].weight = newValue
+                                                }
+                                            }
+                                        ), format: .number)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .frame(width: 60)
+                                        
+                                        Text("kg")
+                                            .foregroundColor(.secondary)
+                                        
+                                        TextField("Reps", value: Binding(
+                                            get: { set.reps },
+                                            set: { newValue in
+                                                if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
+                                                    workoutExercise.sets[idx].reps = newValue
+                                                }
+                                            }
+                                        ), format: .number)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .frame(width: 60)
+                                        
+                                        Text("reps")
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                
+                                Button(action: { deleteSet(set) }) {
+                                    HStack {
+                                        Image(systemName: "trash")
+                                        Text("Remove set")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                        }
+                        
+                        Button(action: { addNewSet() }) {
+                            HStack {
+                                Image(systemName: "plus")
+                                Text("Add Set")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.accentColor.opacity(0.1))
+                            .foregroundColor(.accentColor)
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    Spacer(minLength: 20)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") {
+                        saveChanges()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func addNewSet() {
+        let newOrder = (workoutExercise.sets.map { $0.order }.max() ?? 0) + 1
+        let newSet = WorkoutSet(
+            exerciseId: workoutExercise.exerciseId,
+            order: newOrder,
+            reps: 10,
+            weight: 0
+        )
+        workoutExercise.sets.append(newSet)
+        try? modelContext.save()
+    }
+    
+    private func deleteSet(_ set: WorkoutSet) {
+        workoutExercise.sets.removeAll { $0.id == set.id }
+        try? modelContext.save()
+    }
+    
+    private func saveChanges() {
+        try? modelContext.save()
+        dismiss()
     }
 }
 
