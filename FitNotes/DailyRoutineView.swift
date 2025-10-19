@@ -128,8 +128,8 @@ struct WorkoutDetailView: View {
                         icon: "dumbbell",
                         title: "No exercises",
                         subtitle: "Add exercises to get started",
-                        actionTitle: "Add Exercise",
-                        onAction: { showingAddExercise = true }
+                        actionTitle: nil,
+                        onAction: nil
                     )
                     .padding(.horizontal)
                 } else {
@@ -412,8 +412,8 @@ struct EmptyWorkoutView: View {
                 icon: "dumbbell",
                 title: "No workout for this day",
                 subtitle: "Start a workout from the Home tab or add exercises manually",
-                actionTitle: "Add Exercise",
-                onAction: onAddExercise
+                actionTitle: nil,
+                onAction: nil
             )
             
             SecondaryActionButton(

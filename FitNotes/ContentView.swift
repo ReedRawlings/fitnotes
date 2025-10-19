@@ -1289,16 +1289,18 @@ struct ContentView: View {
             appearance.configureWithOpaqueBackground()
             appearance.backgroundColor = UIColor.systemBackground
             
-            // Active tab styling (white)
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor.white
+            // Active tab styling (blue accent color)
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemBlue
             appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor.white
+                .foregroundColor: UIColor.systemBlue,
+                .font: UIFont.systemFont(ofSize: 12, weight: .semibold)
             ]
             
             // Inactive tab styling (gray)
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray2
             appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor.systemGray
+                .foregroundColor: UIColor.systemGray2,
+                .font: UIFont.systemFont(ofSize: 12, weight: .regular)
             ]
             
             UITabBar.appearance().standardAppearance = appearance
