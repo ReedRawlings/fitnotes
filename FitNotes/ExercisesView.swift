@@ -86,36 +86,72 @@ struct ExercisesView: View {
                 
                 // Exercises List
                 if filteredExercises.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "dumbbell")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("No exercises found")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        Text("Try adjusting your search or filter")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No exercises found",
+                        subtitle: "Try adjusting your search or filter",
+                        actionTitle: "Add Exercise",
+                        onAction: {
+                            showingAddExercise = true
+                        }
+                    )
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            LazyVStack(spacing: 12) {
-                                ForEach(filteredExercises) { exercise in
-                                    UnifiedCardView(
-                                        title: exercise.name,
-                                        subtitle: exercise.category
-                                    ) {
-                                        selectedExercise = exercise
+                    CardListView(filteredExercises) { exercise in
+                        BaseCardView {
+                            Button(action: {
+                                selectedExercise = exercise
+                            }) {
+                                HStack(spacing: 12) {
+                                    // Exercise Icon
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.accentColor.opacity(0.1))
+                                            .frame(width: 50, height: 50)
+                                        
+                                        Image(systemName: exerciseIcon(for: exercise.category))
+                                            .font(.title2)
+                                            .foregroundColor(.accentColor)
                                     }
+                                    
+                                    // Exercise Info
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(exercise.name)
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                        
+                                        HStack(spacing: 8) {
+                                            Text(exercise.category)
+                                                .font(.caption)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 2)
+                                                .background(Color.accentColor.opacity(0.2))
+                                                .foregroundColor(.accentColor)
+                                                .cornerRadius(4)
+                                            
+                                            if !exercise.equipment.isEmpty {
+                                                Text(exercise.equipment)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            
+                                            Text(exercise.difficulty)
+                                                .font(.caption)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(difficultyColor(exercise.difficulty).opacity(0.2))
+                                                .foregroundColor(difficultyColor(exercise.difficulty))
+                                                .cornerRadius(4)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-                            
-                            Spacer(minLength: 100) // Space for bottom button and tab bar
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -141,6 +177,29 @@ struct ExercisesView: View {
             if allExercises.isEmpty {
                 ExerciseDatabaseService.shared.createDefaultExercises(modelContext: modelContext)
             }
+        }
+    }
+    
+    private func exerciseIcon(for category: String) -> String {
+        switch category.lowercased() {
+        case "chest": return "heart"
+        case "back": return "figure.strengthtraining.traditional"
+        case "shoulders": return "figure.arms.open"
+        case "arms": return "figure.arms.open"
+        case "legs": return "figure.walk"
+        case "core": return "circle.grid.cross"
+        case "glutes": return "figure.strengthtraining.functional"
+        case "cardio": return "heart.fill"
+        default: return "dumbbell"
+        }
+    }
+    
+    private func difficultyColor(_ difficulty: String) -> Color {
+        switch difficulty.lowercased() {
+        case "beginner": return .green
+        case "intermediate": return .orange
+        case "advanced": return .red
+        default: return .gray
         }
     }
 }

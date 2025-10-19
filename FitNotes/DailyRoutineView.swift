@@ -17,24 +17,37 @@ struct WorkoutView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Show active workout if it exists and we're viewing today
-                if let activeWorkout = appState.activeWorkout,
-                   Calendar.current.isDateInToday(selectedDate) {
-                    ActiveWorkoutContentView(workoutId: activeWorkout.workoutId)
-                } else {
-                    // Date Picker
-                    DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                        .datePickerStyle(CompactDatePickerStyle())
-                        .padding()
-                    
-                    Divider()
-                    
-                    if let workout = getWorkoutForDate(selectedDate) {
-                        WorkoutDetailView(workout: workout)
+            ZStack {
+                // Blue gradient background
+                LinearGradient(
+                    colors: [
+                        Color.blue.opacity(0.3),
+                        Color.blue.opacity(0.6)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Show active workout if it exists and we're viewing today
+                    if let activeWorkout = appState.activeWorkout,
+                       Calendar.current.isDateInToday(selectedDate) {
+                        ActiveWorkoutContentView(workoutId: activeWorkout.workoutId)
                     } else {
-                        EmptyWorkoutView(selectedDate: selectedDate) {
-                            showingAddExercise = true
+                        // Date Picker
+                        DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                            .datePickerStyle(CompactDatePickerStyle())
+                            .padding()
+                        
+                        Divider()
+                        
+                        if let workout = getWorkoutForDate(selectedDate) {
+                            WorkoutDetailView(workout: workout)
+                        } else {
+                            EmptyWorkoutView(selectedDate: selectedDate) {
+                                showingAddExercise = true
+                            }
                         }
                     }
                 }
@@ -76,116 +89,55 @@ struct WorkoutDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 // Workout Header
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(workout.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            
-                            Text(workout.date, style: .date)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        if workout.isCompleted {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.green)
-                        }
-                    }
-                    
-                    if let notes = workout.notes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 4)
-                    }
-                }
+                WorkoutHeaderCardView(
+                    workoutName: workout.name,
+                    startTime: workout.date,
+                    completed: workout.exercises.filter { $0.isCompleted }.count,
+                    total: workout.exercises.count
+                )
                 .padding(.horizontal)
                 
                 // Exercises Section
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Exercises")
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        Button(action: { showingAddExercise = true }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus")
-                                Text("Add Exercise")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.accentColor)
-                        }
-                    }
-                    .padding(.horizontal)
+                    SectionHeaderView(
+                        title: "Exercises",
+                        actionTitle: "Add Exercise",
+                        onAction: { showingAddExercise = true }
+                    )
                     
                     if workout.exercises.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "dumbbell")
-                                .font(.system(size: 32))
-                                .foregroundColor(.secondary)
-                            
-                            Text("No exercises added")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Text("Add exercises to start your workout")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        EmptyStateView(
+                            icon: "dumbbell",
+                            title: "No exercises in this workout",
+                            subtitle: "Add exercises to get started"
+                        )
                         .padding(.horizontal)
                     } else {
-                        LazyVStack(spacing: 8) {
-                            ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
-                                WorkoutExerciseRowView(workoutExercise: workoutExercise)
-                            }
+                        CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
+                            WorkoutExerciseRowView(workoutExercise: workoutExercise)
                         }
-                        .padding(.horizontal)
                     }
                 }
                 
                 // Action Buttons
                 VStack(spacing: 12) {
                     if !workout.exercises.isEmpty {
-                        Button(action: {
-                            WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
-                        }) {
-                            HStack {
-                                Image(systemName: workout.isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
-                                Text(workout.isCompleted ? "Completed" : "Mark Complete")
+                        PrimaryActionButton(
+                            title: workout.isCompleted ? "Completed" : "Complete Workout",
+                            icon: workout.isCompleted ? "checkmark.circle.fill" : "checkmark.circle.fill",
+                            onTap: {
+                                WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(workout.isCompleted ? Color.green : Color.accentColor)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                        }
+                        )
                         .disabled(workout.isCompleted)
                     }
                     
-                    Button(action: { showingEditWorkout = true }) {
-                        HStack {
-                            Image(systemName: "pencil")
-                            Text("Edit Workout")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundColor(.primary)
-                        .cornerRadius(12)
-                    }
+                    SecondaryActionButton(
+                        title: "Edit Workout",
+                        icon: "pencil",
+                        onTap: { showingEditWorkout = true }
+                    )
                 }
-                .padding(.horizontal)
                 
                 Spacer(minLength: 20)
             }
@@ -205,70 +157,57 @@ struct WorkoutExerciseRowView: View {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
-    var body: some View {
-        HStack(spacing: 12) {
-            // Exercise Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text(exercise?.name ?? "Unknown Exercise")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                HStack(spacing: 8) {
-                    if workoutExercise.sets > 0 {
-                        Text("\(workoutExercise.sets) sets")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let reps = workoutExercise.reps {
-                        Text("\(reps) reps")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let weight = workoutExercise.weight {
-                        Text("\(Int(weight)) kg")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let duration = workoutExercise.duration {
-                        Text("\(duration) sec")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            // Complete Button
-            Button(action: {
-                workoutExercise.isCompleted.toggle()
-                try? modelContext.save()
-            }) {
-                Image(systemName: workoutExercise.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundColor(workoutExercise.isCompleted ? .green : .gray)
-            }
-            
-            // Delete Button
-            Button(action: {
-                if workoutExercise.workout != nil {
-                    WorkoutService.shared.removeExerciseFromWorkout(
-                        workoutExercise: workoutExercise,
-                        modelContext: modelContext
-                    )
-                }
-            }) {
-                Image(systemName: "trash")
-                    .font(.subheadline)
-                    .foregroundColor(.red)
-            }
+    private var subtitle: String {
+        var parts: [String] = []
+        if workoutExercise.sets > 0 {
+            parts.append("\(workoutExercise.sets) sets")
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
+        if let reps = workoutExercise.reps {
+            parts.append("\(reps) reps")
+        }
+        if let weight = workoutExercise.weight {
+            parts.append("\(Int(weight)) kg")
+        }
+        if let duration = workoutExercise.duration {
+            parts.append("\(duration) sec")
+        }
+        return parts.joined(separator: " ")
+    }
+    
+    var body: some View {
+        BaseCardView {
+            CardRowView(
+                title: exercise?.name ?? "Unknown Exercise",
+                subtitle: subtitle.isEmpty ? nil : subtitle,
+                trailingContent: {
+                    HStack(spacing: 12) {
+                        // Complete Button
+                        Button(action: {
+                            workoutExercise.isCompleted.toggle()
+                            try? modelContext.save()
+                        }) {
+                            Image(systemName: workoutExercise.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.title2)
+                                .foregroundColor(workoutExercise.isCompleted ? .green : .gray)
+                        }
+                        
+                        // Delete Button
+                        Button(action: {
+                            if workoutExercise.workout != nil {
+                                WorkoutService.shared.removeExerciseFromWorkout(
+                                    workoutExercise: workoutExercise,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.subheadline)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -279,50 +218,19 @@ struct EmptyWorkoutView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Spacer()
+            EmptyStateView(
+                icon: "dumbbell",
+                title: "No workout for this day",
+                subtitle: "Start a workout from the Home tab or add exercises manually",
+                actionTitle: "Add Exercise",
+                onAction: onAddExercise
+            )
             
-            Image(systemName: "dumbbell")
-                .font(.system(size: 64))
-                .foregroundColor(.secondary)
-            
-            Text("No workout for this day")
-                .font(.title2)
-                .fontWeight(.medium)
-                .foregroundColor(.secondary)
-            
-            Text("Start a workout from the Home tab or add exercises manually")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            
-            VStack(spacing: 12) {
-                Button(action: onAddExercise) {
-                    HStack {
-                        Image(systemName: "plus")
-                        Text("Add Exercise")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(Color.accentColor)
-                    .cornerRadius(12)
-                }
-                
-                Button(action: { showingRoutineTemplates = true }) {
-                    HStack {
-                        Image(systemName: "list.bullet.rectangle")
-                        Text("Use Routine Template")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.accentColor)
-                    .padding()
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(12)
-                }
-            }
-            
-            Spacer()
+            SecondaryActionButton(
+                title: "Use Routine Template",
+                icon: "list.bullet.rectangle",
+                onTap: { showingRoutineTemplates = true }
+            )
         }
         .padding()
         .sheet(isPresented: $showingRoutineTemplates) {
