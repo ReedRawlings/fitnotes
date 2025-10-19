@@ -96,7 +96,7 @@ struct HomeView: View {
     @State private var showingRoutineDetail: Routine?
     
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
             // Blue gradient background
             LinearGradient(
                 colors: [
@@ -108,52 +108,54 @@ struct HomeView: View {
             )
             .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 12) {
-                    // Routine cards
-                    LazyVStack(spacing: 12) {
-                        ForEach(routines) { routine in
-                            RoutineCardView(
-                                routine: routine,
-                                isExpanded: expandedRoutineId == routine.id,
-                                isActiveWorkout: appState.activeWorkout != nil,
-                                lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
-                                    for: routine,
-                                    modelContext: modelContext
-                                ),
-                                onTap: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        if expandedRoutineId == routine.id {
-                                            expandedRoutineId = nil
-                                        } else {
-                                            expandedRoutineId = routine.id
-                                        }
-                                    }
-                                },
-                                onView: {
-                                    showingRoutineDetail = routine
-                                },
-                                onStart: {
-                                    // Start workout directly from routine
-                                    let workout = RoutineService.shared.createWorkoutFromTemplate(
-                                        routine: routine,
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // Routine cards
+                        LazyVStack(spacing: 12) {
+                            ForEach(routines) { routine in
+                                RoutineCardView(
+                                    routine: routine,
+                                    isExpanded: expandedRoutineId == routine.id,
+                                    isActiveWorkout: appState.activeWorkout != nil,
+                                    lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
+                                        for: routine,
                                         modelContext: modelContext
-                                    )
-                                    
-                                    appState.startWorkoutAndNavigate(
-                                        workoutId: workout.id,
-                                        routineId: routine.id,
-                                        routineName: routine.name,
-                                        totalExercises: routine.exercises.count
-                                    )
-                                }
-                            )
+                                    ),
+                                    onTap: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            if expandedRoutineId == routine.id {
+                                                expandedRoutineId = nil
+                                            } else {
+                                                expandedRoutineId = routine.id
+                                            }
+                                        }
+                                    },
+                                    onView: {
+                                        showingRoutineDetail = routine
+                                    },
+                                    onStart: {
+                                        // Start workout directly from routine
+                                        let workout = RoutineService.shared.createWorkoutFromTemplate(
+                                            routine: routine,
+                                            modelContext: modelContext
+                                        )
+                                        
+                                        appState.startWorkoutAndNavigate(
+                                            workoutId: workout.id,
+                                            routineId: routine.id,
+                                            routineName: routine.name,
+                                            totalExercises: routine.exercises.count
+                                        )
+                                    }
+                                )
+                            }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        Spacer(minLength: 100) // Space for tab bar
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    Spacer(minLength: 100) // Space for tab bar
                 }
             }
         }
