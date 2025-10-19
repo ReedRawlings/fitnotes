@@ -399,21 +399,6 @@ struct ActiveWorkoutContentView: View {
                     .listStyle(PlainListStyle())
                 }
                 
-                // Action Buttons
-                VStack(spacing: 12) {
-                    Button(action: pauseWorkout) {
-                        HStack {
-                            Image(systemName: "pause.circle")
-                            Text("Pause Workout")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundColor(.primary)
-                        .cornerRadius(12)
-                    }
-                }
-                .padding()
             } else {
                 VStack(spacing: 20) {
                     Spacer()
@@ -432,10 +417,6 @@ struct ActiveWorkoutContentView: View {
         }
     }
     
-    private func pauseWorkout() {
-        // Navigate back to Home tab
-        appState.selectedTab = 0
-    }
 }
 
 // MARK: - ActiveWorkoutView Component (for modal use - keeping for compatibility)
@@ -508,21 +489,6 @@ struct ActiveWorkoutView: View {
                         .listStyle(PlainListStyle())
                     }
                     
-                    // Action Buttons
-                    VStack(spacing: 12) {
-                        Button(action: pauseWorkout) {
-                            HStack {
-                                Image(systemName: "pause.circle")
-                                Text("Pause Workout")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray5))
-                            .foregroundColor(.primary)
-                            .cornerRadius(12)
-                        }
-                    }
-                    .padding()
                 } else {
                     VStack(spacing: 20) {
                         Spacer()
@@ -559,11 +525,6 @@ struct ActiveWorkoutView: View {
         }
     }
     
-    private func pauseWorkout() {
-        // Navigate back to Home tab
-        appState.selectedTab = 0
-        dismiss()
-    }
 }
 
 struct ActiveWorkoutExerciseRowView: View {
