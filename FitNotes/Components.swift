@@ -4,14 +4,14 @@
 import SwiftUI
 
 // MARK: - BaseCardView
-public struct BaseCardView<Content: View>: View {
+struct BaseCardView<Content: View>: View {
     let content: Content
     
-    public init(@ViewBuilder content: @escaping () -> Content) {
+    init(@ViewBuilder content: @escaping () -> Content) {
         self.content = content()
     }
     
-    public var body: some View {
+    var body: some View {
         content
             .padding(16)
             .background(Color.white)
@@ -21,16 +21,16 @@ public struct BaseCardView<Content: View>: View {
 }
 
 // MARK: - CardListView
-public struct CardListView<Item: Identifiable, Content: View>: View {
+struct CardListView<Item: Identifiable, Content: View>: View {
     let items: [Item]
     let content: (Item) -> Content
     
-    public init(_ items: [Item], @ViewBuilder content: @escaping (Item) -> Content) {
+    init(_ items: [Item], @ViewBuilder content: @escaping (Item) -> Content) {
         self.items = items
         self.content = content
     }
     
-    public var body: some View {
+    var body: some View {
         ScrollView {
             VStack(spacing: 12) {
                 LazyVStack(spacing: 12) {
@@ -48,12 +48,12 @@ public struct CardListView<Item: Identifiable, Content: View>: View {
 }
 
 // MARK: - CardRowView
-public struct CardRowView<Trailing: View>: View {
+ struct CardRowView<Trailing: View>: View {
     let title: String
     let subtitle: String?
     let trailingContent: Trailing?
     
-    public init(
+ init(
         title: String,
         subtitle: String? = nil,
         @ViewBuilder trailingContent: @escaping () -> Trailing? = { nil }
@@ -63,7 +63,7 @@ public struct CardRowView<Trailing: View>: View {
         self.trailingContent = trailingContent()
     }
     
-    public var body: some View {
+ var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -93,12 +93,12 @@ public struct CardRowView<Trailing: View>: View {
 }
 
 // MARK: - SectionHeaderView
-public struct SectionHeaderView: View {
+ struct SectionHeaderView: View {
     let title: String
     let actionTitle: String?
     let onAction: (() -> Void)?
     
-    public init(
+ init(
         title: String,
         actionTitle: String? = nil,
         onAction: (() -> Void)? = nil
@@ -108,7 +108,7 @@ public struct SectionHeaderView: View {
         self.onAction = onAction
     }
     
-    public var body: some View {
+ var body: some View {
         HStack {
             Text(title)
                 .font(.headline)
@@ -134,14 +134,14 @@ public struct SectionHeaderView: View {
 }
 
 // MARK: - EmptyStateView
-public struct EmptyStateView: View {
+ struct EmptyStateView: View {
     let icon: String
     let title: String
     let subtitle: String
     let actionTitle: String?
     let onAction: (() -> Void)?
     
-    public init(
+ init(
         icon: String,
         title: String,
         subtitle: String,
@@ -155,7 +155,7 @@ public struct EmptyStateView: View {
         self.onAction = onAction
     }
     
-    public var body: some View {
+ var body: some View {
         VStack(spacing: 20) {
             Spacer()
             
@@ -199,16 +199,16 @@ public struct EmptyStateView: View {
 }
 
 // MARK: - ProgressIndicatorView
-public struct ProgressIndicatorView: View {
+ struct ProgressIndicatorView: View {
     let completed: Int
     let total: Int
     
-    public init(completed: Int, total: Int) {
+ init(completed: Int, total: Int) {
         self.completed = completed
         self.total = total
     }
     
-    public var body: some View {
+ var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
             Text("\(completed)/\(total)")
                 .font(.headline)
@@ -223,13 +223,13 @@ public struct ProgressIndicatorView: View {
 }
 
 // MARK: - WorkoutHeaderCardView
-public struct WorkoutHeaderCardView: View {
+ struct WorkoutHeaderCardView: View {
     let workoutName: String
     let startTime: Date
     let completed: Int
     let total: Int
     
-    public init(
+ init(
         workoutName: String,
         startTime: Date,
         completed: Int,
@@ -241,7 +241,7 @@ public struct WorkoutHeaderCardView: View {
         self.total = total
     }
     
-    public var body: some View {
+ var body: some View {
         BaseCardView {
             VStack(spacing: 12) {
                 HStack {
@@ -269,18 +269,18 @@ public struct WorkoutHeaderCardView: View {
 }
 
 // MARK: - PrimaryActionButton
-public struct PrimaryActionButton: View {
+ struct PrimaryActionButton: View {
     let title: String
     let icon: String
     let onTap: () -> Void
     
-    public init(title: String, icon: String = "plus", onTap: @escaping () -> Void) {
+ init(title: String, icon: String = "plus", onTap: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.onTap = onTap
     }
     
-    public var body: some View {
+ var body: some View {
         Button(action: onTap) {
             HStack {
                 Image(systemName: icon)
@@ -302,18 +302,18 @@ public struct PrimaryActionButton: View {
 }
 
 // MARK: - SecondaryActionButton
-public struct SecondaryActionButton: View {
+ struct SecondaryActionButton: View {
     let title: String
     let icon: String
     let onTap: () -> Void
     
-    public init(title: String, icon: String = "pause", onTap: @escaping () -> Void) {
+ init(title: String, icon: String = "pause", onTap: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.onTap = onTap
     }
     
-    public var body: some View {
+ var body: some View {
         Button(action: onTap) {
             HStack {
                 Image(systemName: icon)
