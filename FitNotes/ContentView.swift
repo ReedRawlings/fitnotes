@@ -252,38 +252,6 @@ struct UnifiedCardView: View {
     }
 }
 
-// MARK: - PrimaryActionButton Component
-struct PrimaryActionButton: View {
-    let title: String
-    let icon: String
-    let onTap: () -> Void
-    
-    init(title: String, icon: String = "plus", onTap: @escaping () -> Void) {
-        self.title = title
-        self.icon = icon
-        self.onTap = onTap
-    }
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.purple)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-        }
-        .padding(.horizontal, 20)
-    }
-}
 
 // MARK: - RoutineCardView Component (Homepage specific)
 struct RoutineCardView: View {
