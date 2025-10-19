@@ -18,29 +18,19 @@ public class AppState: ObservableObject {
             guard let workout = _activeWorkout,
                   Calendar.current.isDateInToday(workout.startDate) else {
                 _activeWorkout = nil
-                UserDefaults.standard.removeObject(forKey: "activeWorkout")
                 return nil
             }
             return workout
         }
         set {
             _activeWorkout = newValue
-            if let workout = newValue {
-                if let data = try? JSONEncoder().encode(workout) {
-                    UserDefaults.standard.set(data, forKey: "activeWorkout")
-                }
-            } else {
-                UserDefaults.standard.removeObject(forKey: "activeWorkout")
-            }
         }
     }
     
     init() {
-        // Restore active workout from UserDefaults on app launch
-        if let data = UserDefaults.standard.data(forKey: "activeWorkout"),
-           let workout = try? JSONDecoder().decode(ActiveWorkoutState.self, from: data) {
-            _activeWorkout = workout
-        }
+        // Start with no active workout
+        // WorkoutView or HomeView will set this on app launch if needed
+        _activeWorkout = nil
     }
     
     func startWorkout(workoutId: UUID, routineId: UUID?, totalExercises: Int) {
@@ -70,6 +60,35 @@ public class AppState: ObservableObject {
     
     func continueWorkoutAndNavigate() {
         selectedTab = 2 // Switch to Workout tab (index 2)
+    }
+    
+    func syncActiveWorkoutFromSwiftData(modelContext: ModelContext) {
+        // Query SwiftData for today's workout
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate { workout in
+                workout.date >= today && workout.date < tomorrow
+            },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        
+        do {
+            let workouts = try modelContext.fetch(descriptor)
+            if let activeWorkout = workouts.first {
+                // Set active workout state
+                self.activeWorkout = ActiveWorkoutState(
+                    workoutId: activeWorkout.id,
+                    routineId: activeWorkout.routineTemplateId,
+                    startDate: activeWorkout.date,
+                    completedExercisesCount: 0, // This could be calculated from completed sets
+                    totalExercisesCount: activeWorkout.exercises.count
+                )
+            }
+        } catch {
+            print("Error syncing active workout from SwiftData: \(error)")
+        }
     }
 }
 
@@ -345,6 +364,7 @@ struct ActiveWorkoutContentView: View {
     @EnvironmentObject private var appState: AppState
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
+    @State private var showingAddExercise = false
     
     private var workout: Workout? {
         workouts.first { $0.id == workoutId }
@@ -406,6 +426,12 @@ struct ActiveWorkoutContentView: View {
                     .listStyle(PlainListStyle())
                 }
                 
+                // Add Exercise button
+                PrimaryActionButton(title: "Add to Workout", icon: "plus") {
+                    showingAddExercise = true
+                }
+                .padding(.bottom, 8)
+                
             } else {
                 VStack(spacing: 20) {
                     Spacer()
@@ -421,6 +447,13 @@ struct ActiveWorkoutContentView: View {
                     Spacer()
                 }
             }
+        }
+        .sheet(isPresented: $showingAddExercise) {
+            AddExerciseToWorkoutView(
+                selectedDate: workout?.date ?? Date(),
+                activeWorkoutId: workoutId,
+                isActiveWorkout: true
+            )
         }
     }
     
@@ -1225,6 +1258,7 @@ struct InsightsView: View {
 
 struct ContentView: View {
     @StateObject private var appState = AppState()
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         TabView(selection: $appState.selectedTab) {
@@ -1285,6 +1319,10 @@ struct ContentView: View {
             
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
+        .onAppear {
+            // Sync active workout state from SwiftData on app launch
+            appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
         }
     }
 }

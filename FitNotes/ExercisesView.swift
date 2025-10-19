@@ -10,17 +10,11 @@ struct ExercisesView: View {
     @State private var selectedExercise: Exercise?
     
     private var filteredExercises: [Exercise] {
-        var exercises = allExercises
-        
-        if !selectedMuscleGroup.isEmpty {
-            exercises = exercises.filter { $0.category == selectedMuscleGroup }
-        }
-        
-        if !searchText.isEmpty {
-            exercises = exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-        
-        return exercises
+        ExerciseSearchService.shared.searchExercises(
+            query: searchText,
+            category: selectedMuscleGroup.isEmpty ? nil : selectedMuscleGroup,
+            exercises: allExercises
+        )
     }
     
     private var muscleGroups: [String] {
@@ -96,64 +90,13 @@ struct ExercisesView: View {
                         }
                     )
                 } else {
-                    CardListView(filteredExercises) { exercise in
-                        BaseCardView {
-                            Button(action: {
-                                selectedExercise = exercise
-                            }) {
-                                HStack(spacing: 12) {
-                                    // Exercise Icon
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.accentColor.opacity(0.1))
-                                            .frame(width: 50, height: 50)
-                                        
-                                        Image(systemName: exerciseIcon(for: exercise.category))
-                                            .font(.title2)
-                                            .foregroundColor(.accentColor)
-                                    }
-                                    
-                                    // Exercise Info
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(exercise.name)
-                                            .font(.headline)
-                                            .foregroundColor(.primary)
-                                        
-                                        HStack(spacing: 8) {
-                                            Text(exercise.category)
-                                                .font(.caption)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 2)
-                                                .background(Color.accentColor.opacity(0.2))
-                                                .foregroundColor(.accentColor)
-                                                .cornerRadius(4)
-                                            
-                                            if !exercise.equipment.isEmpty {
-                                                Text(exercise.equipment)
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                            }
-                                            
-                                            Text(exercise.difficulty)
-                                                .font(.caption)
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(difficultyColor(exercise.difficulty).opacity(0.2))
-                                                .foregroundColor(difficultyColor(exercise.difficulty))
-                                                .cornerRadius(4)
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                    ExercisePickerView(
+                        exercises: filteredExercises,
+                        displayMode: .detailed,
+                        onExerciseSelected: { exercise in
+                            selectedExercise = exercise
                         }
-                    }
+                    )
                 }
             }
             
@@ -177,29 +120,6 @@ struct ExercisesView: View {
             if allExercises.isEmpty {
                 ExerciseDatabaseService.shared.createDefaultExercises(modelContext: modelContext)
             }
-        }
-    }
-    
-    private func exerciseIcon(for category: String) -> String {
-        switch category.lowercased() {
-        case "chest": return "heart"
-        case "back": return "figure.strengthtraining.traditional"
-        case "shoulders": return "figure.arms.open"
-        case "arms": return "figure.arms.open"
-        case "legs": return "figure.walk"
-        case "core": return "circle.grid.cross"
-        case "glutes": return "figure.strengthtraining.functional"
-        case "cardio": return "heart.fill"
-        default: return "dumbbell"
-        }
-    }
-    
-    private func difficultyColor(_ difficulty: String) -> Color {
-        switch difficulty.lowercased() {
-        case "beginner": return .green
-        case "intermediate": return .orange
-        case "advanced": return .red
-        default: return .gray
         }
     }
 }

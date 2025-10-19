@@ -8,6 +8,14 @@ struct WorkoutView: View {
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
     
+    var displayDate: Date {
+        if let activeWorkout = appState.activeWorkout {
+            return activeWorkout.startDate
+        } else {
+            return selectedDate
+        }
+    }
+    
     var todaysWorkout: Workout? {
         let calendar = Calendar.current
         return workouts.first { workout in
@@ -32,12 +40,12 @@ struct WorkoutView: View {
                 VStack(spacing: 0) {
                     // Show active workout if it exists and we're viewing today
                     if let activeWorkout = appState.activeWorkout,
-                       Calendar.current.isDateInToday(selectedDate) {
+                       Calendar.current.isDateInToday(displayDate) {
                         ActiveWorkoutContentView(workoutId: activeWorkout.workoutId)
                     } else {
                         // Minimal date header
                         HStack {
-                            if Calendar.current.isDateInToday(selectedDate) {
+                            if Calendar.current.isDateInToday(displayDate) {
                                 Text("Today")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
@@ -49,7 +57,7 @@ struct WorkoutView: View {
                                             .foregroundColor(.secondary)
                                     }
                                     
-                                    Text(selectedDate.formatted(date: .abbreviated, time: .omitted))
+                                    Text(displayDate.formatted(date: .abbreviated, time: .omitted))
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                     
@@ -69,10 +77,10 @@ struct WorkoutView: View {
                         Divider()
                         
                         // Exercise list directly below
-                        if let workout = getWorkoutForDate(selectedDate) {
+                        if let workout = getWorkoutForDate(displayDate) {
                             WorkoutDetailView(workout: workout)
                         } else {
-                            EmptyWorkoutView(selectedDate: selectedDate) {
+                            EmptyWorkoutView(selectedDate: displayDate) {
                                 showingAddExercise = true
                             }
                         }
@@ -90,7 +98,29 @@ struct WorkoutView: View {
             .navigationBarHidden(true)
         }
         .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(selectedDate: selectedDate)
+            if let activeWorkout = appState.activeWorkout {
+                // Pass active workout info
+                AddExerciseToWorkoutView(
+                    selectedDate: activeWorkout.startDate,
+                    activeWorkoutId: activeWorkout.workoutId,
+                    isActiveWorkout: true
+                )
+            } else {
+                // Normal flow - new or existing workout for selectedDate
+                AddExerciseToWorkoutView(
+                    selectedDate: displayDate,
+                    activeWorkoutId: nil,
+                    isActiveWorkout: false
+                )
+            }
+        }
+        .onAppear {
+            // If active workout exists, set selectedDate to active workout's date
+            if let activeWorkout = appState.activeWorkout {
+                selectedDate = activeWorkout.startDate
+            } else {
+                selectedDate = Date()
+            }
         }
     }
     
@@ -140,7 +170,7 @@ struct WorkoutDetailView: View {
             .padding(.top, 12)
         }
         .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
+            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout, activeWorkoutId: nil, isActiveWorkout: false)
         }
     }
 }
@@ -438,6 +468,8 @@ struct AddExerciseToWorkoutView: View {
     
     let selectedDate: Date
     var workout: Workout?
+    var activeWorkoutId: UUID?
+    var isActiveWorkout: Bool = false
     
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
@@ -447,11 +479,11 @@ struct AddExerciseToWorkoutView: View {
     @State private var notes = ""
     
     private var filteredExercises: [Exercise] {
-        if searchText.isEmpty {
-            return exercises
-        } else {
-            return exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
+        ExerciseSearchService.shared.searchExercises(
+            query: searchText,
+            category: nil,
+            exercises: exercises
+        )
     }
     
     var body: some View {
@@ -537,38 +569,14 @@ struct AddExerciseToWorkoutView: View {
                     }
                 } else {
                     // Exercise List
-                    List(filteredExercises) { exercise in
-                        Button(action: {
+                    ExercisePickerView(
+                        exercises: filteredExercises,
+                        displayMode: .compact,
+                        onExerciseSelected: { exercise in
                             selectedExercise = exercise
                             initializeSetData(for: exercise)
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(exercise.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    HStack(spacing: 8) {
-                                        Text(exercise.category)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text(exercise.equipment)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .listStyle(PlainListStyle())
+                    )
                 }
             }
             .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")
@@ -650,9 +658,33 @@ struct AddExerciseToWorkoutView: View {
         
         // Create workout if it doesn't exist
         let currentWorkout: Workout
-        if let existingWorkout = workout {
+        
+        if isActiveWorkout, let activeId = activeWorkoutId {
+            // Fetch active workout from SwiftData using activeId
+            let descriptor = FetchDescriptor<Workout>(
+                predicate: #Predicate<Workout> { workout in
+                    workout.id == activeId
+                }
+            )
+            
+            do {
+                let workouts = try modelContext.fetch(descriptor)
+                guard let activeWorkout = workouts.first else {
+                    print("Active workout not found")
+                    dismiss()
+                    return
+                }
+                currentWorkout = activeWorkout
+            } catch {
+                print("Error fetching active workout: \(error)")
+                dismiss()
+                return
+            }
+        } else if let existingWorkout = workout {
+            // Use provided workout (existing flow)
             currentWorkout = existingWorkout
         } else {
+            // Create new workout for selectedDate
             currentWorkout = WorkoutService.shared.createWorkout(
                 name: "Workout - \(selectedDate.formatted(date: .abbreviated, time: .omitted))",
                 date: selectedDate,

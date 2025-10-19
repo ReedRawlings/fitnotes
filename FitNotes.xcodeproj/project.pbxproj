@@ -15,6 +15,7 @@
 		741325342E9F733D0099C49A /* ExerciseDatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */; };
 		741325362E9F733D0099C49A /* DailyRoutineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325372E9F733D0099C49A /* DailyRoutineService.swift */; };
 		741325382E9F733D0099C49A /* ExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325392E9F733D0099C49A /* ExercisesView.swift */; };
+		431B230F0CFC4AC6B3451926 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431B230F0CFC4AC6B3451925 /* ExercisePickerView.swift */; };
 		7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253B2E9F733D0099C49A /* DailyRoutineView.swift */; };
 		7413253C2E9F733D0099C49A /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253D2E9F733D0099C49A /* Components.swift */; };
 		741325402E9F733D0099C49A /* ExerciseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253E2E9F733D0099C49A /* ExerciseService.swift */; };
@@ -53,6 +54,7 @@
 		741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabaseService.swift; sourceTree = "<group>"; };
 		741325372E9F733D0099C49A /* DailyRoutineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineService.swift; sourceTree = "<group>"; };
 		741325392E9F733D0099C49A /* ExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisesView.swift; sourceTree = "<group>"; };
+		431B230F0CFC4AC6B3451925 /* ExercisePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
 		7413253B2E9F733D0099C49A /* DailyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineView.swift; sourceTree = "<group>"; };
 		7413253D2E9F733D0099C49A /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		7413253E2E9F733D0099C49A /* ExerciseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseService.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */,
 				741325372E9F733D0099C49A /* DailyRoutineService.swift */,
 				741325392E9F733D0099C49A /* ExercisesView.swift */,
+				431B230F0CFC4AC6B3451925 /* ExercisePickerView.swift */,
 				7413253B2E9F733D0099C49A /* DailyRoutineView.swift */,
 				7413253D2E9F733D0099C49A /* Components.swift */,
 				7413253E2E9F733D0099C49A /* ExerciseService.swift */,
@@ -298,6 +301,7 @@
 				741325342E9F733D0099C49A /* ExerciseDatabaseService.swift in Sources */,
 				741325362E9F733D0099C49A /* DailyRoutineService.swift in Sources */,
 				741325382E9F733D0099C49A /* ExercisesView.swift in Sources */,
+				431B230F0CFC4AC6B3451926 /* ExercisePickerView.swift in Sources */,
 				7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */,
 				7413253C2E9F733D0099C49A /* Components.swift in Sources */,
 				741325402E9F733D0099C49A /* ExerciseService.swift in Sources */,
