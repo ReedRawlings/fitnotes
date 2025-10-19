@@ -159,6 +159,12 @@ struct HomeView: View {
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
+                .onAppear {
+                    // Fix for RTIInputSystemClient error - dismiss any active text input before showing routine detail
+                    DispatchQueue.main.async {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
         }
         .onTapGesture {
             // Tap outside to collapse expanded card
@@ -167,6 +173,10 @@ struct HomeView: View {
                     expandedRoutineId = nil
                 }
             }
+        }
+        .onAppear {
+            // Fix for RTIInputSystemClient error - dismiss any active text input
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
     }
     
@@ -945,6 +955,12 @@ struct RoutineDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToRoutineTemplateView(routine: routine)
+                .onAppear {
+                    // Fix for RTIInputSystemClient error - ensure clean text input state
+                    DispatchQueue.main.async {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
         }
     }
     
@@ -1052,6 +1068,12 @@ struct AddExerciseToRoutineTemplateView: View {
                             .foregroundColor(.secondary)
                         TextField("Search exercises...", text: $searchText)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .onTapGesture {
+                                // Ensure proper focus management
+                                DispatchQueue.main.async {
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                }
+                            }
                     }
                 .padding()
                 
