@@ -118,7 +118,7 @@ struct HomeView: View {
                                     routine: routine,
                                     isExpanded: expandedRoutineId == routine.id,
                                     isActiveWorkout: appState.activeWorkout != nil,
-                                    lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
+                                    lastDoneText: RoutineService.shared.getDaysSinceLastUsed(
                                         for: routine,
                                         modelContext: modelContext
                                     ),
@@ -347,10 +347,6 @@ struct ActiveWorkoutContentView: View {
         workout?.exercises.sorted { $0.order < $1.order } ?? []
     }
     
-    private var completedExercisesCount: Int {
-        sortedExercises.filter { $0.isCompleted }.count
-    }
-    
     var body: some View {
         VStack(spacing: 0) {
             if let workout = workout {
@@ -368,21 +364,7 @@ struct ActiveWorkoutContentView: View {
                         }
                         
                         Spacer()
-                        
-                        // Progress indicator
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("\(completedExercisesCount)/\(sortedExercises.count)")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                            Text("exercises")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
                     }
-                    
-                    // Progress bar
-                    ProgressView(value: Double(completedExercisesCount), total: Double(sortedExercises.count))
-                        .progressViewStyle(LinearProgressViewStyle(tint: .green))
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -419,20 +401,6 @@ struct ActiveWorkoutContentView: View {
                 
                 // Action Buttons
                 VStack(spacing: 12) {
-                    if !sortedExercises.isEmpty {
-                        Button(action: completeWorkout) {
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Complete Workout")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                        }
-                    }
-                    
                     Button(action: pauseWorkout) {
                         HStack {
                             Image(systemName: "pause.circle")
@@ -462,26 +430,6 @@ struct ActiveWorkoutContentView: View {
                 }
             }
         }
-        .onAppear {
-            updateAppStateProgress()
-        }
-        .onChange(of: completedExercisesCount) { _, _ in
-            updateAppStateProgress()
-        }
-    }
-    
-    private func updateAppStateProgress() {
-        appState.updateWorkoutProgress(completedExercises: completedExercisesCount)
-    }
-    
-    private func completeWorkout() {
-        guard let workout = workout else { return }
-        
-        // Mark workout as completed
-        WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
-        
-        // Clear active workout state
-        appState.completeWorkout()
     }
     
     private func pauseWorkout() {
@@ -507,10 +455,6 @@ struct ActiveWorkoutView: View {
         workout?.exercises.sorted { $0.order < $1.order } ?? []
     }
     
-    private var completedExercisesCount: Int {
-        sortedExercises.filter { $0.isCompleted }.count
-    }
-    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -529,21 +473,7 @@ struct ActiveWorkoutView: View {
                             }
                             
                             Spacer()
-                            
-                            // Progress indicator
-                            VStack(alignment: .trailing, spacing: 4) {
-                                Text("\(completedExercisesCount)/\(sortedExercises.count)")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                Text("exercises")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
                         }
-                        
-                        // Progress bar
-                        ProgressView(value: Double(completedExercisesCount), total: Double(sortedExercises.count))
-                            .progressViewStyle(LinearProgressViewStyle(tint: .green))
                     }
                     .padding()
                     .background(Color(.systemGray6))
@@ -580,20 +510,6 @@ struct ActiveWorkoutView: View {
                     
                     // Action Buttons
                     VStack(spacing: 12) {
-                        if !sortedExercises.isEmpty {
-                            Button(action: completeWorkout) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text("Complete Workout")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.green)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                            }
-                        }
-                        
                         Button(action: pauseWorkout) {
                             HStack {
                                 Image(systemName: "pause.circle")
@@ -641,29 +557,6 @@ struct ActiveWorkoutView: View {
                 }
             }
         }
-        .onAppear {
-            updateAppStateProgress()
-        }
-        .onChange(of: completedExercisesCount) { _, _ in
-            updateAppStateProgress()
-        }
-    }
-    
-    private func updateAppStateProgress() {
-        appState.updateWorkoutProgress(completedExercises: completedExercisesCount)
-    }
-    
-    private func completeWorkout() {
-        guard let workout = workout else { return }
-        
-        // Mark workout as completed
-        WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
-        
-        // Clear active workout state
-        appState.completeWorkout()
-        
-        // Dismiss the view
-        dismiss()
     }
     
     private func pauseWorkout() {
@@ -754,12 +647,6 @@ struct WorkoutRowView: View {
             }
             
             Spacer()
-            
-            if workout.isCompleted {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.green)
-            }
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
@@ -856,7 +743,7 @@ struct RoutinesView: View {
                                 ForEach(routines) { routine in
                                     UnifiedCardView(
                                         title: routine.name,
-                                        subtitle: RoutineService.shared.getDaysSinceLastCompletion(
+                                        subtitle: RoutineService.shared.getDaysSinceLastUsed(
                                             for: routine,
                                             modelContext: modelContext
                                         )

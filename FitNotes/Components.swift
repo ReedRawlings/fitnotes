@@ -257,12 +257,7 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                     }
                     
                     Spacer()
-                    
-                    ProgressIndicatorView(completed: completed, total: total)
                 }
-                
-                ProgressView(value: Double(completed), total: Double(total))
-                    .progressViewStyle(LinearProgressViewStyle(tint: .green))
             }
         }
     }

@@ -150,16 +150,6 @@ public final class WorkoutService {
         }
     }
     
-    public func completeWorkout(_ workout: Workout, modelContext: ModelContext) {
-        workout.isCompleted = true
-        workout.updatedAt = Date()
-        
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error completing workout: \(error)")
-        }
-    }
 }
 
 // MARK: - RoutineService (Template Management)
@@ -253,11 +243,11 @@ public final class RoutineService {
     
     // MARK: - Last Completed Date Queries
     
-    public func getLastCompletedDate(for routine: Routine, modelContext: ModelContext) -> Date? {
+    public func getLastUsedDate(for routine: Routine, modelContext: ModelContext) -> Date? {
         let routineId = routine.id
         let descriptor = FetchDescriptor<Workout>(
             predicate: #Predicate<Workout> { workout in
-                workout.routineTemplateId == routineId && workout.isCompleted == true
+                workout.routineTemplateId == routineId
             },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
@@ -266,25 +256,25 @@ public final class RoutineService {
             let workouts = try modelContext.fetch(descriptor)
             return workouts.first?.date
         } catch {
-            print("Error fetching last completed date: \(error)")
+            print("Error fetching last used date: \(error)")
             return nil
         }
     }
     
-    public func getDaysSinceLastCompletion(for routine: Routine, modelContext: ModelContext) -> String {
-        guard let lastCompletedDate = getLastCompletedDate(for: routine, modelContext: modelContext) else {
-            return "Never completed"
+    public func getDaysSinceLastUsed(for routine: Routine, modelContext: ModelContext) -> String {
+        guard let lastUsedDate = getLastUsedDate(for: routine, modelContext: modelContext) else {
+            return "Never used"
         }
         
         let calendar = Calendar.current
-        let days = calendar.dateComponents([.day], from: lastCompletedDate, to: Date()).day ?? 0
+        let days = calendar.dateComponents([.day], from: lastUsedDate, to: Date()).day ?? 0
         
         if days == 0 {
-            return "Last done: Today"
+            return "Last used: Today"
         } else if days == 1 {
-            return "Last done: 1 day ago"
+            return "Last used: 1 day ago"
         } else {
-            return "Last done: \(days) days ago"
+            return "Last used: \(days) days ago"
         }
     }
     

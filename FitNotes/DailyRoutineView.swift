@@ -92,7 +92,7 @@ struct WorkoutDetailView: View {
                 WorkoutHeaderCardView(
                     workoutName: workout.name,
                     startTime: workout.date,
-                    completed: workout.exercises.filter { $0.isCompleted }.count,
+                    completed: workout.exercises.count,
                     total: workout.exercises.count
                 )
                 .padding(.horizontal)
@@ -121,16 +121,6 @@ struct WorkoutDetailView: View {
                 
                 // Action Buttons
                 VStack(spacing: 12) {
-                    if !workout.exercises.isEmpty {
-                        PrimaryActionButton(
-                            title: workout.isCompleted ? "Completed" : "Complete Workout",
-                            icon: workout.isCompleted ? "checkmark.circle.fill" : "checkmark.circle.fill",
-                            onTap: {
-                                WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
-                            }
-                        )
-                        .disabled(workout.isCompleted)
-                    }
                     
                     SecondaryActionButton(
                         title: "Edit Workout",

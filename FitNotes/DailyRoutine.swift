@@ -33,7 +33,6 @@ public final class Workout {
     public var name: String
     public var date: Date
     public var notes: String?
-    public var isCompleted: Bool
     public var routineTemplateId: UUID? // Reference to the template routine
     public var createdAt: Date
     public var updatedAt: Date
@@ -44,7 +43,6 @@ public final class Workout {
         name: String,
         date: Date = Date(),
         notes: String? = nil,
-        isCompleted: Bool = false,
         routineTemplateId: UUID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -53,7 +51,6 @@ public final class Workout {
         self.name = name
         self.date = date
         self.notes = notes
-        self.isCompleted = isCompleted
         self.routineTemplateId = routineTemplateId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
