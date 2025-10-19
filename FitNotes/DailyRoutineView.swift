@@ -195,24 +195,36 @@ struct WorkoutExerciseRowView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(sortedSets, id: \.id) { set in
                         HStack(spacing: 0) {
-                            Text("\(Int(set.weight)).0 kg")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                                .frame(minWidth: 16)
-                            
-                            Text("×")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                                .frame(minWidth: 16)
-                            
-                            Text("\(set.reps) reps")
-                                .font(.body)
-                                .foregroundColor(.secondary)
+                            if set.weight > 0 {
+                                Text("\(Int(set.weight)) kg")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                    .frame(minWidth: 16)
+                                
+                                Text("×")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                    .frame(minWidth: 16)
+                                
+                                Text("\(set.reps) reps")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                            } else if let duration = set.duration {
+                                Text("\(duration) sec")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            } else {
+                                Text("\(set.reps) reps")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
@@ -242,6 +254,8 @@ struct EditWorkoutExerciseView: View {
     let workoutExercise: WorkoutExercise
     let workout: Workout
     
+    @State private var showingHistory = false
+    
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
@@ -254,11 +268,24 @@ struct EditWorkoutExerciseView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Exercise name header
-                    Text(exercise?.name ?? "Unknown Exercise")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .padding(.horizontal)
+                    // Exercise name header with history button
+                    HStack {
+                        Text(exercise?.name ?? "Unknown Exercise")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Spacer()
+                        
+                        Button(action: { showingHistory = true }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                Text("View History")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.accentColor)
+                        }
+                    }
+                    .padding(.horizontal)
                     
                     // Sets editor
                     VStack(alignment: .leading, spacing: 12) {
@@ -281,6 +308,7 @@ struct EditWorkoutExerciseView: View {
                                             set: { newValue in
                                                 if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
                                                     workoutExercise.sets[idx].weight = newValue
+                                                    workoutExercise.sets[idx].updatedAt = Date()
                                                 }
                                             }
                                         ), format: .number)
@@ -295,6 +323,7 @@ struct EditWorkoutExerciseView: View {
                                             set: { newValue in
                                                 if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
                                                     workoutExercise.sets[idx].reps = newValue
+                                                    workoutExercise.sets[idx].updatedAt = Date()
                                                 }
                                             }
                                         ), format: .number)
@@ -347,17 +376,25 @@ struct EditWorkoutExerciseView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingHistory) {
+            if let exercise = exercise {
+                ExerciseHistoryView(exercise: exercise)
+            }
+        }
     }
     
     private func addNewSet() {
         let newOrder = (workoutExercise.sets.map { $0.order }.max() ?? 0) + 1
         let newSet = WorkoutSet(
             exerciseId: workoutExercise.exerciseId,
+            workoutId: workout.id,
             order: newOrder,
             reps: 10,
-            weight: 0
+            weight: 0,
+            date: workout.date
         )
         workoutExercise.sets.append(newSet)
+        modelContext.insert(newSet)
         try? modelContext.save()
     }
     
@@ -566,13 +603,32 @@ struct AddExerciseToWorkoutView: View {
     
     private func initializeSetData(for exercise: Exercise) {
         setData = []
-        for _ in 0..<numberOfSets {
-            if exercise.type == "Strength" {
-                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
-            } else if exercise.type == "Cardio" {
-                setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
-            } else {
-                setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+        
+        // Try to get last session data for this exercise
+        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+            exerciseId: exercise.id,
+            modelContext: modelContext
+        ) {
+            // Pre-populate with last session data
+            numberOfSets = lastSession.count
+            for set in lastSession {
+                setData.append((
+                    reps: set.reps,
+                    weight: set.weight,
+                    duration: set.duration,
+                    distance: set.distance
+                ))
+            }
+        } else {
+            // No history found, use defaults
+            for _ in 0..<numberOfSets {
+                if exercise.type == "Strength" {
+                    setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
+                } else if exercise.type == "Cardio" {
+                    setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
+                } else {
+                    setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+                }
             }
         }
     }

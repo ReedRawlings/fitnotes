@@ -104,39 +104,42 @@ public final class RoutineExercise {
 @Model
 public final class WorkoutSet {
     @Attribute(.unique) public var id: UUID
-    public var exerciseId: UUID  // Reference to the exercise
-    public var order: Int        // Which set (1st, 2nd, 3rd)
+    public var exerciseId: UUID       // Which exercise
+    public var workoutId: UUID        // Which workout session
+    public var order: Int             // Set number (1, 2, 3...)
     public var reps: Int
     public var weight: Double
-    public var duration: Int?    // For cardio/timed exercises
-    public var distance: Double? // For distance-based exercises
+    public var duration: Int?         // For cardio/timed
+    public var distance: Double?      // For distance-based
     public var notes: String?
-    public var isCompleted: Bool // User marked this set as done
+    public var date: Date             // When this was logged (denormalized for queries)
     public var createdAt: Date
     public var updatedAt: Date
 
     public init(
         id: UUID = UUID(),
         exerciseId: UUID,
+        workoutId: UUID,
         order: Int,
         reps: Int,
         weight: Double = 0,
         duration: Int? = nil,
         distance: Double? = nil,
         notes: String? = nil,
-        isCompleted: Bool = false,
+        date: Date = Date(),
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
         self.id = id
         self.exerciseId = exerciseId
+        self.workoutId = workoutId
         self.order = order
         self.reps = reps
         self.weight = weight
         self.duration = duration
         self.distance = distance
         self.notes = notes
-        self.isCompleted = isCompleted
+        self.date = date
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

@@ -54,14 +54,15 @@ public final class WorkoutService {
         for setIndex in 1...sets {
             let workoutSet = WorkoutSet(
                 exerciseId: exerciseId,
+                workoutId: workout.id,
                 order: setIndex,
                 reps: reps ?? 10,
                 weight: weight ?? 0,
                 duration: duration,
                 distance: distance,
-                notes: notes
+                notes: notes,
+                date: workout.date
             )
-            workoutSet.exerciseId = exerciseId
             workoutExercise.sets.append(workoutSet)
             modelContext.insert(workoutSet)
         }
@@ -97,12 +98,14 @@ public final class WorkoutService {
         for (index, set) in setData.enumerated() {
             let workoutSet = WorkoutSet(
                 exerciseId: exerciseId,
+                workoutId: workout.id,
                 order: index + 1,
                 reps: set.reps,
                 weight: set.weight,
                 duration: set.duration,
                 distance: set.distance,
-                notes: notes
+                notes: notes,
+                date: workout.date
             )
             workoutExercise.sets.append(workoutSet)
             modelContext.insert(workoutSet)
@@ -130,12 +133,14 @@ public final class WorkoutService {
         
         let workoutSet = WorkoutSet(
             exerciseId: workoutExercise.exerciseId,
+            workoutId: workoutExercise.workout?.id ?? UUID(),
             order: order,
             reps: reps,
             weight: weight,
             duration: duration,
             distance: distance,
-            notes: notes
+            notes: notes,
+            date: workoutExercise.workout?.date ?? Date()
         )
         
         workoutExercise.sets.append(workoutSet)
@@ -415,12 +420,14 @@ public final class RoutineService {
             for setIndex in 1...templateExercise.sets {
                 let workoutSet = WorkoutSet(
                     exerciseId: templateExercise.exerciseId,
+                    workoutId: workout.id,
                     order: setIndex,
                     reps: templateExercise.reps ?? 10,
                     weight: templateExercise.weight ?? 0,
                     duration: templateExercise.duration,
                     distance: templateExercise.distance,
-                    notes: templateExercise.notes
+                    notes: templateExercise.notes,
+                    date: workout.date
                 )
                 workoutExercise.sets.append(workoutSet)
                 modelContext.insert(workoutSet)
