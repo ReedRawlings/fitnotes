@@ -77,25 +77,19 @@ struct WorkoutView: View {
                             }
                         }
                     }
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Workout")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                }
-                
-                if appState.activeWorkout == nil || !Calendar.current.isDateInToday(selectedDate) {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: { showingAddExercise = true }) {
-                            Image(systemName: "plus")
-                                .foregroundColor(.accentColor)
+                    
+                    Spacer()
+                    
+                    // Prominent Add Exercise button at bottom
+                    if appState.activeWorkout == nil || !Calendar.current.isDateInToday(selectedDate) {
+                        PrimaryActionButton(title: "Add Exercise", icon: "plus") {
+                            showingAddExercise = true
                         }
+                        .padding(.bottom, 8) // Small padding above tab bar
                     }
                 }
             }
+            .navigationBarHidden(true)
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToWorkoutView(selectedDate: selectedDate)

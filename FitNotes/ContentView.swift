@@ -1283,6 +1283,27 @@ struct ContentView: View {
         }
         .accentColor(.blue)
         .environmentObject(appState)
+        .onAppear {
+            // Customize tab bar appearance
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor.systemBackground
+            
+            // Active tab styling (white)
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor.white
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+                .foregroundColor: UIColor.white
+            ]
+            
+            // Inactive tab styling (gray)
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+                .foregroundColor: UIColor.systemGray
+            ]
+            
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
     }
 }
 
