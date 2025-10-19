@@ -134,12 +134,7 @@ struct WorkoutDetailView: View {
                     .padding(.horizontal)
                 } else {
                     CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
-                        NavigationLink(destination: EditWorkoutExerciseView(
-                            workoutExercise: workoutExercise,
-                            workout: workout
-                        )) {
-                            WorkoutExerciseRowView(workoutExercise: workoutExercise)
-                        }
+                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
                     }
                 }
             }
@@ -154,6 +149,7 @@ struct WorkoutDetailView: View {
 
 struct WorkoutExerciseRowView: View {
     let workoutExercise: WorkoutExercise
+    let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     
@@ -178,9 +174,13 @@ struct WorkoutExerciseRowView: View {
                     
                     Button(action: { deleteExercise() }) {
                         Image(systemName: "trash")
-                            .font(.subheadline)
+                            .font(.title2)
                             .foregroundColor(.red)
+                            .frame(width: 44, height: 44)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 
                 Divider()
@@ -226,14 +226,18 @@ struct WorkoutExerciseRowView: View {
             }
             .padding(12)
         }
-        .contentShape(Rectangle()) // Make entire card tappable
+        .onTapGesture {
+            // Navigate to edit view when card is tapped (but not when delete button is tapped)
+        }
     }
     
     private func deleteExercise() {
+        print("Attempting to delete exercise: \(exercise?.name ?? "Unknown")")
         WorkoutService.shared.removeExerciseFromWorkout(
             workoutExercise: workoutExercise,
             modelContext: modelContext
         )
+        print("Delete operation completed")
     }
 }
 
