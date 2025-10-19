@@ -571,6 +571,14 @@ struct ActiveWorkoutExerciseRowView: View {
     let exercise: Exercise?
     @Environment(\.modelContext) private var modelContext
     
+    private var sortedSets: [WorkoutSet] {
+        workoutExercise.sets.sorted { $0.order < $1.order }
+    }
+    
+    private var completedSets: Int {
+        sortedSets.filter { $0.isCompleted }.count
+    }
+    
     var body: some View {
         HStack(spacing: 12) {
             // Exercise Info
@@ -580,47 +588,40 @@ struct ActiveWorkoutExerciseRowView: View {
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 8) {
-                    if workoutExercise.sets > 0 {
-                        Text("\(workoutExercise.sets) sets")
+                    if !sortedSets.isEmpty {
+                        Text("\(completedSets)/\(sortedSets.count) sets")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
-                    if let reps = workoutExercise.reps {
-                        Text("\(reps) reps")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let weight = workoutExercise.weight {
-                        Text("\(Int(weight)) kg")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let duration = workoutExercise.duration {
-                        Text("\(duration) sec")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    // Show first set as example
+                    if let firstSet = sortedSets.first {
+                        if firstSet.weight > 0 {
+                            Text("\(Int(firstSet.weight)) kg")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        if firstSet.duration != nil {
+                            Text("\(firstSet.duration ?? 0) sec")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
             }
             
             Spacer()
             
-            // Complete Button
-            Button(action: {
-                workoutExercise.isCompleted.toggle()
-                try? modelContext.save()
-            }) {
-                Image(systemName: workoutExercise.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundColor(workoutExercise.isCompleted ? .green : .gray)
+            // Progress indicator
+            if !sortedSets.isEmpty {
+                Text("\(Int(Double(completedSets) / Double(sortedSets.count) * 100))%")
+                    .font(.caption)
+                    .foregroundColor(completedSets == sortedSets.count ? .green : .secondary)
             }
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        .background(workoutExercise.isCompleted ? Color.green.opacity(0.1) : Color.clear)
+        .background(completedSets == sortedSets.count ? Color.green.opacity(0.1) : Color.clear)
         .cornerRadius(8)
     }
 }

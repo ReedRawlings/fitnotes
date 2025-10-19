@@ -16,6 +16,7 @@ struct FitNotesApp: App {
                 Workout.self,
                 BodyMetric.self,
                 WorkoutExercise.self,
+                WorkoutSet.self,
                 RoutineExercise.self,
                 Routine.self
             ])

@@ -100,30 +100,27 @@ public final class RoutineExercise {
     }
 }
 
-// MARK: - WorkoutExercise (for individual workouts)
+// MARK: - WorkoutSet (Individual Set Data)
 @Model
-public final class WorkoutExercise {
+public final class WorkoutSet {
     @Attribute(.unique) public var id: UUID
-    public var exerciseId: UUID
-    public var order: Int
-    public var sets: Int
-    public var reps: Int?
-    public var weight: Double?
-    public var duration: Int? // For time-based exercises
+    public var exerciseId: UUID  // Reference to the exercise
+    public var order: Int        // Which set (1st, 2nd, 3rd)
+    public var reps: Int
+    public var weight: Double
+    public var duration: Int?    // For cardio/timed exercises
     public var distance: Double? // For distance-based exercises
     public var notes: String?
-    public var isCompleted: Bool
+    public var isCompleted: Bool // User marked this set as done
     public var createdAt: Date
     public var updatedAt: Date
-    public var workout: Workout?
 
     public init(
         id: UUID = UUID(),
         exerciseId: UUID,
         order: Int,
-        sets: Int = 1,
-        reps: Int? = nil,
-        weight: Double? = nil,
+        reps: Int,
+        weight: Double = 0,
         duration: Int? = nil,
         distance: Double? = nil,
         notes: String? = nil,
@@ -134,13 +131,41 @@ public final class WorkoutExercise {
         self.id = id
         self.exerciseId = exerciseId
         self.order = order
-        self.sets = sets
         self.reps = reps
         self.weight = weight
         self.duration = duration
         self.distance = distance
         self.notes = notes
         self.isCompleted = isCompleted
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}
+
+// MARK: - WorkoutExercise (for individual workouts)
+@Model
+public final class WorkoutExercise {
+    @Attribute(.unique) public var id: UUID
+    public var exerciseId: UUID
+    public var order: Int
+    @Relationship(deleteRule: .cascade) public var sets: [WorkoutSet] = [] // NEW
+    public var notes: String?
+    public var createdAt: Date
+    public var updatedAt: Date
+    public var workout: Workout?
+
+    public init(
+        id: UUID = UUID(),
+        exerciseId: UUID,
+        order: Int,
+        notes: String? = nil,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.id = id
+        self.exerciseId = exerciseId
+        self.order = order
+        self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

@@ -83,50 +83,43 @@ struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddExercise = false
-    @State private var showingEditWorkout = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Workout Header
-                WorkoutHeaderCardView(
-                    workoutName: workout.name,
-                    startTime: workout.date,
-                    completed: workout.exercises.count,
-                    total: workout.exercises.count
-                )
-                .padding(.horizontal)
-                
-                // Exercises Section
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeaderView(
-                        title: "Exercises",
-                        actionTitle: "Add Exercise",
-                        onAction: { showingAddExercise = true }
-                    )
+                // Minimal Header
+                HStack {
+                    Text(workout.date.formatted(date: .abbreviated, time: .omitted))
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                     
-                    if workout.exercises.isEmpty {
-                        EmptyStateView(
-                            icon: "dumbbell",
-                            title: "No exercises in this workout",
-                            subtitle: "Add exercises to get started"
-                        )
-                        .padding(.horizontal)
-                    } else {
-                        CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
-                            WorkoutExerciseRowView(workoutExercise: workoutExercise)
+                    Spacer()
+                    
+                    Button(action: { showingAddExercise = true }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                            Text("Add Exercise")
                         }
+                        .font(.subheadline)
+                        .foregroundColor(.accentColor)
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
                 
-                // Action Buttons
-                VStack(spacing: 12) {
-                    
-                    SecondaryActionButton(
-                        title: "Edit Workout",
-                        icon: "pencil",
-                        onTap: { showingEditWorkout = true }
+                // Exercises Section
+                if workout.exercises.isEmpty {
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No exercises in this workout",
+                        subtitle: "Add exercises to get started"
                     )
+                    .padding(.horizontal)
+                } else {
+                    CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
+                        WorkoutExerciseRowView(workoutExercise: workoutExercise)
+                    }
                 }
                 
                 Spacer(minLength: 20)
@@ -147,55 +140,72 @@ struct WorkoutExerciseRowView: View {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
-    private var subtitle: String {
-        var parts: [String] = []
-        if workoutExercise.sets > 0 {
-            parts.append("\(workoutExercise.sets) sets")
-        }
-        if let reps = workoutExercise.reps {
-            parts.append("\(reps) reps")
-        }
-        if let weight = workoutExercise.weight {
-            parts.append("\(Int(weight)) kg")
-        }
-        if let duration = workoutExercise.duration {
-            parts.append("\(duration) sec")
-        }
-        return parts.joined(separator: " ")
+    private var sortedSets: [WorkoutSet] {
+        workoutExercise.sets.sorted { $0.order < $1.order }
     }
     
     var body: some View {
         BaseCardView {
-            CardRowView(
-                title: exercise?.name ?? "Unknown Exercise",
-                subtitle: subtitle.isEmpty ? nil : subtitle,
-                trailingContent: {
-                    HStack(spacing: 12) {
-                        // Complete Button
-                        Button(action: {
-                            workoutExercise.isCompleted.toggle()
-                            try? modelContext.save()
-                        }) {
-                            Image(systemName: workoutExercise.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundColor(workoutExercise.isCompleted ? .green : .gray)
-                        }
-                        
-                        // Delete Button
-                        Button(action: {
-                            if workoutExercise.workout != nil {
-                                WorkoutService.shared.removeExerciseFromWorkout(
-                                    workoutExercise: workoutExercise,
-                                    modelContext: modelContext
-                                )
-                            }
-                        }) {
-                            Image(systemName: "trash")
-                                .font(.subheadline)
-                                .foregroundColor(.red)
-                        }
+            VStack(alignment: .leading, spacing: 8) {
+                // Exercise name and delete button
+                HStack {
+                    Text(exercise?.name ?? "Unknown Exercise")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    // Delete button
+                    Button(action: { deleteExercise() }) {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
                     }
                 }
+                
+                // Divider line
+                Divider()
+                
+                // Individual sets
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(sortedSets, id: \.id) { set in
+                        HStack(spacing: 0) {
+                            // Weight
+                            Text("\(Int(set.weight)).0 kg")
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                                .frame(minWidth: 16)
+                            
+                            // Separator
+                            Text("×")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                                .frame(minWidth: 16)
+                            
+                            // Reps
+                            Text("\(set.reps) reps")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .padding(12)
+        }
+    }
+    
+    private func deleteExercise() {
+        if let workout = workoutExercise.workout {
+            WorkoutService.shared.removeExerciseFromWorkout(
+                workoutExercise: workoutExercise,
+                modelContext: modelContext
             )
         }
     }
@@ -240,9 +250,8 @@ struct AddExerciseToWorkoutView: View {
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
     @State private var selectedExercise: Exercise?
-    @State private var sets = 1
-    @State private var reps = 10
-    @State private var weight: Double = 0
+    @State private var numberOfSets = 1
+    @State private var setData: [(reps: Int, weight: Double, duration: Int?, distance: Double?)] = []
     @State private var notes = ""
     
     private var filteredExercises: [Exercise] {
@@ -283,14 +292,49 @@ struct AddExerciseToWorkoutView: View {
                             }
                         }
                         
-                        Section("Workout Details") {
-                            Stepper("Sets: \(sets)", value: $sets, in: 1...20)
-                            
-                            if exercise.type == "Strength" {
-                                Stepper("Reps: \(reps)", value: $reps, in: 1...100)
-                                Stepper("Weight: \(Int(weight)) kg", value: $weight, in: 0...500, step: 1)
-                            } else if exercise.type == "Cardio" {
-                                Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
+                        Section("Number of Sets") {
+                            Stepper("Sets: \(numberOfSets)", value: $numberOfSets, in: 1...20)
+                                .onChange(of: numberOfSets) { _, newValue in
+                                    updateSetData(for: exercise, newCount: newValue)
+                                }
+                        }
+                        
+                        Section("Set Details") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(0..<numberOfSets, id: \.self) { index in
+                                    HStack(spacing: 12) {
+                                        Text("Set \(index + 1)")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .frame(width: 50, alignment: .leading)
+                                        
+                                        if exercise.type == "Strength" {
+                                            TextField("Reps", value: $setData[index].reps, format: .number)
+                                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                .frame(width: 60)
+                                            
+                                            Text("×")
+                                                .foregroundColor(.secondary)
+                                            
+                                            TextField("Weight", value: $setData[index].weight, format: .number)
+                                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                .frame(width: 80)
+                                            
+                                            Text("kg")
+                                                .foregroundColor(.secondary)
+                                        } else if exercise.type == "Cardio" {
+                                            TextField("Duration", value: $setData[index].duration, format: .number)
+                                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                .frame(width: 80)
+                                            
+                                            Text("sec")
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 4)
+                                }
                             }
                         }
                         
@@ -304,6 +348,7 @@ struct AddExerciseToWorkoutView: View {
                     List(filteredExercises) { exercise in
                         Button(action: {
                             selectedExercise = exercise
+                            initializeSetData(for: exercise)
                         }) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -358,6 +403,37 @@ struct AddExerciseToWorkoutView: View {
         }
     }
     
+    private func initializeSetData(for exercise: Exercise) {
+        setData = []
+        for _ in 0..<numberOfSets {
+            if exercise.type == "Strength" {
+                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
+            } else if exercise.type == "Cardio" {
+                setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
+            } else {
+                setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+            }
+        }
+    }
+    
+    private func updateSetData(for exercise: Exercise, newCount: Int) {
+        if newCount > setData.count {
+            // Add new sets
+            for _ in setData.count..<newCount {
+                if exercise.type == "Strength" {
+                    setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
+                } else if exercise.type == "Cardio" {
+                    setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
+                } else {
+                    setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+                }
+            }
+        } else {
+            // Remove excess sets
+            setData.removeLast(setData.count - newCount)
+        }
+    }
+    
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
         
@@ -373,13 +449,10 @@ struct AddExerciseToWorkoutView: View {
             )
         }
         
-        _ = WorkoutService.shared.addExerciseToWorkout(
+        _ = WorkoutService.shared.addExerciseToWorkoutWithSets(
             workout: currentWorkout,
             exerciseId: exercise.id,
-            sets: sets,
-            reps: exercise.type == "Strength" ? reps : nil,
-            weight: exercise.type == "Strength" ? weight : nil,
-            duration: exercise.type == "Cardio" ? sets * 60 : nil,
+            setData: setData,
             notes: notes.isEmpty ? nil : notes,
             modelContext: modelContext
         )
@@ -482,5 +555,5 @@ struct RoutineTemplateSelectorView: View {
 
 #Preview {
     WorkoutView()
-        .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, RoutineExercise.self, Routine.self], inMemory: true)
+        .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, WorkoutSet.self, RoutineExercise.self, Routine.self], inMemory: true)
 }

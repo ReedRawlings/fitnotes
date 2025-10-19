@@ -44,16 +44,27 @@ public final class WorkoutService {
         let workoutExercise = WorkoutExercise(
             exerciseId: exerciseId,
             order: order,
-            sets: sets,
-            reps: reps,
-            weight: weight,
-            duration: duration,
-            distance: distance,
             notes: notes
         )
         
         workoutExercise.workout = workout
         modelContext.insert(workoutExercise)
+        
+        // Create individual sets
+        for setIndex in 1...sets {
+            let workoutSet = WorkoutSet(
+                exerciseId: exerciseId,
+                order: setIndex,
+                reps: reps ?? 10,
+                weight: weight ?? 0,
+                duration: duration,
+                distance: distance,
+                notes: notes
+            )
+            workoutSet.exerciseId = exerciseId
+            workoutExercise.sets.append(workoutSet)
+            modelContext.insert(workoutSet)
+        }
         
         do {
             try modelContext.save()
@@ -62,6 +73,102 @@ public final class WorkoutService {
         }
         
         return workoutExercise
+    }
+    
+    public func addExerciseToWorkoutWithSets(
+        workout: Workout,
+        exerciseId: UUID,
+        setData: [(reps: Int, weight: Double, duration: Int?, distance: Double?)],
+        notes: String? = nil,
+        modelContext: ModelContext
+    ) -> WorkoutExercise {
+        let order = workout.exercises.count + 1
+        
+        let workoutExercise = WorkoutExercise(
+            exerciseId: exerciseId,
+            order: order,
+            notes: notes
+        )
+        
+        workoutExercise.workout = workout
+        modelContext.insert(workoutExercise)
+        
+        // Create individual sets from provided data
+        for (index, set) in setData.enumerated() {
+            let workoutSet = WorkoutSet(
+                exerciseId: exerciseId,
+                order: index + 1,
+                reps: set.reps,
+                weight: set.weight,
+                duration: set.duration,
+                distance: set.distance,
+                notes: notes
+            )
+            workoutExercise.sets.append(workoutSet)
+            modelContext.insert(workoutSet)
+        }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving workout exercise with sets: \(error)")
+        }
+        
+        return workoutExercise
+    }
+    
+    public func addSetToExercise(
+        workoutExercise: WorkoutExercise,
+        reps: Int,
+        weight: Double = 0,
+        duration: Int? = nil,
+        distance: Double? = nil,
+        notes: String? = nil,
+        modelContext: ModelContext
+    ) -> WorkoutSet {
+        let order = workoutExercise.sets.count + 1
+        
+        let workoutSet = WorkoutSet(
+            exerciseId: workoutExercise.exerciseId,
+            order: order,
+            reps: reps,
+            weight: weight,
+            duration: duration,
+            distance: distance,
+            notes: notes
+        )
+        
+        workoutExercise.sets.append(workoutSet)
+        modelContext.insert(workoutSet)
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving workout set: \(error)")
+        }
+        
+        return workoutSet
+    }
+    
+    public func removeSetFromExercise(
+        workoutSet: WorkoutSet,
+        workoutExercise: WorkoutExercise,
+        modelContext: ModelContext
+    ) {
+        workoutExercise.sets.removeAll { $0.id == workoutSet.id }
+        modelContext.delete(workoutSet)
+        
+        // Reorder remaining sets
+        let sortedSets = workoutExercise.sets.sorted { $0.order < $1.order }
+        for (index, set) in sortedSets.enumerated() {
+            set.order = index + 1
+        }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error removing workout set: \(error)")
+        }
     }
     
     public func removeExerciseFromWorkout(
@@ -299,15 +406,25 @@ public final class RoutineService {
             let workoutExercise = WorkoutExercise(
                 exerciseId: templateExercise.exerciseId,
                 order: templateExercise.order,
-                sets: templateExercise.sets,
-                reps: templateExercise.reps,
-                weight: templateExercise.weight,
-                duration: templateExercise.duration,
-                distance: templateExercise.distance,
                 notes: templateExercise.notes
             )
             workoutExercise.workout = workout
             modelContext.insert(workoutExercise)
+            
+            // Create individual sets from template
+            for setIndex in 1...templateExercise.sets {
+                let workoutSet = WorkoutSet(
+                    exerciseId: templateExercise.exerciseId,
+                    order: setIndex,
+                    reps: templateExercise.reps ?? 10,
+                    weight: templateExercise.weight ?? 0,
+                    duration: templateExercise.duration,
+                    distance: templateExercise.distance,
+                    notes: templateExercise.notes
+                )
+                workoutExercise.sets.append(workoutSet)
+                modelContext.insert(workoutSet)
+            }
         }
         
         do {
