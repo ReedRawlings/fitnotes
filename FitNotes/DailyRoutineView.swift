@@ -80,13 +80,11 @@ struct WorkoutView: View {
                     
                     Spacer()
                     
-                    // Prominent Add Exercise button at bottom
-                    if appState.activeWorkout == nil || !Calendar.current.isDateInToday(selectedDate) {
-                        PrimaryActionButton(title: "Add Exercise", icon: "plus") {
-                            showingAddExercise = true
-                        }
-                        .padding(.bottom, 8) // Small padding above tab bar
+                    // Prominent Add Exercise button at bottom - always show
+                    PrimaryActionButton(title: "Add Exercise", icon: "plus") {
+                        showingAddExercise = true
                     }
+                    .padding(.bottom, 8) // Small padding above tab bar
                 }
             }
             .navigationBarHidden(true)

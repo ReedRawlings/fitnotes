@@ -398,8 +398,11 @@ public final class RoutineService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> Workout {
+        // Generate session-specific workout name
+        let sessionName = "Workout - \(date.formatted(date: .abbreviated, time: .omitted))"
+        
         let workout = Workout(
-            name: routine.name,
+            name: sessionName,
             date: date,
             notes: notes,
             routineTemplateId: routine.id
@@ -441,5 +444,55 @@ public final class RoutineService {
         }
         
         return workout
+    }
+    
+    // MARK: - Add Routine Exercises to Existing Workout
+    
+    public func addExercisesFromRoutineToWorkout(
+        workout: Workout,
+        routine: Routine,
+        modelContext: ModelContext
+    ) -> [WorkoutExercise] {
+        var addedExercises: [WorkoutExercise] = []
+        
+        // Get the next order number for new exercises
+        let currentExerciseCount = workout.exercises.count
+        
+        // Copy exercises from template
+        for (index, templateExercise) in routine.exercises.sorted(by: { $0.order < $1.order }).enumerated() {
+            let workoutExercise = WorkoutExercise(
+                exerciseId: templateExercise.exerciseId,
+                order: currentExerciseCount + index + 1,
+                notes: templateExercise.notes
+            )
+            workoutExercise.workout = workout
+            modelContext.insert(workoutExercise)
+            addedExercises.append(workoutExercise)
+            
+            // Create individual sets from template
+            for setIndex in 1...templateExercise.sets {
+                let workoutSet = WorkoutSet(
+                    exerciseId: templateExercise.exerciseId,
+                    workoutId: workout.id,
+                    order: setIndex,
+                    reps: templateExercise.reps ?? 10,
+                    weight: templateExercise.weight ?? 0,
+                    duration: templateExercise.duration,
+                    distance: templateExercise.distance,
+                    notes: templateExercise.notes,
+                    date: workout.date
+                )
+                workoutExercise.sets.append(workoutSet)
+                modelContext.insert(workoutSet)
+            }
+        }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error adding routine exercises to workout: \(error)")
+        }
+        
+        return addedExercises
     }
 }

@@ -43,11 +43,10 @@ public class AppState: ObservableObject {
         }
     }
     
-    func startWorkout(workoutId: UUID, routineId: UUID?, routineName: String, totalExercises: Int) {
+    func startWorkout(workoutId: UUID, routineId: UUID?, totalExercises: Int) {
         activeWorkout = ActiveWorkoutState(
             workoutId: workoutId,
             routineId: routineId,
-            routineName: routineName,
             startDate: Date(),
             completedExercisesCount: 0,
             totalExercisesCount: totalExercises
@@ -64,8 +63,8 @@ public class AppState: ObservableObject {
         activeWorkout = nil
     }
     
-    func startWorkoutAndNavigate(workoutId: UUID, routineId: UUID?, routineName: String, totalExercises: Int) {
-        startWorkout(workoutId: workoutId, routineId: routineId, routineName: routineName, totalExercises: totalExercises)
+    func startWorkoutAndNavigate(workoutId: UUID, routineId: UUID?, totalExercises: Int) {
+        startWorkout(workoutId: workoutId, routineId: routineId, totalExercises: totalExercises)
         selectedTab = 2 // Switch to Workout tab (index 2)
     }
     
@@ -78,7 +77,6 @@ public class AppState: ObservableObject {
 public struct ActiveWorkoutState: Codable {
     let workoutId: UUID
     let routineId: UUID?
-    let routineName: String
     let startDate: Date
     var completedExercisesCount: Int
     var totalExercisesCount: Int
@@ -144,7 +142,6 @@ struct HomeView: View {
                                         appState.startWorkoutAndNavigate(
                                             workoutId: workout.id,
                                             routineId: routine.id,
-                                            routineName: routine.name,
                                             totalExercises: routine.exercises.count
                                         )
                                     }
