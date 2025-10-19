@@ -94,10 +94,9 @@ struct HomeView: View {
     @Query(sort: \Routine.name) private var routines: [Routine]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
-    @State private var showingRoutineSelection = false
     
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
             // Blue gradient background
             LinearGradient(
                 colors: [
@@ -109,69 +108,58 @@ struct HomeView: View {
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Routine cards
-                        LazyVStack(spacing: 12) {
-                            ForEach(routines) { routine in
-                                RoutineCardView(
-                                    routine: routine,
-                                    isExpanded: expandedRoutineId == routine.id,
-                                    isActiveWorkout: appState.activeWorkout != nil,
-                                    lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
-                                        for: routine,
-                                        modelContext: modelContext
-                                    ),
-                                    onTap: {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            if expandedRoutineId == routine.id {
-                                                expandedRoutineId = nil
-                                            } else {
-                                                expandedRoutineId = routine.id
-                                            }
+            ScrollView {
+                VStack(spacing: 12) {
+                    // Routine cards
+                    LazyVStack(spacing: 12) {
+                        ForEach(routines) { routine in
+                            RoutineCardView(
+                                routine: routine,
+                                isExpanded: expandedRoutineId == routine.id,
+                                isActiveWorkout: appState.activeWorkout != nil,
+                                lastDoneText: RoutineService.shared.getDaysSinceLastCompletion(
+                                    for: routine,
+                                    modelContext: modelContext
+                                ),
+                                onTap: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        if expandedRoutineId == routine.id {
+                                            expandedRoutineId = nil
+                                        } else {
+                                            expandedRoutineId = routine.id
                                         }
-                                    },
-                                    onView: {
-                                        showingRoutineDetail = routine
-                                    },
-                                    onStart: {
-                                        showingRoutineSelection = true
                                     }
-                                )
-                            }
+                                },
+                                onView: {
+                                    showingRoutineDetail = routine
+                                },
+                                onStart: {
+                                    // Start workout directly from routine
+                                    let workout = RoutineService.shared.createWorkoutFromTemplate(
+                                        routine: routine,
+                                        modelContext: modelContext
+                                    )
+                                    
+                                    appState.startWorkoutAndNavigate(
+                                        workoutId: workout.id,
+                                        routineId: routine.id,
+                                        routineName: routine.name,
+                                        totalExercises: routine.exercises.count
+                                    )
+                                }
+                            )
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                        
-                        Spacer(minLength: 100) // Space for bottom button and tab bar
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    
+                    Spacer(minLength: 100) // Space for tab bar
                 }
-            }
-            
-            // Fixed bottom button - overlay on top
-            VStack {
-                Spacer()
-                PrimaryActionButton(
-                    title: appState.activeWorkout != nil ? "Continue \(appState.activeWorkout?.routineName ?? "")" : "New Workout",
-                    icon: appState.activeWorkout != nil ? "play.circle.fill" : "plus"
-                ) {
-                    if appState.activeWorkout != nil {
-                        appState.continueWorkoutAndNavigate()
-                    } else {
-                        // Show routine selection modal for new workout
-                        showingRoutineSelection = true
-                    }
-                }
-                .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
-        }
-        .sheet(isPresented: $showingRoutineSelection) {
-            RoutineSelectionModalView()
         }
         .onTapGesture {
             // Tap outside to collapse expanded card
@@ -966,236 +954,6 @@ struct EmptyRoutinesView: View {
     }
 }
 
-// MARK: - RoutineSelectionModalView
-struct RoutineSelectionModalView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var appState: AppState
-    @Query(sort: \Routine.name) private var routines: [Routine]
-    
-    @State private var selectedMode: WorkoutMode = .template
-    @State private var selectedRoutine: Routine?
-    
-    enum WorkoutMode: CaseIterable {
-        case template, custom
-        
-        var title: String {
-            switch self {
-            case .template: return "Use Template"
-            case .custom: return "Custom Workout"
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .template: return "list.bullet.rectangle"
-            case .custom: return "plus.circle"
-            }
-        }
-    }
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 16) {
-                    Text("Start Your Workout")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    // Mode Selection
-                    Picker("Workout Mode", selection: $selectedMode) {
-                        ForEach(WorkoutMode.allCases, id: \.self) { mode in
-                            HStack {
-                                Image(systemName: mode.icon)
-                                Text(mode.title)
-                            }
-                            .tag(mode)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                
-                Divider()
-                
-                // Content based on selected mode
-                if selectedMode == .template {
-                    templateModeView
-                } else {
-                    customModeView
-                }
-            }
-            .navigationTitle("New Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private var templateModeView: some View {
-        VStack(spacing: 0) {
-            if routines.isEmpty {
-                VStack(spacing: 20) {
-                    Spacer()
-                    
-                    Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 64))
-                        .foregroundColor(.secondary)
-                    
-                    Text("No routines yet")
-                        .font(.title2)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
-                    
-                    Text("Create routine templates in Settings first")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                    
-                    Spacer()
-                }
-                .padding()
-            } else {
-                List(routines) { routine in
-                    Button(action: {
-                        selectedRoutine = routine
-                    }) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(routine.name)
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                
-                                Text(RoutineService.shared.getDaysSinceLastCompletion(
-                                    for: routine,
-                                    modelContext: modelContext
-                                ))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            if selectedRoutine?.id == routine.id {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.accentColor)
-                            } else {
-                                Image(systemName: "circle")
-                                    .font(.title2)
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .listStyle(PlainListStyle())
-                
-                // Start Button
-                if selectedRoutine != nil {
-                    VStack(spacing: 12) {
-                        PrimaryActionButton(
-                            title: "Start Workout",
-                            icon: "play.circle.fill",
-                            onTap: startTemplateWorkout
-                        )
-                        
-                        Button("Switch to Custom Workout") {
-                            selectedMode = .custom
-                            selectedRoutine = nil
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.accentColor)
-                    }
-                    .padding()
-                }
-            }
-        }
-    }
-    
-    private var customModeView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            Image(systemName: "plus.circle")
-                .font(.system(size: 64))
-                .foregroundColor(.accentColor)
-            
-            Text("Custom Workout")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
-            Text("Create a blank workout and add exercises as you go")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            
-            VStack(spacing: 12) {
-                PrimaryActionButton(
-                    title: "Start Custom Workout",
-                    icon: "play.circle.fill",
-                    onTap: startCustomWorkout
-                )
-                
-                Button("Switch to Template") {
-                    selectedMode = .template
-                }
-                .font(.subheadline)
-                .foregroundColor(.accentColor)
-            }
-            .padding()
-            
-            Spacer()
-        }
-    }
-    
-    private func startTemplateWorkout() {
-        guard let routine = selectedRoutine else { return }
-        
-        let workout = RoutineService.shared.createWorkoutFromTemplate(
-            routine: routine,
-            modelContext: modelContext
-        )
-        
-        appState.startWorkoutAndNavigate(
-            workoutId: workout.id,
-            routineId: routine.id,
-            routineName: routine.name,
-            totalExercises: routine.exercises.count
-        )
-        
-        dismiss()
-    }
-    
-    private func startCustomWorkout() {
-        let workout = WorkoutService.shared.createWorkout(
-            name: "Custom Workout - \(Date().formatted(date: .abbreviated, time: .omitted))",
-            modelContext: modelContext
-        )
-        
-        appState.startWorkoutAndNavigate(
-            workoutId: workout.id,
-            routineId: nil,
-            routineName: "Custom Workout",
-            totalExercises: 0
-        )
-        
-        dismiss()
-    }
-}
 
 // MARK: - AddRoutineView
 struct AddRoutineView: View {
