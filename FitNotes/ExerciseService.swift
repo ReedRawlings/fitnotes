@@ -2,7 +2,8 @@ import Foundation
 import SwiftData
 
 // MARK: - ExerciseSessionSummary
-public struct ExerciseSessionSummary {
+public struct ExerciseSessionSummary: Identifiable {
+    public let id = UUID()
     public let date: Date
     public let setsSummary: String
     public let workoutId: UUID

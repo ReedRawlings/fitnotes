@@ -576,7 +576,7 @@ struct ActiveWorkoutExerciseRowView: View {
     }
     
     private var completedSets: Int {
-        sortedSets.filter { $0.isCompleted }.count
+        sortedSets.count // All sets are considered completed when logged
     }
     
     var body: some View {

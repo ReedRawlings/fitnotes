@@ -17,6 +17,8 @@
 		741325382E9F733D0099C49A /* ExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325392E9F733D0099C49A /* ExercisesView.swift */; };
 		7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253B2E9F733D0099C49A /* DailyRoutineView.swift */; };
 		7413253C2E9F733D0099C49A /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253D2E9F733D0099C49A /* Components.swift */; };
+		741325402E9F733D0099C49A /* ExerciseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253E2E9F733D0099C49A /* ExerciseService.swift */; };
+		741325412E9F733D0099C49A /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7413253F2E9F733D0099C49A /* ExerciseHistoryView.swift */; };
 		741325122E9F73400099C49A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325112E9F73400099C49A /* Assets.xcassets */; };
 		741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325142E9F73400099C49A /* Preview Assets.xcassets */; };
 		741325212E9F73400099C49A /* FitNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325202E9F73400099C49A /* FitNotesTests.swift */; };
@@ -53,6 +55,8 @@
 		741325392E9F733D0099C49A /* ExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisesView.swift; sourceTree = "<group>"; };
 		7413253B2E9F733D0099C49A /* DailyRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRoutineView.swift; sourceTree = "<group>"; };
 		7413253D2E9F733D0099C49A /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		7413253E2E9F733D0099C49A /* ExerciseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseService.swift; sourceTree = "<group>"; };
+		7413253F2E9F733D0099C49A /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
 		741325112E9F73400099C49A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		741325142E9F73400099C49A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		741325162E9F73400099C49A /* FitNotes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitNotes.entitlements; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 				741325392E9F733D0099C49A /* ExercisesView.swift */,
 				7413253B2E9F733D0099C49A /* DailyRoutineView.swift */,
 				7413253D2E9F733D0099C49A /* Components.swift */,
+				7413253E2E9F733D0099C49A /* ExerciseService.swift */,
+				7413253F2E9F733D0099C49A /* ExerciseHistoryView.swift */,
 				741325112E9F73400099C49A /* Assets.xcassets */,
 				741325162E9F73400099C49A /* FitNotes.entitlements */,
 				741325172E9F73400099C49A /* Info.plist */,
@@ -294,6 +300,8 @@
 				741325382E9F733D0099C49A /* ExercisesView.swift in Sources */,
 				7413253A2E9F733D0099C49A /* DailyRoutineView.swift in Sources */,
 				7413253C2E9F733D0099C49A /* Components.swift in Sources */,
+				741325402E9F733D0099C49A /* ExerciseService.swift in Sources */,
+				741325412E9F733D0099C49A /* ExerciseHistoryView.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

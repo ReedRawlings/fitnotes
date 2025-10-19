@@ -236,12 +236,10 @@ struct WorkoutExerciseRowView: View {
     }
     
     private func deleteExercise() {
-        if let workout = workoutExercise.workout {
-            WorkoutService.shared.removeExerciseFromWorkout(
-                workoutExercise: workoutExercise,
-                modelContext: modelContext
-            )
-        }
+        WorkoutService.shared.removeExerciseFromWorkout(
+            workoutExercise: workoutExercise,
+            modelContext: modelContext
+        )
     }
 }
 
