@@ -11,6 +11,7 @@ import SwiftData
 // MARK: - App State Management
 public class AppState: ObservableObject {
     private var _activeWorkout: ActiveWorkoutState?
+    @Published var selectedTab: Int = 0
     
     var activeWorkout: ActiveWorkoutState? {
         get {
@@ -62,6 +63,15 @@ public class AppState: ObservableObject {
     func completeWorkout() {
         activeWorkout = nil
     }
+    
+    func startWorkoutAndNavigate(workoutId: UUID, routineId: UUID?, routineName: String, totalExercises: Int) {
+        startWorkout(workoutId: workoutId, routineId: routineId, routineName: routineName, totalExercises: totalExercises)
+        selectedTab = 2 // Switch to Workout tab (index 2)
+    }
+    
+    func continueWorkoutAndNavigate() {
+        selectedTab = 2 // Switch to Workout tab (index 2)
+    }
 }
 
 // MARK: - Active Workout State
@@ -80,11 +90,10 @@ public struct ActiveWorkoutState: Codable {
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var appState = AppState()
+    @EnvironmentObject private var appState: AppState
     @Query(sort: \Routine.name) private var routines: [Routine]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
-    @State private var showingActiveWorkout = false
     
     var body: some View {
         ZStack {
@@ -147,7 +156,7 @@ struct HomeView: View {
                     icon: appState.activeWorkout != nil ? "play.circle.fill" : "plus"
                 ) {
                     if appState.activeWorkout != nil {
-                        showingActiveWorkout = true
+                        appState.continueWorkoutAndNavigate()
                     } else {
                         // Show routine selection for new workout
                         // For now, we'll just show the first routine
@@ -162,11 +171,6 @@ struct HomeView: View {
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
-        }
-        .sheet(isPresented: $showingActiveWorkout) {
-            if let activeWorkout = appState.activeWorkout {
-                ActiveWorkoutView(workoutId: activeWorkout.workoutId)
-            }
         }
         .onTapGesture {
             // Tap outside to collapse expanded card
@@ -184,14 +188,12 @@ struct HomeView: View {
             modelContext: modelContext
         )
         
-        appState.startWorkout(
+        appState.startWorkoutAndNavigate(
             workoutId: workout.id,
             routineId: routine.id,
             routineName: routine.name,
             totalExercises: routine.exercises.count
         )
-        
-        showingActiveWorkout = true
     }
 }
 
@@ -383,11 +385,170 @@ struct RoutineCardView: View {
     }
 }
 
-// MARK: - ActiveWorkoutView Component
+// MARK: - ActiveWorkoutContentView Component (for inline use)
+struct ActiveWorkoutContentView: View {
+    let workoutId: UUID
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
+    @Query private var workouts: [Workout]
+    @Query private var exercises: [Exercise]
+    
+    private var workout: Workout? {
+        workouts.first { $0.id == workoutId }
+    }
+    
+    private var sortedExercises: [WorkoutExercise] {
+        workout?.exercises.sorted { $0.order < $1.order } ?? []
+    }
+    
+    private var completedExercisesCount: Int {
+        sortedExercises.filter { $0.isCompleted }.count
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            if let workout = workout {
+                // Workout Header
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(workout.name)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            
+                            Text("Started \(workout.date, style: .time)")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        // Progress indicator
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("\(completedExercisesCount)/\(sortedExercises.count)")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            Text("exercises")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    // Progress bar
+                    ProgressView(value: Double(completedExercisesCount), total: Double(sortedExercises.count))
+                        .progressViewStyle(LinearProgressViewStyle(tint: .green))
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                
+                Divider()
+                
+                // Exercises List
+                if sortedExercises.isEmpty {
+                    VStack(spacing: 20) {
+                        Spacer()
+                        
+                        Image(systemName: "dumbbell")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        
+                        Text("No exercises in this workout")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    List {
+                        ForEach(sortedExercises, id: \.id) { workoutExercise in
+                            ActiveWorkoutExerciseRowView(
+                                workoutExercise: workoutExercise,
+                                exercise: exercises.first { $0.id == workoutExercise.exerciseId }
+                            )
+                        }
+                    }
+                    .listStyle(PlainListStyle())
+                }
+                
+                // Action Buttons
+                VStack(spacing: 12) {
+                    if !sortedExercises.isEmpty {
+                        Button(action: completeWorkout) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Complete Workout")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                        }
+                    }
+                    
+                    Button(action: pauseWorkout) {
+                        HStack {
+                            Image(systemName: "pause.circle")
+                            Text("Pause Workout")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .foregroundColor(.primary)
+                        .cornerRadius(12)
+                    }
+                }
+                .padding()
+            } else {
+                VStack(spacing: 20) {
+                    Spacer()
+                    
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 48))
+                        .foregroundColor(.orange)
+                    
+                    Text("Workout not found")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+            }
+        }
+        .onAppear {
+            updateAppStateProgress()
+        }
+        .onChange(of: completedExercisesCount) { _, _ in
+            updateAppStateProgress()
+        }
+    }
+    
+    private func updateAppStateProgress() {
+        appState.updateWorkoutProgress(completedExercises: completedExercisesCount)
+    }
+    
+    private func completeWorkout() {
+        guard let workout = workout else { return }
+        
+        // Mark workout as completed
+        WorkoutService.shared.completeWorkout(workout, modelContext: modelContext)
+        
+        // Clear active workout state
+        appState.completeWorkout()
+    }
+    
+    private func pauseWorkout() {
+        // Navigate back to Home tab
+        appState.selectedTab = 0
+    }
+}
+
+// MARK: - ActiveWorkoutView Component (for modal use - keeping for compatibility)
 struct ActiveWorkoutView: View {
     let workoutId: UUID
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var appState = AppState()
+    @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
@@ -487,7 +648,7 @@ struct ActiveWorkoutView: View {
                             }
                         }
                         
-                        Button(action: { dismiss() }) {
+                        Button(action: pauseWorkout) {
                             HStack {
                                 Image(systemName: "pause.circle")
                                 Text("Pause Workout")
@@ -556,6 +717,12 @@ struct ActiveWorkoutView: View {
         appState.completeWorkout()
         
         // Dismiss the view
+        dismiss()
+    }
+    
+    private func pauseWorkout() {
+        // Navigate back to Home tab
+        appState.selectedTab = 0
         dismiss()
     }
 }
@@ -1242,8 +1409,10 @@ struct InsightsView: View {
 }
 
 struct ContentView: View {
+    @StateObject private var appState = AppState()
+    
     var body: some View {
-        TabView {
+        TabView(selection: $appState.selectedTab) {
             HomeView()
                 .tabItem { 
                     VStack {
@@ -1251,6 +1420,7 @@ struct ContentView: View {
                         Text("Home")
                     }
                 }
+                .tag(0)
             InsightsView()
                 .tabItem { 
                     VStack {
@@ -1258,22 +1428,26 @@ struct ContentView: View {
                         Text("Insights")
                     }
                 }
+                .tag(1)
             WorkoutView()
                 .tabItem { 
                     VStack {
-                        Image(systemName: "calendar")
-                        Text("Calendar")
+                        Image(systemName: "dumbbell.fill")
+                        Text("Workout")
                     }
                 }
+                .tag(2)
             SettingsView()
                 .tabItem { 
                     VStack {
                         Image(systemName: "gear")
                         Text("Settings")
-        }
+                    }
                 }
+                .tag(3)
         }
         .accentColor(.blue)
+        .environmentObject(appState)
     }
 }
 

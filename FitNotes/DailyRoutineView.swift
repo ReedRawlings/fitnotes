@@ -3,6 +3,7 @@ import SwiftData
 
 struct WorkoutView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
@@ -17,28 +18,36 @@ struct WorkoutView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Date Picker
-                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(CompactDatePickerStyle())
-                    .padding()
-                
-                Divider()
-                
-                if let workout = getWorkoutForDate(selectedDate) {
-                    WorkoutDetailView(workout: workout)
+                // Show active workout if it exists and we're viewing today
+                if let activeWorkout = appState.activeWorkout,
+                   Calendar.current.isDateInToday(selectedDate) {
+                    ActiveWorkoutContentView(workoutId: activeWorkout.workoutId)
                 } else {
-                    EmptyWorkoutView(selectedDate: selectedDate) {
-                        showingAddExercise = true
+                    // Date Picker
+                    DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                        .datePickerStyle(CompactDatePickerStyle())
+                        .padding()
+                    
+                    Divider()
+                    
+                    if let workout = getWorkoutForDate(selectedDate) {
+                        WorkoutDetailView(workout: workout)
+                    } else {
+                        EmptyWorkoutView(selectedDate: selectedDate) {
+                            showingAddExercise = true
+                        }
                     }
                 }
             }
-            .navigationTitle("Today")
+            .navigationTitle("Workout")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddExercise = true }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .foregroundColor(.accentColor)
+                if appState.activeWorkout == nil || !Calendar.current.isDateInToday(selectedDate) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: { showingAddExercise = true }) {
+                            Image(systemName: "plus")
+                                .font(.title2)
+                                .foregroundColor(.accentColor)
+                        }
                     }
                 }
             }
@@ -281,7 +290,7 @@ struct EmptyWorkoutView: View {
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
             
-            Text("Start adding exercises or use a routine template")
+            Text("Start a workout from the Home tab or add exercises manually")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
