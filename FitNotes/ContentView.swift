@@ -441,113 +441,6 @@ struct ActiveWorkoutContentView: View {
     
 }
 
-// MARK: - ActiveWorkoutView Component (for modal use - keeping for compatibility)
-struct ActiveWorkoutView: View {
-    let workoutId: UUID
-    @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    @Query private var workouts: [Workout]
-    @Query private var exercises: [Exercise]
-    
-    private var workout: Workout? {
-        workouts.first { $0.id == workoutId }
-    }
-    
-    private var sortedExercises: [WorkoutExercise] {
-        workout?.exercises.sorted { $0.order < $1.order } ?? []
-    }
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                if let workout = workout {
-                    // Workout Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(workout.name)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                
-                                Text("Started \(workout.date, style: .time)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    
-                    Divider()
-                    
-                    // Exercises List
-                    if sortedExercises.isEmpty {
-                        VStack(spacing: 20) {
-                            Spacer()
-                            
-                            Image(systemName: "dumbbell")
-                                .font(.system(size: 48))
-                                .foregroundColor(.secondary)
-                            
-                            Text("No exercises in this workout")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity)
-                    } else {
-                        List {
-                            ForEach(sortedExercises, id: \.id) { workoutExercise in
-                                ActiveWorkoutExerciseRowView(
-                                    workoutExercise: workoutExercise,
-                                    exercise: exercises.first { $0.id == workoutExercise.exerciseId }
-                                )
-                            }
-                        }
-                        .listStyle(PlainListStyle())
-                    }
-                    
-                } else {
-                    VStack(spacing: 20) {
-                        Spacer()
-                        
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 48))
-                            .foregroundColor(.orange)
-                        
-                        Text("Workout not found")
-                            .font(.headline)
-                                .foregroundColor(.secondary)
-                        
-                        Button("Close") {
-                            dismiss()
-                        }
-                        .padding()
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        
-                        Spacer()
-                    }
-                }
-            }
-            .navigationTitle("Active Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-}
 
 struct ActiveWorkoutExerciseRowView: View {
     let workoutExercise: WorkoutExercise
@@ -609,92 +502,6 @@ struct ActiveWorkoutExerciseRowView: View {
     }
 }
 
-struct WorkoutRowView: View {
-    let workout: Workout
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(workout.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text(workout.date, style: .date)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                if !workout.exercises.isEmpty {
-                    Text("\(workout.exercises.count) exercises")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
-    }
-}
-
-struct NewWorkoutView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    
-    @State private var name = ""
-    @State private var selectedDate = Date()
-    @State private var notes = ""
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Workout Details") {
-                    TextField("Workout Name", text: $name)
-                    DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
-                }
-                
-                Section("Notes") {
-                    TextField("Notes (optional)", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-            }
-            .navigationTitle("New Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Create") {
-                        createWorkout()
-                    }
-                    .disabled(name.isEmpty)
-                }
-            }
-        }
-    }
-    
-    private func createWorkout() {
-        _ = WorkoutService.shared.createWorkout(
-            name: name,
-            date: selectedDate,
-            notes: notes.isEmpty ? nil : notes,
-            modelContext: modelContext
-        )
-        
-        dismiss()
-    }
-}
-
-// WorkoutExercise and WorkoutExerciseRowView are now in DailyRoutineView.swift
-
-// AddExerciseToWorkoutView is now in DailyRoutineView.swift
-
 // MARK: - RoutinesView
 struct RoutinesView: View {
     @Environment(\.modelContext) private var modelContext
@@ -717,9 +524,15 @@ struct RoutinesView: View {
             
             VStack(spacing: 0) {
                 if routines.isEmpty {
-                    EmptyRoutinesView {
-                        showingAddRoutine = true
-                    }
+                    EmptyStateView(
+                        icon: "list.bullet.rectangle",
+                        title: "No routines yet",
+                        subtitle: "Create reusable exercise routines that you can easily add to any day",
+                        actionTitle: "New Routine",
+                        onAction: {
+                            showingAddRoutine = true
+                        }
+                    )
                 } else {
                     ScrollView {
                         VStack(spacing: 12) {
@@ -763,69 +576,7 @@ struct RoutinesView: View {
     }
 }
 
-struct RoutineRowView: View {
-    let routine: Routine
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(routine.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    if let description = routine.routineDescription, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                    
-                    Text("\(routine.exercises.count) exercises")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.vertical, 4)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
-struct EmptyRoutinesView: View {
-    let onCreateRoutine: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            Image(systemName: "list.bullet.rectangle")
-                .font(.system(size: 64))
-                .foregroundColor(.secondary)
-            
-            Text("No routines yet")
-                .font(.title2)
-                .fontWeight(.medium)
-                .foregroundColor(.secondary)
-            
-            Text("Create reusable exercise routines that you can easily add to any day")
-                        .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            
-            Spacer()
-        }
-        .padding()
-    }
-}
 
 
 // MARK: - AddRoutineView

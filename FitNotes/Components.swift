@@ -198,70 +198,7 @@ struct CardListView<Item: Identifiable, Content: View>: View {
     }
 }
 
-// MARK: - ProgressIndicatorView
- struct ProgressIndicatorView: View {
-    let completed: Int
-    let total: Int
-    
- init(completed: Int, total: Int) {
-        self.completed = completed
-        self.total = total
-    }
-    
- var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text("\(completed)/\(total)")
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            Text("exercises")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-    }
-}
 
-// MARK: - WorkoutHeaderCardView
- struct WorkoutHeaderCardView: View {
-    let workoutName: String
-    let startTime: Date
-    let completed: Int
-    let total: Int
-    
- init(
-        workoutName: String,
-        startTime: Date,
-        completed: Int,
-        total: Int
-    ) {
-        self.workoutName = workoutName
-        self.startTime = startTime
-        self.completed = completed
-        self.total = total
-    }
-    
- var body: some View {
-        BaseCardView {
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(workoutName)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                        
-                        Text("Started \(startTime, style: .time)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                }
-            }
-        }
-    }
-}
 
 // MARK: - PrimaryActionButton
  struct PrimaryActionButton: View {
