@@ -427,7 +427,7 @@ struct ActiveWorkoutContentView: View {
                 }
                 
                 // Add Exercise button
-                PrimaryActionButton(title: "Add to Workout", icon: "plus") {
+                PrimaryActionButton(title: "Add to Current Workout", icon: "plus") {
                     showingAddExercise = true
                 }
                 .padding(.bottom, 8)
@@ -1146,37 +1146,14 @@ struct AddExerciseToRoutineTemplateView: View {
                     }
                 } else {
                     // Exercise List
-                    List(filteredExercises) { exercise in
-                        Button(action: {
+                    ExerciseListView(
+                        exercises: filteredExercises,
+                        searchText: $searchText,
+                        onExerciseSelected: { exercise in
                             selectedExercise = exercise
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(exercise.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    HStack(spacing: 8) {
-                                        Text(exercise.category)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text(exercise.equipment)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .listStyle(PlainListStyle())
+                        },
+                        context: .picker
+                    )
                 }
             }
             .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")

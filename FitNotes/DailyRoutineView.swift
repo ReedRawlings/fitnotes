@@ -16,6 +16,17 @@ struct WorkoutView: View {
         }
     }
     
+    var addExerciseButtonLabel: String {
+        if let activeWorkout = appState.activeWorkout,
+           Calendar.current.isDateInToday(selectedDate) {
+            return "Add to Current Workout"
+        } else if getWorkoutForDate(selectedDate) != nil {
+            return "Add Exercise"
+        } else {
+            return "Start New Workout"
+        }
+    }
+    
     var todaysWorkout: Workout? {
         let calendar = Calendar.current
         return workouts.first { workout in
@@ -38,6 +49,27 @@ struct WorkoutView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // Show active workout indicator banner
+                    if let activeWorkout = appState.activeWorkout,
+                       Calendar.current.isDateInToday(selectedDate) {
+                        HStack {
+                            Image(systemName: "circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                            
+                            Text("Active Workout in Progress")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            
+                            Spacer()
+                        }
+                        .padding()
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(8)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                    }
+                    
                     // Show active workout if it exists and we're viewing today
                     if let activeWorkout = appState.activeWorkout,
                        Calendar.current.isDateInToday(displayDate) {
@@ -89,7 +121,7 @@ struct WorkoutView: View {
                     Spacer()
                     
                     // Prominent Add Exercise button at bottom - always show
-                    PrimaryActionButton(title: "Add Exercise", icon: "plus") {
+                    PrimaryActionButton(title: addExerciseButtonLabel, icon: "plus") {
                         showingAddExercise = true
                     }
                     .padding(.bottom, 8) // Small padding above tab bar
@@ -439,20 +471,43 @@ struct EmptyWorkoutView: View {
     @State private var showingRoutineTemplates = false
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             EmptyStateView(
                 icon: "dumbbell",
                 title: "No workout for this day",
-                subtitle: "Start a workout from the Home tab or add exercises manually",
+                subtitle: "Choose how to get started",
                 actionTitle: nil,
                 onAction: nil
             )
             
-            SecondaryActionButton(
-                title: "Use Routine Template",
-                icon: "list.bullet.rectangle",
-                onTap: { showingRoutineTemplates = true }
-            )
+            VStack(spacing: 12) {
+                // Option 1: Manual
+                Button(action: { onAddExercise() }) {
+                    HStack {
+                        Image(systemName: "plus.circle")
+                        Text("Add Exercises")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                
+                // Option 2: Template
+                Button(action: { showingRoutineTemplates = true }) {
+                    HStack {
+                        Image(systemName: "list.bullet")
+                        Text("Use Routine Template")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.systemGray5))
+                    .foregroundColor(.primary)
+                    .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal, 20)
         }
         .padding()
         .sheet(isPresented: $showingRoutineTemplates) {
@@ -569,13 +624,14 @@ struct AddExerciseToWorkoutView: View {
                     }
                 } else {
                     // Exercise List
-                    ExercisePickerView(
+                    ExerciseListView(
                         exercises: filteredExercises,
-                        displayMode: .compact,
+                        searchText: $searchText,
                         onExerciseSelected: { exercise in
                             selectedExercise = exercise
                             initializeSetData(for: exercise)
-                        }
+                        },
+                        context: .picker
                     )
                 }
             }

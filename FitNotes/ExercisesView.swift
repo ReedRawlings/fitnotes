@@ -90,12 +90,13 @@ struct ExercisesView: View {
                         }
                     )
                 } else {
-                    ExercisePickerView(
+                    ExerciseListView(
                         exercises: filteredExercises,
-                        displayMode: .detailed,
+                        searchText: $searchText,
                         onExerciseSelected: { exercise in
                             selectedExercise = exercise
-                        }
+                        },
+                        context: .browse
                     )
                 }
             }
@@ -124,94 +125,6 @@ struct ExercisesView: View {
     }
 }
 
-struct ExerciseRowView: View {
-    let exercise: Exercise
-    @State private var showingDetail = false
-    
-    var body: some View {
-        Button(action: {
-            showingDetail = true
-        }) {
-            HStack(spacing: 12) {
-                // Exercise Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.accentColor.opacity(0.1))
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: exerciseIcon(for: exercise.category))
-                        .font(.title2)
-                        .foregroundColor(.accentColor)
-                }
-                
-                // Exercise Info
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(exercise.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    HStack(spacing: 8) {
-                        Text(exercise.category)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor.opacity(0.2))
-                            .foregroundColor(.accentColor)
-                            .cornerRadius(4)
-                        
-                        if !exercise.equipment.isEmpty {
-                            Text(exercise.equipment)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Text(exercise.difficulty)
-                            .font(.caption)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(difficultyColor(exercise.difficulty).opacity(0.2))
-                            .foregroundColor(difficultyColor(exercise.difficulty))
-                            .cornerRadius(4)
-                    }
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.vertical, 4)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .sheet(isPresented: $showingDetail) {
-            ExerciseDetailView(exercise: exercise)
-        }
-    }
-    
-    private func exerciseIcon(for category: String) -> String {
-        switch category.lowercased() {
-        case "chest": return "heart"
-        case "back": return "figure.strengthtraining.traditional"
-        case "shoulders": return "figure.arms.open"
-        case "arms": return "figure.arms.open"
-        case "legs": return "figure.walk"
-        case "core": return "circle.grid.cross"
-        case "glutes": return "figure.strengthtraining.functional"
-        case "cardio": return "heart.fill"
-        default: return "dumbbell"
-        }
-    }
-    
-    private func difficultyColor(_ difficulty: String) -> Color {
-        switch difficulty.lowercased() {
-        case "beginner": return .green
-        case "intermediate": return .orange
-        case "advanced": return .red
-        default: return .gray
-        }
-    }
-}
 
 struct AddExerciseView: View {
     @Environment(\.dismiss) private var dismiss
@@ -220,9 +133,6 @@ struct AddExerciseView: View {
     @State private var name = ""
     @State private var selectedCategory = "Chest"
     @State private var selectedType = "Strength"
-    @State private var selectedEquipment = "Bodyweight"
-    @State private var selectedDifficulty = "Beginner"
-    @State private var instructions = ""
     @State private var notes = ""
     
     var body: some View {
@@ -231,7 +141,7 @@ struct AddExerciseView: View {
                 Section("Exercise Details") {
                     TextField("Exercise Name", text: $name)
                     
-                    Picker("Category", selection: $selectedCategory) {
+                    Picker("Muscle Group", selection: $selectedCategory) {
                         ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
                             Text(group).tag(group)
                         }
@@ -242,26 +152,9 @@ struct AddExerciseView: View {
                             Text(type).tag(type)
                         }
                     }
-                    
-                    Picker("Equipment", selection: $selectedEquipment) {
-                        ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
-                            Text(equipment).tag(equipment)
-                        }
-                    }
-                    
-                    Picker("Difficulty", selection: $selectedDifficulty) {
-                        ForEach(ExerciseDatabaseService.difficultyLevels, id: \.self) { difficulty in
-                            Text(difficulty).tag(difficulty)
-                        }
-                    }
                 }
                 
-                Section("Instructions") {
-                    TextField("Exercise instructions...", text: $instructions, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-                
-                Section("Notes") {
+                Section("Notes (Optional)") {
                     TextField("Personal notes...", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
                 }
@@ -290,9 +183,6 @@ struct AddExerciseView: View {
             name: name,
             category: selectedCategory,
             type: selectedType,
-            equipment: selectedEquipment,
-            difficulty: selectedDifficulty,
-            instructions: instructions.isEmpty ? nil : instructions,
             notes: notes.isEmpty ? nil : notes,
             isCustom: true
         )
@@ -331,10 +221,6 @@ struct ExerciseDetailView: View {
                                 .foregroundColor(.accentColor)
                                 .cornerRadius(8)
                             
-                            Text(exercise.equipment)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
                             Spacer()
                         }
                     }
@@ -346,22 +232,9 @@ struct ExerciseDetailView: View {
                         GridItem(.flexible())
                     ], spacing: 16) {
                         DetailCard(title: "Type", value: exercise.type)
-                        DetailCard(title: "Difficulty", value: exercise.difficulty)
+                        DetailCard(title: "Category", value: exercise.category)
                     }
                     .padding(.horizontal)
-                    
-                    // Instructions
-                    if let instructions = exercise.instructions, !instructions.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Instructions")
-                                .font(.headline)
-                            
-                            Text(instructions)
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.horizontal)
-                    }
                     
                     // Notes
                     if let notes = exercise.notes, !notes.isEmpty {
