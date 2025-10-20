@@ -17,7 +17,7 @@ struct ExerciseListView: View {
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
             query: searchText,
-            category: nil,
+            category: nil as String?,
             exercises: exercises
         )
     }

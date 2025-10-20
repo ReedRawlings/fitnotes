@@ -86,8 +86,7 @@ struct HistoryRowView: View {
     ExerciseHistoryView(exercise: Exercise(
         name: "Bench Press",
         category: "Chest",
-        type: "Strength",
-        equipment: "Barbell"
+        type: "Strength"
     ))
     .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, WorkoutExercise.self], inMemory: true)
 }
