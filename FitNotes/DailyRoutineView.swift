@@ -488,10 +488,6 @@ struct AddExerciseToWorkoutView: View {
     
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
-    @State private var selectedExercise: Exercise?
-    @State private var numberOfSets = 1
-    @State private var setData: [(reps: Int, weight: Double, duration: Int?, distance: Double?)] = []
-    @State private var notes = ""
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -513,165 +509,29 @@ struct AddExerciseToWorkoutView: View {
                 }
                 .padding()
                 
-                if let exercise = selectedExercise {
-                    // Exercise Details Form
-                    Form {
-                        Section("Exercise") {
-                            HStack {
-                                Text(exercise.name)
-                                    .font(.headline)
-                                Spacer()
-                                Text(exercise.category)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.accentColor.opacity(0.2))
-                                    .foregroundColor(.accentColor)
-                                    .cornerRadius(4)
-                            }
-                        }
-                        
-                        Section("Number of Sets") {
-                            Stepper("Sets: \(numberOfSets)", value: $numberOfSets, in: 1...20)
-                                .onChange(of: numberOfSets) { _, newValue in
-                                    updateSetData(for: exercise, newCount: newValue)
-                                }
-                        }
-                        
-                        Section("Set Details") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(0..<numberOfSets, id: \.self) { index in
-                                    HStack(spacing: 12) {
-                                        Text("Set \(index + 1)")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .frame(width: 50, alignment: .leading)
-                                        
-                                        if exercise.type == "Strength" {
-                                            TextField("Reps", value: $setData[index].reps, format: .number)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .frame(width: 60)
-                                            
-                                            Text("×")
-                                                .foregroundColor(.secondary)
-                                            
-                                            TextField("Weight", value: $setData[index].weight, format: .number)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .frame(width: 80)
-                                            
-                                            Text("kg")
-                                                .foregroundColor(.secondary)
-                                        } else if exercise.type == "Cardio" {
-                                            TextField("Duration", value: $setData[index].duration, format: .number)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .frame(width: 80)
-                                            
-                                            Text("sec")
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        Spacer()
-                                    }
-                                    .padding(.vertical, 4)
-                                }
-                            }
-                        }
-                        
-                        Section("Notes") {
-                            TextField("Notes (optional)", text: $notes, axis: .vertical)
-                                .lineLimit(2...4)
-                        }
-                    }
-                } else {
-                    // Exercise List
-                    ExerciseListView(
-                        exercises: filteredExercises,
-                        searchText: $searchText,
-                        onExerciseSelected: { exercise in
-                            selectedExercise = exercise
-                            initializeSetData(for: exercise)
-                        },
-                        context: .picker
-                    )
-                }
+                // Exercise List - simplified to single-step selection
+                ExerciseListView(
+                    exercises: filteredExercises,
+                    searchText: $searchText,
+                    onExerciseSelected: { exercise in
+                        addExerciseImmediately(exercise)
+                    },
+                    context: .picker
+                )
             }
-            .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")
+            .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(selectedExercise == nil ? "Cancel" : "Back") {
-                        if selectedExercise != nil {
-                            selectedExercise = nil
-                        } else {
-                            dismiss()
-                        }
-                    }
-                }
-                
-                if selectedExercise != nil {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Add") {
-                            addExercise()
-                        }
+                    Button("Cancel") {
+                        dismiss()
                     }
                 }
             }
         }
     }
     
-    private func initializeSetData(for exercise: Exercise) {
-        setData = []
-        
-        // Try to get last session data for this exercise
-        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
-            exerciseId: exercise.id,
-            modelContext: modelContext
-        ) {
-            // Pre-populate with last session data
-            numberOfSets = lastSession.count
-            for set in lastSession {
-                setData.append((
-                    reps: set.reps,
-                    weight: set.weight,
-                    duration: set.duration,
-                    distance: set.distance
-                ))
-            }
-        } else {
-            // No history found, use defaults
-            for _ in 0..<numberOfSets {
-                if exercise.type == "Strength" {
-                    setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
-                } else if exercise.type == "Cardio" {
-                    setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
-                } else {
-                    setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
-                }
-            }
-        }
-    }
-    
-    private func updateSetData(for exercise: Exercise, newCount: Int) {
-        if newCount > setData.count {
-            // Add new sets
-            for _ in setData.count..<newCount {
-                if exercise.type == "Strength" {
-                    setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
-                } else if exercise.type == "Cardio" {
-                    setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
-                } else {
-                    setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
-                }
-            }
-        } else {
-            // Remove excess sets
-            setData.removeLast(setData.count - newCount)
-        }
-    }
-    
-    private func addExercise() {
-        guard let exercise = selectedExercise else { return }
-        
+    private func addExerciseImmediately(_ exercise: Exercise) {
         // Fetch or create workout for selectedDate
         let targetWorkout: Workout
         if let existing = workout {
@@ -685,15 +545,43 @@ struct AddExerciseToWorkoutView: View {
             )
         }
         
-        // Add exercise to that workout
+        // Try to get last session data for this exercise
+        var setData: [(reps: Int, weight: Double, duration: Int?, distance: Double?)] = []
+        
+        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+            exerciseId: exercise.id,
+            modelContext: modelContext
+        ) {
+            // Pre-populate with last session data
+            for set in lastSession {
+                setData.append((
+                    reps: set.reps,
+                    weight: set.weight,
+                    duration: set.duration,
+                    distance: set.distance
+                ))
+            }
+        } else {
+            // No history found, use sensible defaults
+            if exercise.type == "Strength" {
+                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
+            } else if exercise.type == "Cardio" {
+                setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
+            } else {
+                setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+            }
+        }
+        
+        // Add exercise to workout with the prepared set data
         _ = WorkoutService.shared.addExerciseToWorkoutWithSets(
             workout: targetWorkout,
             exerciseId: exercise.id,
             setData: setData,
-            notes: notes.isEmpty ? nil : notes,
+            notes: nil, // No notes on initial add - user can add them in workout view
             modelContext: modelContext
         )
         
+        // Dismiss immediately after successful addition
         dismiss()
     }
 }
