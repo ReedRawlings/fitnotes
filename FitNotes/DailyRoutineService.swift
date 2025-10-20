@@ -48,6 +48,7 @@ public final class WorkoutService {
         )
         
         workoutExercise.workout = workout
+        workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
         
         // Create individual sets
@@ -92,6 +93,7 @@ public final class WorkoutService {
         )
         
         workoutExercise.workout = workout
+        workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
         
         // Create individual sets from provided data
