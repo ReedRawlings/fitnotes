@@ -7,6 +7,7 @@ struct WorkoutView: View {
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
+    @State private var refreshTrigger = UUID()
     
     var displayDate: Date {
         if let activeWorkout = appState.activeWorkout {
@@ -102,10 +103,10 @@ struct WorkoutView: View {
         .sheet(isPresented: $showingAddExercise) {
             if let workout = getWorkoutForDate(displayDate) {
                 // Workout exists - add exercises to it
-                AddExerciseToWorkoutView(selectedDate: displayDate, workout: workout)
+                AddExerciseToWorkoutView(selectedDate: displayDate, workout: workout, onExerciseAdded: forceRefresh)
             } else {
                 // No workout - create new one
-                AddExerciseToWorkoutView(selectedDate: displayDate, workout: nil)
+                AddExerciseToWorkoutView(selectedDate: displayDate, workout: nil, onExerciseAdded: forceRefresh)
             }
         }
         .onAppear {
@@ -128,9 +129,15 @@ struct WorkoutView: View {
     
     private func getWorkoutForDate(_ date: Date) -> Workout? {
         let calendar = Calendar.current
+        // Use refreshTrigger to force view updates
+        _ = refreshTrigger
         return workouts.first { workout in
             calendar.isDate(workout.date, inSameDayAs: date)
         }
+    }
+    
+    private func forceRefresh() {
+        refreshTrigger = UUID()
     }
 }
 
@@ -164,7 +171,7 @@ struct WorkoutDetailView: View {
             .padding(.top, 12)
         }
         .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
+            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout, onExerciseAdded: nil)
         }
     }
 }
@@ -485,6 +492,7 @@ struct AddExerciseToWorkoutView: View {
     
     let selectedDate: Date
     var workout: Workout?
+    var onExerciseAdded: (() -> Void)?
     
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
@@ -581,7 +589,9 @@ struct AddExerciseToWorkoutView: View {
             modelContext: modelContext
         )
         
-        // Dismiss immediately after successful addition
+        // Notify parent view to refresh
+        onExerciseAdded?()
+        
         dismiss()
     }
 }
