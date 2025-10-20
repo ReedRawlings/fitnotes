@@ -49,27 +49,6 @@ struct WorkoutView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Show active workout indicator banner
-                    if let activeWorkout = appState.activeWorkout,
-                       Calendar.current.isDateInToday(selectedDate) {
-                        HStack {
-                            Image(systemName: "circle.fill")
-                                .font(.caption)
-                                .foregroundColor(.green)
-                            
-                            Text("Active Workout in Progress")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                            
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(8)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                    }
-                    
                     // Show active workout if it exists and we're viewing today
                     if let activeWorkout = appState.activeWorkout,
                        Calendar.current.isDateInToday(displayDate) {

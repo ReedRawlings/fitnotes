@@ -364,7 +364,6 @@ struct ActiveWorkoutContentView: View {
     @EnvironmentObject private var appState: AppState
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
-    @State private var showingAddExercise = false
     
     private var workout: Workout? {
         workouts.first { $0.id == workoutId }
@@ -384,10 +383,6 @@ struct ActiveWorkoutContentView: View {
                             Text(workout.name)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            
-                            Text("Started \(workout.date, style: .time)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
                         }
                         
                         Spacer()
@@ -426,12 +421,6 @@ struct ActiveWorkoutContentView: View {
                     .listStyle(PlainListStyle())
                 }
                 
-                // Add Exercise button
-                PrimaryActionButton(title: "Add to Current Workout", icon: "plus") {
-                    showingAddExercise = true
-                }
-                .padding(.bottom, 8)
-                
             } else {
                 VStack(spacing: 20) {
                     Spacer()
@@ -447,13 +436,6 @@ struct ActiveWorkoutContentView: View {
                     Spacer()
                 }
             }
-        }
-        .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(
-                selectedDate: workout?.date ?? Date(),
-                activeWorkoutId: workoutId,
-                isActiveWorkout: true
-            )
         }
     }
     
