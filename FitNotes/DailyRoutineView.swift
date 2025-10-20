@@ -100,7 +100,13 @@ struct WorkoutView: View {
             .navigationBarHidden(true)
         }
         .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(selectedDate: displayDate)
+            if let workout = getWorkoutForDate(displayDate) {
+                // Workout exists - add exercises to it
+                AddExerciseToWorkoutView(selectedDate: displayDate, workout: workout)
+            } else {
+                // No workout - create new one
+                AddExerciseToWorkoutView(selectedDate: displayDate, workout: nil)
+            }
         }
         .onAppear {
             // If active workout exists, set selectedDate to active workout's date

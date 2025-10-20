@@ -180,12 +180,17 @@ public final class WorkoutService {
         workoutExercise: WorkoutExercise,
         modelContext: ModelContext
     ) {
+        // Remove from workout's exercises array first
+        if let workout = workoutExercise.workout {
+            workout.exercises.removeAll { $0.id == workoutExercise.id }
+        }
+        
+        // Delete the workout exercise
         modelContext.delete(workoutExercise)
         
         // Reorder remaining exercises
         if let workout = workoutExercise.workout {
             let remainingExercises = workout.exercises
-                .filter { $0.id != workoutExercise.id }
                 .sorted { $0.order < $1.order }
             
             for (index, exercise) in remainingExercises.enumerated() {
