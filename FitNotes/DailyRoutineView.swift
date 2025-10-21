@@ -16,14 +16,6 @@ struct WorkoutView: View {
         }
     }
     
-    var addExerciseButtonLabel: String {
-        if getWorkoutForDate(selectedDate) != nil {
-            return "Add Exercise"
-        } else {
-            return "Start New Workout"
-        }
-    }
-    
     var todaysWorkout: Workout? {
         let calendar = Calendar.current
         return workouts.first { workout in
@@ -83,15 +75,13 @@ struct WorkoutView: View {
                     if let workout = getWorkoutForDate(displayDate) {
                         WorkoutDetailView(workout: workout)
                     } else {
-                        EmptyWorkoutView(selectedDate: displayDate) {
-                            showingAddExercise = true
-                        }
+                        EmptyWorkoutView(selectedDate: displayDate)
                     }
                     
                     Spacer()
                     
-                    // Prominent Add Exercise button at bottom - always show
-                    PrimaryActionButton(title: addExerciseButtonLabel, icon: "plus") {
+                    // Purple Add Exercise button - always show (matches app design system)
+                    PrimaryActionButton(title: "Add Exercise", icon: "plus") {
                         showingAddExercise = true
                     }
                     .padding(.bottom, 8) // Small padding above tab bar
@@ -429,7 +419,6 @@ struct EditWorkoutExerciseView: View {
 
 struct EmptyWorkoutView: View {
     let selectedDate: Date
-    let onAddExercise: () -> Void
     @State private var showingRoutineTemplates = false
     
     var body: some View {
@@ -443,20 +432,7 @@ struct EmptyWorkoutView: View {
             )
             
             VStack(spacing: 12) {
-                // Option 1: Manual
-                Button(action: { onAddExercise() }) {
-                    HStack {
-                        Image(systemName: "plus.circle")
-                        Text("Add Exercises")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
-                
-                // Option 2: Template
+                // Use Routine Template button
                 Button(action: { showingRoutineTemplates = true }) {
                     HStack {
                         Image(systemName: "list.bullet")
