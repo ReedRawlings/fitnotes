@@ -22,7 +22,7 @@ public final class ExerciseService {
     
     // MARK: - Get Last Session for Exercise
     
-    /// Returns the most recent set of WorkoutSet records for this exercise (grouped by workout session).
+    /// Returns the most recent set of WorkoutSet records for this exercise (grouped by date).
     /// Used to pre-populate new workouts.
     public func getLastSessionForExercise(
         exerciseId: UUID,
@@ -38,22 +38,16 @@ public final class ExerciseService {
         do {
             let allSets = try modelContext.fetch(descriptor)
             
-            // Group by workout session (most recent first)
-            let groupedByWorkout = Dictionary(grouping: allSets) { $0.workoutId }
+            // Group by date (most recent first)
+            let groupedByDate = Dictionary(grouping: allSets) { Calendar.current.startOfDay(for: $0.date) }
             
-            // Get the most recent workout session
-            guard let mostRecentWorkoutId = groupedByWorkout.keys.min(by: { workoutId1, workoutId2 in
-                let sets1 = groupedByWorkout[workoutId1] ?? []
-                let sets2 = groupedByWorkout[workoutId2] ?? []
-                let date1 = sets1.first?.date ?? Date.distantPast
-                let date2 = sets2.first?.date ?? Date.distantPast
-                return date1 < date2
-            }) else {
+            // Get the most recent date
+            guard let mostRecentDate = groupedByDate.keys.max() else {
                 return nil
             }
             
-            // Return sets from the most recent workout, sorted by order
-            let lastSessionSets = groupedByWorkout[mostRecentWorkoutId] ?? []
+            // Return sets from the most recent date, sorted by order
+            let lastSessionSets = groupedByDate[mostRecentDate] ?? []
             return lastSessionSets.sorted { $0.order < $1.order }
             
         } catch {
@@ -80,15 +74,14 @@ public final class ExerciseService {
         do {
             let allSets = try modelContext.fetch(descriptor)
             
-            // Group by workout session
-            let groupedByWorkout = Dictionary(grouping: allSets) { $0.workoutId }
+            // Group by date
+            let groupedByDate = Dictionary(grouping: allSets) { Calendar.current.startOfDay(for: $0.date) }
             
-            // Create summaries for each workout session
+            // Create summaries for each date
             var summaries: [ExerciseSessionSummary] = []
             
-            for (workoutId, sets) in groupedByWorkout {
+            for (date, sets) in groupedByDate {
                 let sortedSets = sets.sorted { $0.order < $1.order }
-                let date = sortedSets.first?.date ?? Date()
                 
                 // Create summary string like "225kg × 5/5/3"
                 let setsSummary = createSetsSummary(from: sortedSets)
@@ -96,7 +89,7 @@ public final class ExerciseService {
                 let summary = ExerciseSessionSummary(
                     date: date,
                     setsSummary: setsSummary,
-                    workoutId: workoutId
+                    workoutId: UUID() // Generate a unique ID for each date group
                 )
                 summaries.append(summary)
             }
@@ -141,6 +134,127 @@ public final class ExerciseService {
         } catch {
             print("Error fetching exercise: \(error)")
             return nil
+        }
+    }
+    
+    // MARK: - Get Sets by Date
+    
+    /// Returns all sets for a specific exercise on a specific date
+    public func getSetsByDate(
+        exerciseId: UUID,
+        date: Date,
+        modelContext: ModelContext
+    ) -> [WorkoutSet] {
+        let startOfDay = Calendar.current.startOfDay(for: date)
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+        
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { workoutSet in
+                workoutSet.exerciseId == exerciseId &&
+                workoutSet.date >= startOfDay &&
+                workoutSet.date < endOfDay
+            },
+            sortBy: [SortDescriptor(\.order, order: .forward)]
+        )
+        
+        do {
+            return try modelContext.fetch(descriptor)
+        } catch {
+            print("Error fetching sets by date: \(error)")
+            return []
+        }
+    }
+    
+    // MARK: - Save Sets
+    
+    /// Saves sets for an exercise on a specific date, replacing any existing sets
+    public func saveSets(
+        exerciseId: UUID,
+        date: Date,
+        sets: [(weight: Double, reps: Int)],
+        modelContext: ModelContext
+    ) -> Bool {
+        do {
+            // First, delete existing sets for this exercise on this date
+            let existingSets = getSetsByDate(exerciseId: exerciseId, date: date, modelContext: modelContext)
+            for set in existingSets {
+                modelContext.delete(set)
+            }
+            
+            // Create new sets
+            for (index, setData) in sets.enumerated() {
+                let newSet = WorkoutSet(
+                    exerciseId: exerciseId,
+                    order: index + 1,
+                    reps: setData.reps,
+                    weight: setData.weight,
+                    date: date
+                )
+                modelContext.insert(newSet)
+            }
+            
+            try modelContext.save()
+            return true
+        } catch {
+            print("Error saving sets: \(error)")
+            return false
+        }
+    }
+    
+    // MARK: - Update Set
+    
+    /// Updates a specific set's weight and reps
+    public func updateSet(
+        setId: UUID,
+        weight: Double,
+        reps: Int,
+        modelContext: ModelContext
+    ) -> Bool {
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { workoutSet in
+                workoutSet.id == setId
+            }
+        )
+        
+        do {
+            let sets = try modelContext.fetch(descriptor)
+            guard let set = sets.first else { return false }
+            
+            set.weight = weight
+            set.reps = reps
+            set.updatedAt = Date()
+            
+            try modelContext.save()
+            return true
+        } catch {
+            print("Error updating set: \(error)")
+            return false
+        }
+    }
+    
+    // MARK: - Delete Set
+    
+    /// Deletes a specific set
+    public func deleteSet(
+        setId: UUID,
+        modelContext: ModelContext
+    ) -> Bool {
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { workoutSet in
+                workoutSet.id == setId
+            }
+        )
+        
+        do {
+            let sets = try modelContext.fetch(descriptor)
+            guard let set = sets.first else { return false }
+            
+            modelContext.delete(set)
+            try modelContext.save()
+            return true
+        } catch {
+            print("Error deleting set: \(error)")
+            return false
         }
     }
 }

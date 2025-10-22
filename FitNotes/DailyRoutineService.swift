@@ -51,22 +51,8 @@ public final class WorkoutService {
         workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
         
-        // Create individual sets
-        for setIndex in 1...sets {
-            let workoutSet = WorkoutSet(
-                exerciseId: exerciseId,
-                workoutId: workout.id,
-                order: setIndex,
-                reps: reps ?? 10,
-                weight: weight ?? 0,
-                duration: duration,
-                distance: distance,
-                notes: notes,
-                date: workout.date
-            )
-            workoutExercise.sets.append(workoutSet)
-            modelContext.insert(workoutSet)
-        }
+        // Note: Sets are now managed independently through ExerciseService
+        // This method is kept for backward compatibility but sets should be added via ExerciseService
         
         do {
             try modelContext.save()
@@ -96,22 +82,8 @@ public final class WorkoutService {
         workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
         
-        // Create individual sets from provided data
-        for (index, set) in setData.enumerated() {
-            let workoutSet = WorkoutSet(
-                exerciseId: exerciseId,
-                workoutId: workout.id,
-                order: index + 1,
-                reps: set.reps,
-                weight: set.weight,
-                duration: set.duration,
-                distance: set.distance,
-                notes: notes,
-                date: workout.date
-            )
-            workoutExercise.sets.append(workoutSet)
-            modelContext.insert(workoutSet)
-        }
+        // Note: Sets are now managed independently through ExerciseService
+        // This method is kept for backward compatibility but sets should be added via ExerciseService
         
         do {
             try modelContext.save()
@@ -131,12 +103,11 @@ public final class WorkoutService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> WorkoutSet {
-        let order = workoutExercise.sets.count + 1
-        
+        // Note: This method is deprecated. Use ExerciseService.saveSets instead.
+        // Keeping for backward compatibility but sets should be managed via ExerciseService
         let workoutSet = WorkoutSet(
             exerciseId: workoutExercise.exerciseId,
-            workoutId: workoutExercise.workout?.id ?? UUID(),
-            order: order,
+            order: 1,
             reps: reps,
             weight: weight,
             duration: duration,
@@ -145,7 +116,6 @@ public final class WorkoutService {
             date: workoutExercise.workout?.date ?? Date()
         )
         
-        workoutExercise.sets.append(workoutSet)
         modelContext.insert(workoutSet)
         
         do {
@@ -162,14 +132,9 @@ public final class WorkoutService {
         workoutExercise: WorkoutExercise,
         modelContext: ModelContext
     ) {
-        workoutExercise.sets.removeAll { $0.id == workoutSet.id }
+        // Note: This method is deprecated. Use ExerciseService.deleteSet instead.
+        // Keeping for backward compatibility but sets should be managed via ExerciseService
         modelContext.delete(workoutSet)
-        
-        // Reorder remaining sets
-        let sortedSets = workoutExercise.sets.sorted { $0.order < $1.order }
-        for (index, set) in sortedSets.enumerated() {
-            set.order = index + 1
-        }
         
         do {
             try modelContext.save()
@@ -246,6 +211,36 @@ public final class WorkoutService {
             print("Error fetching today's workout: \(error)")
             return nil
         }
+    }
+    
+    public func getOrCreateWorkoutForDate(date: Date, modelContext: ModelContext) -> Workout {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate { workout in
+                workout.date >= startOfDay && workout.date < endOfDay
+            },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        
+        do {
+            let workouts = try modelContext.fetch(descriptor)
+            if let existingWorkout = workouts.first {
+                return existingWorkout
+            }
+        } catch {
+            print("Error fetching workout for date: \(error)")
+        }
+        
+        // Create new workout if none exists
+        let workoutName = "Workout - \(date.formatted(date: .abbreviated, time: .omitted))"
+        return createWorkout(
+            name: workoutName,
+            date: date,
+            modelContext: modelContext
+        )
     }
     
     public func getWorkoutsForWeek(modelContext: ModelContext) -> [Workout] {
@@ -426,22 +421,8 @@ public final class RoutineService {
             workoutExercise.workout = workout
             modelContext.insert(workoutExercise)
             
-            // Create individual sets from template
-            for setIndex in 1...templateExercise.sets {
-                let workoutSet = WorkoutSet(
-                    exerciseId: templateExercise.exerciseId,
-                    workoutId: workout.id,
-                    order: setIndex,
-                    reps: templateExercise.reps ?? 10,
-                    weight: templateExercise.weight ?? 0,
-                    duration: templateExercise.duration,
-                    distance: templateExercise.distance,
-                    notes: templateExercise.notes,
-                    date: workout.date
-                )
-                workoutExercise.sets.append(workoutSet)
-                modelContext.insert(workoutSet)
-            }
+            // Note: Sets are now managed independently through ExerciseService
+            // This method is kept for backward compatibility but sets should be added via ExerciseService
         }
         
         do {
@@ -476,22 +457,8 @@ public final class RoutineService {
             modelContext.insert(workoutExercise)
             addedExercises.append(workoutExercise)
             
-            // Create individual sets from template
-            for setIndex in 1...templateExercise.sets {
-                let workoutSet = WorkoutSet(
-                    exerciseId: templateExercise.exerciseId,
-                    workoutId: workout.id,
-                    order: setIndex,
-                    reps: templateExercise.reps ?? 10,
-                    weight: templateExercise.weight ?? 0,
-                    duration: templateExercise.duration,
-                    distance: templateExercise.distance,
-                    notes: templateExercise.notes,
-                    date: workout.date
-                )
-                workoutExercise.sets.append(workoutSet)
-                modelContext.insert(workoutSet)
-            }
+            // Note: Sets are now managed independently through ExerciseService
+            // This method is kept for backward compatibility but sets should be added via ExerciseService
         }
         
         do {

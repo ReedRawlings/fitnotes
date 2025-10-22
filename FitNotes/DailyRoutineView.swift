@@ -386,7 +386,7 @@ struct EditWorkoutExerciseView: View {
         }
         .sheet(isPresented: $showingHistory) {
             if let exercise = exercise {
-                ExerciseHistoryView(exercise: exercise)
+                ExerciseDetailView(exercise: exercise)
             }
         }
     }

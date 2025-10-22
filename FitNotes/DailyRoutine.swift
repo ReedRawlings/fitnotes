@@ -105,21 +105,19 @@ public final class RoutineExercise {
 public final class WorkoutSet {
     @Attribute(.unique) public var id: UUID
     public var exerciseId: UUID       // Which exercise
-    public var workoutId: UUID        // Which workout session
     public var order: Int             // Set number (1, 2, 3...)
     public var reps: Int
     public var weight: Double
     public var duration: Int?         // For cardio/timed
     public var distance: Double?      // For distance-based
     public var notes: String?
-    public var date: Date             // When this was logged (denormalized for queries)
+    public var date: Date             // When this was logged (used for grouping by day)
     public var createdAt: Date
     public var updatedAt: Date
 
     public init(
         id: UUID = UUID(),
         exerciseId: UUID,
-        workoutId: UUID,
         order: Int,
         reps: Int,
         weight: Double = 0,
@@ -132,7 +130,6 @@ public final class WorkoutSet {
     ) {
         self.id = id
         self.exerciseId = exerciseId
-        self.workoutId = workoutId
         self.order = order
         self.reps = reps
         self.weight = weight
@@ -151,7 +148,6 @@ public final class WorkoutExercise {
     @Attribute(.unique) public var id: UUID
     public var exerciseId: UUID
     public var order: Int
-    @Relationship(deleteRule: .cascade) public var sets: [WorkoutSet] = [] // NEW
     public var notes: String?
     public var createdAt: Date
     public var updatedAt: Date
