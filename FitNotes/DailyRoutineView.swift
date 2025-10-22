@@ -164,13 +164,18 @@ struct WorkoutExerciseRowView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
+    @Query private var allSets: [WorkoutSet]
     
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
     private var sortedSets: [WorkoutSet] {
-        workoutExercise.sets.sorted { $0.order < $1.order }
+        let exerciseSets = allSets.filter { 
+            $0.exerciseId == workoutExercise.exerciseId && 
+            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
+        }
+        return exerciseSets.sorted { $0.order < $1.order }
     }
     
     var body: some View {
@@ -258,6 +263,7 @@ struct EditWorkoutExerciseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
+    @Query private var allSets: [WorkoutSet]
     
     let workoutExercise: WorkoutExercise
     let workout: Workout
@@ -269,7 +275,11 @@ struct EditWorkoutExerciseView: View {
     }
     
     private var sortedSets: [WorkoutSet] {
-        workoutExercise.sets.sorted { $0.order < $1.order }
+        let exerciseSets = allSets.filter { 
+            $0.exerciseId == workoutExercise.exerciseId && 
+            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
+        }
+        return exerciseSets.sorted { $0.order < $1.order }
     }
     
     var body: some View {
@@ -314,10 +324,12 @@ struct EditWorkoutExerciseView: View {
                                         TextField("Weight", value: Binding(
                                             get: { set.weight },
                                             set: { newValue in
-                                                if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
-                                                    workoutExercise.sets[idx].weight = newValue
-                                                    workoutExercise.sets[idx].updatedAt = Date()
-                                                }
+                                                _ = ExerciseService.shared.updateSet(
+                                                    setId: set.id,
+                                                    weight: newValue,
+                                                    reps: set.reps,
+                                                    modelContext: modelContext
+                                                )
                                             }
                                         ), format: .number)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -329,10 +341,12 @@ struct EditWorkoutExerciseView: View {
                                         TextField("Reps", value: Binding(
                                             get: { set.reps },
                                             set: { newValue in
-                                                if let idx = workoutExercise.sets.firstIndex(where: { $0.id == set.id }) {
-                                                    workoutExercise.sets[idx].reps = newValue
-                                                    workoutExercise.sets[idx].updatedAt = Date()
-                                                }
+                                                _ = ExerciseService.shared.updateSet(
+                                                    setId: set.id,
+                                                    weight: set.weight,
+                                                    reps: newValue,
+                                                    modelContext: modelContext
+                                                )
                                             }
                                         ), format: .number)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -392,23 +406,23 @@ struct EditWorkoutExerciseView: View {
     }
     
     private func addNewSet() {
-        let newOrder = (workoutExercise.sets.map { $0.order }.max() ?? 0) + 1
+        let newOrder = (sortedSets.map { $0.order }.max() ?? 0) + 1
         let newSet = WorkoutSet(
             exerciseId: workoutExercise.exerciseId,
-            workoutId: workout.id,
             order: newOrder,
             reps: 10,
             weight: 0,
             date: workout.date
         )
-        workoutExercise.sets.append(newSet)
         modelContext.insert(newSet)
         try? modelContext.save()
     }
     
     private func deleteSet(_ set: WorkoutSet) {
-        workoutExercise.sets.removeAll { $0.id == set.id }
-        try? modelContext.save()
+        _ = ExerciseService.shared.deleteSet(
+            setId: set.id,
+            modelContext: modelContext
+        )
     }
     
     private func saveChanges() {
