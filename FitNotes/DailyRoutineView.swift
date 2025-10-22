@@ -166,6 +166,8 @@ struct WorkoutExerciseRowView: View {
     @Query private var exercises: [Exercise]
     @Query private var allSets: [WorkoutSet]
     
+    @State private var showingExerciseDetail = false
+    
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
@@ -244,7 +246,12 @@ struct WorkoutExerciseRowView: View {
             .padding(12)
         }
         .onTapGesture {
-            // Navigate to edit view when card is tapped (but not when delete button is tapped)
+            showingExerciseDetail = true
+        }
+        .sheet(isPresented: $showingExerciseDetail) {
+            if let exercise = exercise {
+                ExerciseDetailView(exercise: exercise)
+            }
         }
     }
     
@@ -478,6 +485,8 @@ struct AddExerciseToWorkoutView: View {
     
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
+    @State private var showingDuplicateAlert = false
+    @State private var duplicateExerciseName = ""
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -519,6 +528,13 @@ struct AddExerciseToWorkoutView: View {
                 }
             }
         }
+        .alert("Exercise already exists", isPresented: $showingDuplicateAlert) {
+            Button("OK") {
+                dismiss()
+            }
+        } message: {
+            Text("\(duplicateExerciseName) is already in this workout.")
+        }
     }
     
     private func addExerciseImmediately(_ exercise: Exercise) {
@@ -533,6 +549,13 @@ struct AddExerciseToWorkoutView: View {
                 date: selectedDate,
                 modelContext: modelContext
             )
+        }
+        
+        // Check if exercise already exists in workout
+        if WorkoutService.shared.exerciseExistsInWorkout(workout: targetWorkout, exerciseId: exercise.id) {
+            duplicateExerciseName = exercise.name
+            showingDuplicateAlert = true
+            return
         }
         
         // Try to get last session data for this exercise

@@ -243,6 +243,16 @@ public final class WorkoutService {
         )
     }
     
+    // MARK: - Duplicate Exercise Checking
+    
+    /// Checks if an exercise already exists in a workout
+    public func exerciseExistsInWorkout(
+        workout: Workout,
+        exerciseId: UUID
+    ) -> Bool {
+        return workout.exercises.contains { $0.exerciseId == exerciseId }
+    }
+    
     public func getWorkoutsForWeek(modelContext: ModelContext) -> [Workout] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -446,16 +456,23 @@ public final class RoutineService {
         // Get the next order number for new exercises
         let currentExerciseCount = workout.exercises.count
         
-        // Copy exercises from template
-        for (index, templateExercise) in routine.exercises.sorted(by: { $0.order < $1.order }).enumerated() {
+        // Copy exercises from template, skipping duplicates
+        var orderOffset = 0
+        for templateExercise in routine.exercises.sorted(by: { $0.order < $1.order }) {
+            // Skip if exercise already exists in workout
+            if exerciseExistsInWorkout(workout: workout, exerciseId: templateExercise.exerciseId) {
+                continue
+            }
+            
             let workoutExercise = WorkoutExercise(
                 exerciseId: templateExercise.exerciseId,
-                order: currentExerciseCount + index + 1,
+                order: currentExerciseCount + orderOffset + 1,
                 notes: templateExercise.notes
             )
             workoutExercise.workout = workout
             modelContext.insert(workoutExercise)
             addedExercises.append(workoutExercise)
+            orderOffset += 1
             
             // Note: Sets are now managed independently through ExerciseService
             // This method is kept for backward compatibility but sets should be added via ExerciseService
