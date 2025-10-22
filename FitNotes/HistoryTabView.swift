@@ -18,35 +18,37 @@ struct HistoryTabView: View {
     }
     
     var body: some View {
-        if groupedSets.isEmpty {
-            EmptyStateView(
-                icon: "clock.arrow.circlepath",
-                title: "No History",
-                subtitle: "Complete a workout to see your progress",
-                actionTitle: nil,
-                onAction: nil
-            )
-        } else {
-            List {
-                ForEach(groupedSets, id: \.0) { date, sets in
-                    Section(header: DateHeaderView(date: date)) {
-                        ForEach(sets.sorted { $0.order < $1.order }) { set in
-                            SetHistoryRowView(
-                                set: set,
-                                onTap: {
-                                    selectedSet = set
-                                    showingEditSheet = true
-                                },
-                                onDelete: {
-                                    setToDelete = set
-                                    showingDeleteAlert = true
-                                }
-                            )
+        Group {
+            if groupedSets.isEmpty {
+                EmptyStateView(
+                    icon: "clock.arrow.circlepath",
+                    title: "No History",
+                    subtitle: "Complete a workout to see your progress",
+                    actionTitle: nil,
+                    onAction: nil
+                )
+            } else {
+                List {
+                    ForEach(groupedSets, id: \.0) { date, sets in
+                        Section(header: DateHeaderView(date: date)) {
+                            ForEach(sets.sorted { $0.order < $1.order }) { set in
+                                SetHistoryRowView(
+                                    set: set,
+                                    onTap: {
+                                        selectedSet = set
+                                        showingEditSheet = true
+                                    },
+                                    onDelete: {
+                                        setToDelete = set
+                                        showingDeleteAlert = true
+                                    }
+                                )
+                            }
                         }
                     }
                 }
+                .listStyle(PlainListStyle())
             }
-            .listStyle(PlainListStyle())
         }
         .sheet(isPresented: $showingEditSheet) {
             if let set = selectedSet {
