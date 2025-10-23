@@ -460,7 +460,7 @@ public final class RoutineService {
         var orderOffset = 0
         for templateExercise in routine.exercises.sorted(by: { $0.order < $1.order }) {
             // Skip if exercise already exists in workout
-            if self.exerciseExistsInWorkout(workout: workout, exerciseId: templateExercise.exerciseId) {
+            if WorkoutService.shared.exerciseExistsInWorkout(workout: workout, exerciseId: templateExercise.exerciseId) {
                 continue
             }
             
