@@ -209,9 +209,12 @@ struct WorkoutExerciseRowView: View {
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
                     
-                    // Set history - vertical layout
+                    // Set history - grid layout (2 columns)
                     if !sortedSets.isEmpty {
-                        VStack(alignment: .leading, spacing: 1) {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), alignment: .leading),
+                            GridItem(.flexible(), alignment: .leading)
+                        ], spacing: 8) {
                             ForEach(sortedSets, id: \.id) { set in
                                 Text("\(set.reps)×\(Int(set.weight)) \(appState.weightUnit)")
                                     .font(.system(size: 12, weight: .medium, design: .monospaced))
