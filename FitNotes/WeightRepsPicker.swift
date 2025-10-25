@@ -47,46 +47,44 @@ struct WeightRepsPicker: View {
                     onDismiss()
                 }
             
+            // Centered Popover
             VStack(spacing: 0) {
-                Spacer()
-                
-                // Picker Sheet
-                VStack(spacing: 0) {
-                    // Header
-                    HStack {
-                        Text(pickerType.title)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.textPrimary)
-                        
-                        Spacer()
-                        
-                        Button("Done") {
-                            onDismiss()
-                        }
+                // Header
+                HStack {
+                    Text(pickerType.title)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.accentPrimary)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    .background(Color.secondaryBg)
-                    .overlay(
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(Color.white.opacity(0.06)),
-                        alignment: .bottom
-                    )
+                        .foregroundColor(.textPrimary)
                     
-                    // Picker Content
-                    PickerView(
-                        pickerType: pickerType,
-                        currentValue: currentValue,
-                        onValueChanged: onValueChanged
-                    )
-                    .frame(height: 260)
+                    Spacer()
+                    
+                    Button("Done") {
+                        onDismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.accentPrimary)
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
                 .background(Color.secondaryBg)
-                .cornerRadius(20, corners: [.topLeft, .topRight])
+                .overlay(
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(Color.white.opacity(0.06)),
+                    alignment: .bottom
+                )
+                
+                // Picker Content
+                PickerView(
+                    pickerType: pickerType,
+                    currentValue: currentValue,
+                    onValueChanged: onValueChanged
+                )
+                .frame(height: 200)
             }
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .frame(width: 280)
+            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
         }
     }
 }
@@ -103,6 +101,8 @@ struct PickerView: UIViewRepresentable {
         picker.delegate = context.coordinator
         picker.dataSource = context.coordinator
         picker.backgroundColor = UIColor.clear
+        
+        // Disable sound effects (showsSelectionIndicator is deprecated)
         
         // Set initial selection
         let values = pickerType.values
@@ -158,14 +158,14 @@ struct PickerView: UIViewRepresentable {
             return label
         }
         
-        func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-            let value = parent.pickerType.values[row]
-            parent.onValueChanged(value)
-        }
-        
-        func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat {
-            return 44
-        }
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        let value = parent.pickerType.values[row]
+        parent.onValueChanged(value)
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat {
+        return 44
+    }
     }
 }
 

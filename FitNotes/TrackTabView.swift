@@ -85,26 +85,23 @@ struct TrackTabView: View {
         .onAppear {
             loadLastSession()
         }
-               .overlay(
-                   Group {
-                       if showingPicker {
-                           WeightRepsPicker(
-                               pickerType: pickerType,
-                               currentValue: editingField == .weight ? sets[editingSetIndex].weight : Double(sets[editingSetIndex].reps),
-                               onValueChanged: { newValue in
-                                   if editingField == .weight {
-                                       sets[editingSetIndex].weight = newValue
-                                   } else {
-                                       sets[editingSetIndex].reps = Int(newValue)
-                                   }
-                               },
-                               onDismiss: {
-                                   showingPicker = false
-                               }
-                           )
-                       }
-                   }
-               )
+        .overlay(
+            showingPicker ? 
+            WeightRepsPicker(
+                pickerType: pickerType,
+                currentValue: editingField == .weight ? sets[editingSetIndex].weight : Double(sets[editingSetIndex].reps),
+                onValueChanged: { newValue in
+                    if editingField == .weight {
+                        sets[editingSetIndex].weight = newValue
+                    } else {
+                        sets[editingSetIndex].reps = Int(newValue)
+                    }
+                },
+                onDismiss: {
+                    showingPicker = false
+                }
+            ) : nil
+        )
         .alert("Sets Saved", isPresented: $showingSaveConfirmation) {
             Button("OK") { }
         } message: {
