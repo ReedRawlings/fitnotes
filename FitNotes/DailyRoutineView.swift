@@ -199,28 +199,25 @@ struct WorkoutExerciseRowView: View {
         return exerciseSets.sorted { $0.order < $1.order }
     }
     
-    private var setHistoryText: String {
-        sortedSets.map { set in
-            "\(set.reps)×\(Int(set.weight)) \(appState.weightUnit)"
-        }.joined(separator: " · ")
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // Header with exercise name and delete
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(exercise?.name ?? "Unknown Exercise")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
                     
-                    // Set history line
+                    // Set history - vertical layout
                     if !sortedSets.isEmpty {
-                        Text(setHistoryText)
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundColor(.textSecondary)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(sortedSets, id: \.id) { set in
+                                Text("\(set.reps)×\(Int(set.weight)) \(appState.weightUnit)")
+                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.textSecondary)
+                            }
+                        }
                     }
                 }
                     
