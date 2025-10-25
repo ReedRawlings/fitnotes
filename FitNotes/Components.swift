@@ -160,18 +160,18 @@ struct CardListView<Item: Identifiable, Content: View>: View {
             Spacer()
             
             Image(systemName: icon)
-                .font(.system(size: 64))
-                .foregroundColor(.secondary)
+                .font(.system(size: 60))
+                .foregroundColor(.textTertiary.opacity(0.3))
             
             VStack(spacing: 8) {
                 Text(title)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textPrimary)
                 
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }

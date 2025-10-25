@@ -12,6 +12,7 @@ import SwiftData
 public class AppState: ObservableObject {
     private var _activeWorkout: ActiveWorkoutState?
     @Published var selectedTab: Int = 0
+    @Published var weightUnit: String = "kg" // Global unit preference for set history display
     
     var activeWorkout: ActiveWorkoutState? {
         get {

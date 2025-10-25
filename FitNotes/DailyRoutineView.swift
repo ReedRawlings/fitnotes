@@ -26,40 +26,33 @@ struct WorkoutView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Blue gradient background
-                LinearGradient(
-                    colors: [
-                        Color.blue.opacity(0.3),
-                        Color.blue.opacity(0.6)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // Dark theme background
+                Color.primaryBg
+                    .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Date header
                     HStack {
                         if Calendar.current.isDateInToday(displayDate) {
                             Text("Today")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(.textPrimary)
                         } else {
                             HStack(spacing: 12) {
                                 Button(action: { goToPreviousDay() }) {
                                     Image(systemName: "chevron.left")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 
                                 Text(displayDate.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundColor(.textPrimary)
                                 
                                 Button(action: { goToNextDay() }) {
                                     Image(systemName: "chevron.right")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                             }
                         }
@@ -67,7 +60,8 @@ struct WorkoutView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
                     
                     Divider()
                     
@@ -80,11 +74,35 @@ struct WorkoutView: View {
                     
                     Spacer()
                     
-                    // Purple Add Exercise button - always show (matches app design system)
-                    PrimaryActionButton(title: "Add Exercise", icon: "plus") {
-                        showingAddExercise = true
+                    // V2 Gradient Add Exercise button
+                    Button(action: { showingAddExercise = true }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 16))
+                            
+                            Text("Add Exercise")
+                                .font(.buttonFont)
+                        }
+                        .foregroundColor(.textInverse)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(16)
+                        .shadow(
+                            color: .accentPrimary.opacity(0.3),
+                            radius: 16,
+                            x: 0,
+                            y: 4
+                        )
                     }
-                    .padding(.bottom, 8) // Small padding above tab bar
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20) // 20pt from safe area
                 }
             }
             .navigationBarHidden(true)
@@ -163,6 +181,7 @@ struct WorkoutExerciseRowView: View {
     let workoutExercise: WorkoutExercise
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
     @Query private var exercises: [Exercise]
     @Query private var allSets: [WorkoutSet]
     
@@ -180,71 +199,49 @@ struct WorkoutExerciseRowView: View {
         return exerciseSets.sorted { $0.order < $1.order }
     }
     
+    private var setHistoryText: String {
+        sortedSets.map { set in
+            "\(set.reps)×\(Int(set.weight)) \(appState.weightUnit)"
+        }.joined(separator: " · ")
+    }
+    
     var body: some View {
-        BaseCardView {
-            VStack(alignment: .leading, spacing: 8) {
-                // Header with delete
-                HStack {
+        VStack(alignment: .leading, spacing: 4) {
+            // Header with exercise name and delete
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(exercise?.name ?? "Unknown Exercise")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundColor(.textPrimary)
+                        .lineLimit(1)
                     
-                    Spacer()
-                    
-                    Button(action: { deleteExercise() }) {
-                        Image(systemName: "trash")
-                            .font(.title2)
-                            .foregroundColor(.red)
-                            .frame(width: 44, height: 44)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                
-                Divider()
-                
-                // Sets list
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(sortedSets, id: \.id) { set in
-                        HStack(spacing: 0) {
-                            if set.weight > 0 {
-                                Text("\(Int(set.weight)) kg")
-                                    .font(.body)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                    .frame(minWidth: 16)
-                                
-                                Text("×")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                
-                                Spacer()
-                                    .frame(minWidth: 16)
-                                
-                                Text("\(set.reps) reps")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                            } else if let duration = set.duration {
-                                Text("\(duration) sec")
-                                    .font(.body)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                            } else {
-                                Text("\(set.reps) reps")
-                                    .font(.body)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                        .padding(.vertical, 4)
+                    // Set history line
+                    if !sortedSets.isEmpty {
+                        Text(setHistoryText)
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.textSecondary)
+                            .lineLimit(1)
                     }
                 }
+                    
+                Spacer()
+                
+                Button(action: { deleteExercise() }) {
+                    Image(systemName: "trash.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.errorRed)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .padding(12)
         }
+        .padding(12)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
         .onTapGesture {
             showingExerciseDetail = true
         }
@@ -256,11 +253,18 @@ struct WorkoutExerciseRowView: View {
     }
     
     private func deleteExercise() {
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
         print("Attempting to delete exercise: \(exercise?.name ?? "Unknown")")
-        WorkoutService.shared.removeExerciseFromWorkout(
-            workoutExercise: workoutExercise,
-            modelContext: modelContext
-        )
+        
+        withAnimation(.deleteAnimation) {
+            WorkoutService.shared.removeExerciseFromWorkout(
+                workoutExercise: workoutExercise,
+                modelContext: modelContext
+            )
+        }
         print("Delete operation completed")
     }
 }
@@ -461,8 +465,8 @@ struct EmptyWorkoutView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color(.systemGray5))
-                    .foregroundColor(.primary)
+                    .background(Color.secondaryBg)
+                    .foregroundColor(.textPrimary)
                     .cornerRadius(12)
                 }
             }
