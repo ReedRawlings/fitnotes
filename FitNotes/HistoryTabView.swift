@@ -6,10 +6,6 @@ struct HistoryTabView: View {
     @Environment(\.modelContext) private var modelContext
     
     @Query private var allSets: [WorkoutSet]
-    @State private var showingEditSheet = false
-    @State private var selectedSet: WorkoutSet?
-    @State private var showingDeleteAlert = false
-    @State private var setToDelete: WorkoutSet?
     
     private var groupedSets: [(Date, [WorkoutSet])] {
         let filteredSets = allSets.filter { $0.exerciseId == exercise.id }
@@ -18,175 +14,133 @@ struct HistoryTabView: View {
     }
     
     var body: some View {
-        Group {
+        ZStack {
+            // Dark background
+            Color.primaryBg
+                .ignoresSafeArea()
+            
             if groupedSets.isEmpty {
-                EmptyStateView(
-                    icon: "clock.arrow.circlepath",
-                    title: "No History",
-                    subtitle: "Complete a workout to see your progress",
-                    actionTitle: nil,
-                    onAction: nil
-                )
+                EmptyHistoryState()
             } else {
-                List {
-                    ForEach(groupedSets, id: \.0) { date, sets in
-                        Section(header: DateHeaderView(date: date)) {
-                            ForEach(sets.sorted { $0.order < $1.order }) { set in
-                                SetHistoryRowView(
-                                    set: set,
-                                    onTap: {
-                                        selectedSet = set
-                                        showingEditSheet = true
-                                    },
-                                    onDelete: {
-                                        setToDelete = set
-                                        showingDeleteAlert = true
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(groupedSets, id: \.0) { date, sets in
+                            VStack(spacing: 0) {
+                                // Sticky Date Header
+                                DateHeaderView(date: date)
+                                    .background(Color.primaryBg)
+                                
+                                // Session Cards
+                                VStack(spacing: 8) {
+                                    ForEach(sets.sorted { $0.order < $1.order }) { set in
+                                        SessionCardView(set: set)
                                     }
-                                )
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.bottom, 20)
                             }
                         }
                     }
-                }
-                .listStyle(PlainListStyle())
-            }
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            if let set = selectedSet {
-                EditSetSheet(
-                    set: set,
-                    onSave: { weight, reps in
-                        _ = ExerciseService.shared.updateSet(
-                            setId: set.id,
-                            weight: weight,
-                            reps: reps,
-                            modelContext: modelContext
-                        )
-                    }
-                )
-            }
-        }
-        .alert("Delete Set", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                if let set = setToDelete {
-                    _ = ExerciseService.shared.deleteSet(
-                        setId: set.id,
-                        modelContext: modelContext
-                    )
+                    .padding(.top, 20)
                 }
             }
-        } message: {
-            Text("Are you sure you want to delete this set? This action cannot be undone.")
         }
     }
 }
 
+// MARK: - Date Header View
 struct DateHeaderView: View {
     let date: Date
     
-    var body: some View {
-        Text(date.formatted(.dateTime.weekday(.wide).month(.wide).day(.twoDigits)))
-            .font(.caption)
-            .fontWeight(.bold)
-            .foregroundColor(.primary)
-            .textCase(.uppercase)
-            .padding(.vertical, 8)
+    private var relativeTime: String {
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: date, to: Date()).day ?? 0
+        
+        if days == 0 {
+            return "Today"
+        } else if days == 1 {
+            return "1 day ago"
+        } else {
+            return "\(days) days ago"
+        }
     }
-}
-
-struct SetHistoryRowView: View {
-    let set: WorkoutSet
-    let onTap: () -> Void
-    let onDelete: () -> Void
     
     var body: some View {
         HStack {
-            Button(action: onTap) {
-                HStack {
-                    Text("\(String(format: "%.1f", set.weight)) kg × \(set.reps) reps")
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "pencil")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
+            Text(date.formatted(.dateTime.weekday(.wide).month(.wide).day(.twoDigits)))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.textPrimary)
             
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .foregroundColor(.red)
-                    .font(.title3)
-            }
+            Spacer()
+            
+            Text(relativeTime)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(.textTertiary)
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.primaryBg)
     }
 }
 
-struct EditSetSheet: View {
+// MARK: - Session Card View
+struct SessionCardView: View {
     let set: WorkoutSet
-    let onSave: (Double, Int) -> Void
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var weightText: String = ""
-    @State private var repsText: String = ""
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Weight")
-                        .font(.headline)
-                    
-                    HStack {
-                        TextField("0", text: $weightText)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
-                        Text("kg")
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Reps")
-                        .font(.headline)
-                    
-                    TextField("0", text: $repsText)
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                
-                Spacer()
-            }
-            .padding(20)
-            .navigationTitle("Edit Set")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        if let weight = Double(weightText),
-                           let reps = Int(repsText) {
-                            onSave(weight, reps)
-                            dismiss()
-                        }
-                    }
-                    .disabled(weightText.isEmpty || repsText.isEmpty)
-                }
-            }
+        HStack {
+            Text("Set \(set.order):")
+                .font(.bodyFont)
+                .foregroundColor(.textSecondary)
+            
+            Text("\(formatWeight(set.weight))kg × \(set.reps) reps")
+                .font(.historySetData)
+                .foregroundColor(.textPrimary)
+            
+            Spacer()
         }
-        .onAppear {
-            weightText = set.weight > 0 ? String(format: "%.1f", set.weight) : ""
-            repsText = set.reps > 0 ? "\(set.reps)" : ""
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+    
+    private func formatWeight(_ weight: Double) -> String {
+        if weight.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(weight))"
+        } else {
+            return String(format: "%.1f", weight)
+        }
+    }
+}
+
+// MARK: - Empty History State
+struct EmptyHistoryState: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 60))
+                .foregroundColor(.textTertiary.opacity(0.3))
+            
+            VStack(spacing: 8) {
+                Text("No history yet")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.textSecondary)
+                
+                Text("Complete your first workout to see it here")
+                    .font(.bodyFont)
+                    .foregroundColor(.textTertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+            
+            Spacer()
         }
     }
 }
