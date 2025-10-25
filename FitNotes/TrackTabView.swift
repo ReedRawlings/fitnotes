@@ -6,7 +6,6 @@ struct TrackTabView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var sets: [(id: UUID, weight: Double, reps: Int)] = []
-    @State private var lastSessionSummary: String?
     @State private var showingSaveConfirmation = false
     @State private var isSaving = false
     @State private var showingPicker = false
@@ -27,14 +26,9 @@ struct TrackTabView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Last Session Card
-                        LastSessionCard(summary: lastSessionSummary)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 24)
-                        
                         // Current Sets
                         if !sets.isEmpty {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 10) {  // Reduced from 12
                                 ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                                     SetRowView(
                                         set: set,
@@ -57,7 +51,7 @@ struct TrackTabView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
-                            .padding(.bottom, 28)
+                            .padding(.bottom, 16)  // Reduced from 28
                         }
                         
                         // Add Set Button
@@ -65,6 +59,7 @@ struct TrackTabView: View {
                             addSet()
                         }
                         .padding(.horizontal, 20)
+                        .padding(.top, 16)  // Reduced from 28
                         .padding(.bottom, 100) // Space for fixed save button
                     }
                 }
@@ -81,7 +76,7 @@ struct TrackTabView: View {
             }
         }
         .onAppear {
-            loadLastSession()
+            loadSets()
         }
         .overlay(
             showingPicker ? 
@@ -107,18 +102,13 @@ struct TrackTabView: View {
         }
     }
     
-    private func loadLastSession() {
+    private func loadSets() {
         let lastSession = ExerciseService.shared.getLastSessionForExercise(
             exerciseId: exercise.id,
             modelContext: modelContext
         )
         
         if let lastSession = lastSession, !lastSession.isEmpty {
-            // Create summary string
-            let weight = lastSession.first?.weight ?? 0
-            let reps = lastSession.map { "\($0.reps)" }.joined(separator: "/")
-            lastSessionSummary = "\(Int(weight))kg × \(reps)"
-            
             // Pre-populate with last session data
             sets = lastSession.map { set in
                 (id: set.id, weight: set.weight, reps: set.reps)
@@ -126,7 +116,6 @@ struct TrackTabView: View {
         } else {
             // No history, start with one empty set
             sets = [(id: UUID(), weight: 0, reps: 0)]
-            lastSessionSummary = nil
         }
     }
     
@@ -184,38 +173,6 @@ struct TrackTabView: View {
     }
 }
 
-// MARK: - Last Session Card
-struct LastSessionCard: View {
-    let summary: String?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("LAST SESSION")
-                .font(.sectionHeader)
-                .foregroundColor(.textSecondary)
-                .kerning(0.5)
-            
-            if let summary = summary {
-                Text(summary)
-                    .font(.lastSessionData)
-                    .foregroundColor(.textPrimary)
-            } else {
-                Text("No previous data")
-                    .font(.bodyFont)
-                    .foregroundColor(.textTertiary)
-                    .italic()
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
-    }
-}
 
 // MARK: - Set Row View
 struct SetRowView: View {
@@ -227,7 +184,7 @@ struct SetRowView: View {
     var body: some View {
         HStack(spacing: 16) {
             // Weight Column
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
                 HStack(spacing: 4) {
                     Text("WEIGHT")
                         .font(.sectionHeader)
@@ -244,7 +201,7 @@ struct SetRowView: View {
                         .font(.dataFont)
                         .foregroundColor(.textPrimary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 10)  // Reduced from 14
                         .background(Color.white.opacity(0.04))
                         .cornerRadius(10)
                 }
@@ -252,7 +209,7 @@ struct SetRowView: View {
             }
             
             // Reps Column
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
                 Text("REPS")
                     .font(.sectionHeader)
                     .foregroundColor(.textTertiary)
@@ -263,7 +220,7 @@ struct SetRowView: View {
                         .font(.dataFont)
                         .foregroundColor(.textPrimary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 10)  // Reduced from 14
                         .background(Color.white.opacity(0.04))
                         .cornerRadius(10)
                 }
@@ -273,16 +230,15 @@ struct SetRowView: View {
             // Delete Button
             Button(action: onDelete) {
                 Image(systemName: "trash.fill")
-                    .font(.system(size: 22))
+                    .font(.system(size: 20))  // Reduced from 22
                     .foregroundColor(.errorRed)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Delete set")
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(Color.tertiaryBg)
-        .cornerRadius(14)
+        .padding(.vertical, 0)  // Removed vertical padding
+        // Removed background and corner radius
     }
     
     private func formatWeight(_ weight: Double) -> String {

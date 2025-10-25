@@ -31,7 +31,7 @@ struct ExerciseDetailView: View {
                 .frame(height: 44)
                 
                 // Exercise Title Section
-                VStack(spacing: 16) {
+                HStack {
                     // Exercise Name
                     Text(exercise.name)
                         .font(.exerciseTitle)
@@ -39,28 +39,27 @@ struct ExerciseDetailView: View {
                         .multilineTextAlignment(.center)
                         .kerning(-0.5) // Tighter letter spacing for large display text
                     
-                    // Settings Button (placeholder for now)
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            // TODO: Present exercise settings modal
-                        }) {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(.textSecondary)
-                                .frame(width: 44, height: 44)
-                        }
-                        .accessibilityLabel("Exercise settings")
+                    Spacer()
+                    
+                    // Settings Button (inline with title)
+                    Button(action: {
+                        // TODO: Present exercise settings modal
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.textSecondary)
+                            .frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel("Exercise settings")
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 16)
+                .padding(.top, 16)  // Reduced from 24
+                .padding(.bottom, 12)  // Reduced from 16
                 
                 // Custom Tab Bar
                 CustomTabBar(selectedTab: $selectedTab)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 12)  // Reduced from 16
                 
                 // Tab Content
                 if selectedTab == 0 {

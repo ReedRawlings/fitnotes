@@ -60,13 +60,13 @@ extension Color {
 // MARK: - Typography
 extension Font {
     // Exercise Title
-    static let exerciseTitle = Font.system(size: 36, weight: .bold, design: .default) // SF Pro Display Bold
+    static let exerciseTitle = Font.system(size: 28, weight: .bold, design: .default) // SF Pro Display Bold - Reduced from 36pt
     
     // Section Headers (WEIGHT, REPS, LAST SESSION)
-    static let sectionHeader = Font.system(size: 11, weight: .semibold, design: .default) // SF Pro Text Semibold
+    static let sectionHeader = Font.system(size: 10, weight: .semibold, design: .default) // SF Pro Text Semibold - Reduced from 11pt
     
     // Numeric Data (weights, reps, set values)
-    static let dataFont = Font.system(size: 24, weight: .medium, design: .monospaced) // SF Mono Medium
+    static let dataFont = Font.system(size: 20, weight: .medium, design: .monospaced) // SF Mono Medium - Reduced from 24pt
     
     // Button Text
     static let buttonFont = Font.system(size: 17, weight: .semibold, design: .rounded) // SF Pro Rounded
@@ -123,12 +123,12 @@ extension Animation {
 struct Spacing {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
-    static let md: CGFloat = 12
-    static let lg: CGFloat = 16
-    static let xl: CGFloat = 20
-    static let xxl: CGFloat = 24
-    static let xxxl: CGFloat = 28
-    static let xxxxl: CGFloat = 32
+    static let md: CGFloat = 10      // Reduced from 12
+    static let lg: CGFloat = 12      // Reduced from 16
+    static let xl: CGFloat = 16      // Reduced from 20
+    static let xxl: CGFloat = 20     // Reduced from 24
+    static let xxxl: CGFloat = 24    // Reduced from 28
+    static let xxxxl: CGFloat = 28   // Reduced from 32
 }
 
 // MARK: - Corner Radius Constants
