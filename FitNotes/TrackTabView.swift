@@ -60,12 +60,12 @@ struct TrackTabView: View {
                             .padding(.bottom, 28)
                         }
                         
-                        // Add Set Button
-                        AddSetButton {
-                            addSet()
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 100) // Space for fixed save button
+                               // Add Set Button
+                               AddSetButton {
+                                   addSet()
+                               }
+                               .padding(.horizontal, 20)
+                               .padding(.bottom, 120) // More space for fixed save button
                     }
                 }
                 
@@ -85,22 +85,26 @@ struct TrackTabView: View {
         .onAppear {
             loadLastSession()
         }
-        .sheet(isPresented: $showingPicker) {
-            WeightRepsPicker(
-                pickerType: pickerType,
-                currentValue: editingField == .weight ? sets[editingSetIndex].weight : Double(sets[editingSetIndex].reps),
-                onValueChanged: { newValue in
-                    if editingField == .weight {
-                        sets[editingSetIndex].weight = newValue
-                    } else {
-                        sets[editingSetIndex].reps = Int(newValue)
-                    }
-                },
-                onDismiss: {
-                    showingPicker = false
-                }
-            )
-        }
+               .overlay(
+                   Group {
+                       if showingPicker {
+                           WeightRepsPicker(
+                               pickerType: pickerType,
+                               currentValue: editingField == .weight ? sets[editingSetIndex].weight : Double(sets[editingSetIndex].reps),
+                               onValueChanged: { newValue in
+                                   if editingField == .weight {
+                                       sets[editingSetIndex].weight = newValue
+                                   } else {
+                                       sets[editingSetIndex].reps = Int(newValue)
+                                   }
+                               },
+                               onDismiss: {
+                                   showingPicker = false
+                               }
+                           )
+                       }
+                   }
+               )
         .alert("Sets Saved", isPresented: $showingSaveConfirmation) {
             Button("OK") { }
         } message: {

@@ -10,9 +10,6 @@ struct WeightRepsPicker: View {
     let onValueChanged: (Double) -> Void
     let onDismiss: () -> Void
     
-    @State private var selectedValue: Double
-    @State private var isPresented = false
-    
     enum PickerType {
         case weight
         case reps
@@ -41,75 +38,13 @@ struct WeightRepsPicker: View {
         }
     }
     
-    init(
-        pickerType: PickerType,
-        currentValue: Double,
-        onValueChanged: @escaping (Double) -> Void,
-        onDismiss: @escaping () -> Void
-    ) {
-        self.pickerType = pickerType
-        self.currentValue = currentValue
-        self.onValueChanged = onValueChanged
-        self.onDismiss = onDismiss
-        self._selectedValue = State(initialValue: currentValue)
-    }
-    
-    var body: some View {
-        Button(action: {
-            isPresented = true
-        }) {
-            HStack {
-                Text(formatValue(selectedValue))
-                    .font(.dataFont)
-                    .foregroundColor(.textPrimary)
-                
-                if !pickerType.unit.isEmpty {
-                    Text(pickerType.unit)
-                        .font(.sectionHeader)
-                        .foregroundColor(.textTertiary)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.white.opacity(0.04))
-            .cornerRadius(10)
-        }
-        .sheet(isPresented: $isPresented) {
-            PickerModalView(
-                pickerType: pickerType,
-                selectedValue: $selectedValue,
-                onValueChanged: onValueChanged,
-                onDismiss: onDismiss
-            )
-        }
-        .onAppear {
-            selectedValue = currentValue
-        }
-    }
-    
-    private func formatValue(_ value: Double) -> String {
-        if pickerType == .weight {
-            return value.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(value))" : String(format: "%.1f", value)
-        } else {
-            return "\(Int(value))"
-        }
-    }
-}
-
-// MARK: - Picker Modal View
-struct PickerModalView: View {
-    let pickerType: WeightRepsPicker.PickerType
-    @Binding var selectedValue: Double
-    let onValueChanged: (Double) -> Void
-    let onDismiss: () -> Void
-    
     var body: some View {
         ZStack {
             // Backdrop
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    commitSelection()
+                    onDismiss()
                 }
             
             VStack(spacing: 0) {
@@ -126,7 +61,7 @@ struct PickerModalView: View {
                         Spacer()
                         
                         Button("Done") {
-                            commitSelection()
+                            onDismiss()
                         }
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.accentPrimary)
@@ -144,7 +79,8 @@ struct PickerModalView: View {
                     // Picker Content
                     PickerView(
                         pickerType: pickerType,
-                        selectedValue: $selectedValue
+                        currentValue: currentValue,
+                        onValueChanged: onValueChanged
                     )
                     .frame(height: 260)
                 }
@@ -152,20 +88,15 @@ struct PickerModalView: View {
                 .cornerRadius(20, corners: [.topLeft, .topRight])
             }
         }
-        .presentationDetents([.height(350)])
-        .presentationDragIndicator(.hidden)
-    }
-    
-    private func commitSelection() {
-        onValueChanged(selectedValue)
-        onDismiss()
     }
 }
+
 
 // MARK: - Native Picker View
 struct PickerView: UIViewRepresentable {
     let pickerType: WeightRepsPicker.PickerType
-    @Binding var selectedValue: Double
+    let currentValue: Double
+    let onValueChanged: (Double) -> Void
     
     func makeUIView(context: Context) -> UIPickerView {
         let picker = UIPickerView()
@@ -175,7 +106,7 @@ struct PickerView: UIViewRepresentable {
         
         // Set initial selection
         let values = pickerType.values
-        if let index = values.firstIndex(of: selectedValue) {
+        if let index = values.firstIndex(of: currentValue) {
             picker.selectRow(index, inComponent: 0, animated: false)
         }
         
@@ -185,7 +116,7 @@ struct PickerView: UIViewRepresentable {
     func updateUIView(_ uiView: UIPickerView, context: Context) {
         // Update selection if needed
         let values = pickerType.values
-        if let index = values.firstIndex(of: selectedValue) {
+        if let index = values.firstIndex(of: currentValue) {
             uiView.selectRow(index, inComponent: 0, animated: true)
         }
     }
@@ -229,7 +160,7 @@ struct PickerView: UIViewRepresentable {
         
         func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
             let value = parent.pickerType.values[row]
-            parent.selectedValue = value
+            parent.onValueChanged(value)
         }
         
         func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat {
