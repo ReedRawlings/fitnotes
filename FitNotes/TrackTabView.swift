@@ -60,26 +60,24 @@ struct TrackTabView: View {
                             .padding(.bottom, 28)
                         }
                         
-                               // Add Set Button
-                               AddSetButton {
-                                   addSet()
-                               }
-                               .padding(.horizontal, 20)
-                               .padding(.bottom, 120) // More space for fixed save button
+                        // Add Set Button
+                        AddSetButton {
+                            addSet()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 100) // Space for fixed save button
                     }
                 }
                 
                 // Fixed Save Button
-                VStack {
-                    Spacer()
-                    SaveButton(
-                        isEnabled: !sets.isEmpty,
-                        isSaving: isSaving,
-                        onSave: saveSets
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 34) // Safe area + padding
-                }
+                SaveButton(
+                    isEnabled: !sets.isEmpty,
+                    isSaving: isSaving,
+                    onSave: saveSets
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34) // Safe area + padding
+                .background(Color.primaryBg) // Ensure background matches
             }
         }
         .onAppear {
