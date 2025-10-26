@@ -5,14 +5,15 @@ struct ExercisesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
     @State private var selectedMuscleGroup: String = ""
-    @State private var searchText = ""
+    @State private var selectedEquipment: String = ""
     @State private var showingAddExercise = false
     @State private var selectedExercise: Exercise?
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
-            query: searchText,
+            query: "",
             category: selectedMuscleGroup.isEmpty ? nil : selectedMuscleGroup,
+            equipment: selectedEquipment.isEmpty ? nil : selectedEquipment,
             exercises: allExercises
         )
     }
@@ -29,19 +30,35 @@ struct ExercisesView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Search and Filter Section
+                // Filter Section
                 VStack(spacing: 12) {
-                    // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.textSecondary)
-                        TextField("Search exercises...", text: $searchText)
-                            .foregroundColor(.textPrimary)
-                            .padding(8)
-                            .background(Color.tertiaryBg)
-                            .cornerRadius(10)
+                    // Equipment Filter
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
+                                Button(action: {
+                                    selectedEquipment = selectedEquipment == equipment ? "" : equipment
+                                }) {
+                                    Text(equipment)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            selectedEquipment == equipment
+                                                ? Color.accentPrimary
+                                                : Color.tertiaryBg
+                                        )
+                                        .foregroundColor(
+                                            selectedEquipment == equipment
+                                                ? .textInverse
+                                                : .textPrimary
+                                        )
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                     
                     // Muscle Group Filter
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -88,7 +105,7 @@ struct ExercisesView: View {
                 } else {
                     ExerciseListView(
                         exercises: filteredExercises,
-                        searchText: $searchText,
+                        searchText: .constant(""),
                         onExerciseSelected: { exercise in
                             selectedExercise = exercise
                         },
@@ -128,7 +145,7 @@ struct AddExerciseView: View {
     
     @State private var name = ""
     @State private var selectedCategory = "Chest"
-    @State private var selectedType = "Strength"
+    @State private var selectedEquipment = "Free Weight"
     @State private var notes = ""
     
     var body: some View {
@@ -148,9 +165,9 @@ struct AddExerciseView: View {
                             }
                         }
                         
-                        Picker("Type", selection: $selectedType) {
-                            ForEach(ExerciseDatabaseService.exerciseTypes, id: \.self) { type in
-                                Text(type).tag(type)
+                        Picker("Equipment", selection: $selectedEquipment) {
+                            ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
+                                Text(equipment).tag(equipment)
                             }
                         }
                     }
@@ -188,7 +205,7 @@ struct AddExerciseView: View {
         let exercise = Exercise(
             name: name,
             category: selectedCategory,
-            type: selectedType,
+            equipment: selectedEquipment,
             notes: notes.isEmpty ? nil : notes,
             isCustom: true
         )

@@ -6,7 +6,7 @@ public final class Exercise {
     @Attribute(.unique) public var id: UUID
     public var name: String
     public var category: String // Primary muscle group
-    public var type: String // e.g., "Strength", "Cardio", "Flexibility"
+    public var equipment: String // e.g., "Machine", "Free Weight", "Body"
     public var notes: String?
     public var unit: String
     public var isCustom: Bool // Whether this is a user-created exercise
@@ -17,7 +17,7 @@ public final class Exercise {
         id: UUID = UUID(),
         name: String,
         category: String,
-        type: String = "Strength",
+        equipment: String = "Free Weight",
         notes: String? = nil,
         unit: String = "kg",
         isCustom: Bool = false,
@@ -27,7 +27,7 @@ public final class Exercise {
         self.id = id
         self.name = name
         self.category = category
-        self.type = type
+        self.equipment = equipment
         self.notes = notes
         self.unit = unit
         self.isCustom = isCustom

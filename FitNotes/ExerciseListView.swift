@@ -18,6 +18,7 @@ struct ExerciseListView: View {
         ExerciseSearchService.shared.searchExercises(
             query: searchText,
             category: nil as String?,
+            equipment: nil as String?,
             exercises: exercises
         )
     }

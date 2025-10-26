@@ -803,11 +803,11 @@ struct AddExerciseToRoutineTemplateView: View {
                             Section("Workout Details") {
                                 Stepper("Sets: \(sets)", value: $sets, in: 1...20)
                                 
-                                if exercise.type == "Strength" {
+                                if exercise.equipment == "Body" || exercise.category == "Cardio" {
+                                    Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
+                                } else {
                                     Stepper("Reps: \(reps)", value: $reps, in: 1...100)
                                     Stepper("Weight: \(Int(weight)) kg", value: $weight, in: 0...500, step: 1)
-                                } else if exercise.type == "Cardio" {
-                                    Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
                                 }
                             }
                             
@@ -859,13 +859,15 @@ struct AddExerciseToRoutineTemplateView: View {
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
         
+        let isCardio = exercise.equipment == "Body" || exercise.category == "Cardio"
+        
         _ = RoutineService.shared.addExerciseToRoutine(
             routine: routine,
             exerciseId: exercise.id,
             sets: sets,
-            reps: exercise.type == "Strength" ? reps : nil,
-            weight: exercise.type == "Strength" ? weight : nil,
-            duration: exercise.type == "Cardio" ? sets * 60 : nil,
+            reps: isCardio ? nil : reps,
+            weight: isCardio ? nil : weight,
+            duration: isCardio ? sets * 60 : nil,
             notes: notes.isEmpty ? nil : notes,
             modelContext: modelContext
         )
@@ -892,6 +894,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     .padding()
+                    .tint(.textPrimary)
                     
                     Divider()
                         .background(Color.white.opacity(0.06))
@@ -905,6 +908,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
     }
 }

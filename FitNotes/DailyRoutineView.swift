@@ -496,6 +496,7 @@ struct AddExerciseToWorkoutView: View {
         ExerciseSearchService.shared.searchExercises(
             query: searchText,
             category: nil,
+            equipment: nil,
             exercises: exercises
         )
     }
@@ -588,13 +589,11 @@ struct AddExerciseToWorkoutView: View {
                 ))
             }
         } else {
-            // No history found, use sensible defaults
-            if exercise.type == "Strength" {
-                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
-            } else if exercise.type == "Cardio" {
+            // No history found, use sensible defaults based on equipment type
+            if exercise.equipment == "Body" || exercise.category == "Cardio" {
                 setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
             } else {
-                setData.append((reps: 0, weight: 0, duration: nil, distance: nil))
+                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
             }
         }
         
