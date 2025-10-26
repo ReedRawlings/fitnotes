@@ -564,16 +564,38 @@ struct AddRoutineView: View {
                 Color.primaryBg
                     .ignoresSafeArea()
                 
-                Form {
-                    Section("Routine Details") {
-                        TextField("Routine Name", text: $name)
-                            .foregroundColor(.textPrimary)
-                        TextField("Description (optional)", text: $description, axis: .vertical)
-                            .foregroundColor(.textPrimary)
-                            .lineLimit(3...6)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Routine Details Card
+                        FormSectionCard(title: "Routine Details") {
+                            LabeledTextInput(
+                                label: "Routine Name",
+                                placeholder: "e.g., Upper Body Day",
+                                text: $name
+                            )
+                            
+                            LabeledTextInput(
+                                label: "Description (optional)",
+                                placeholder: "Add a description...",
+                                text: $description,
+                                axis: .vertical,
+                                lineLimit: 3...6
+                            )
+                        }
+                        
+                        Spacer(minLength: 100) // Space for fixed button
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                 }
-                .scrollContentBackground(.hidden)
+                
+                // Fixed CTA at bottom
+                FixedModalCTAButton(
+                    title: "Create Routine",
+                    icon: "checkmark",
+                    isEnabled: !name.isEmpty,
+                    action: createRoutine
+                )
             }
             .navigationTitle("New Routine")
             .navigationBarTitleDisplayMode(.inline)
@@ -583,14 +605,6 @@ struct AddRoutineView: View {
                         dismiss()
                     }
                     .foregroundColor(.accentPrimary)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Create") {
-                        createRoutine()
-                    }
-                    .disabled(name.isEmpty)
-                    .foregroundColor(name.isEmpty ? .textTertiary : .accentPrimary)
                 }
             }
         }
@@ -845,8 +859,121 @@ struct AddExerciseToRoutineTemplateView: View {
                 Color.primaryBg
                     .ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Search Bar
+                if let exercise = selectedExercise {
+                    // Configuration View
+                    ZStack {
+                        Color.primaryBg
+                            .ignoresSafeArea()
+                        
+                        ScrollView {
+                            VStack(spacing: 16) {
+                                // Exercise Info Card (prominent at top)
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(exercise.name)
+                                                .font(.system(size: 20, weight: .semibold))
+                                                .foregroundColor(.textPrimary)
+                                            
+                                            Text(exercise.category)
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.textSecondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        // Equipment badge
+                                        Text(exercise.equipment)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(.accentPrimary)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.accentPrimary.opacity(0.2))
+                                            .cornerRadius(6)
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color.secondaryBg)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                )
+                                
+                                // Configuration Card
+                                FormSectionCard(title: "Workout Configuration") {
+                                    StepperRow(
+                                        label: "Sets",
+                                        value: $sets,
+                                        range: 1...20
+                                    )
+                                    
+                                    if exercise.equipment == "Body" || exercise.category == "Cardio" {
+                                        Divider()
+                                            .background(Color.white.opacity(0.06))
+                                        
+                                        StepperRow(
+                                            label: "Duration",
+                                            value: $sets,
+                                            range: 1...60,
+                                            suffix: " sec"
+                                        )
+                                    } else {
+                                        Divider()
+                                            .background(Color.white.opacity(0.06))
+                                        
+                                        StepperRow(
+                                            label: "Reps",
+                                            value: $reps,
+                                            range: 1...100
+                                        )
+                                        
+                                        Divider()
+                                            .background(Color.white.opacity(0.06))
+                                        
+                                        DoubleStepperRow(
+                                            label: "Weight",
+                                            value: $weight,
+                                            range: 0...500,
+                                            suffix: " kg",
+                                            step: 2.5
+                                        )
+                                    }
+                                }
+                                
+                                // Notes Card
+                                FormSectionCard(title: "Notes (Optional)") {
+                                    TextField("Add notes...", text: $notes, axis: .vertical)
+                                        .font(.bodyFont)
+                                        .foregroundColor(.textPrimary)
+                                        .padding(12)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(10)
+                                        .lineLimit(2...4)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                        )
+                                }
+                                
+                                Spacer(minLength: 100)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                        }
+                        
+                        // Fixed CTA at bottom
+                        FixedModalCTAButton(
+                            title: "Add to Routine",
+                            icon: "plus",
+                            isEnabled: true,
+                            action: addExercise
+                        )
+                    }
+                } else {
+                    // Search and Exercise List View
+                    VStack(spacing: 0) {
+                        // Search Bar
                         HStack {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.textSecondary)
@@ -862,83 +989,36 @@ struct AddExerciseToRoutineTemplateView: View {
                                     }
                                 }
                         }
-                    .padding()
-                
-                    }
-                    if let exercise = selectedExercise {
-                        // Exercise Details Form
-                        Form {
-                            Section("Exercise") {
-                                HStack {
-                                    Text(exercise.name)
-                                        .font(.headline)
-                                        .foregroundColor(.textPrimary)
-                                    Spacer()
-                                    Text(exercise.category)
-                                            .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.accentPrimary.opacity(0.2))
-                                        .foregroundColor(.accentPrimary)
-                                        .cornerRadius(4)
-                                }
-                            }
+                        .padding()
                         
-                            Section("Workout Details") {
-                                Stepper("Sets: \(sets)", value: $sets, in: 1...20)
-                                
-                                if exercise.equipment == "Body" || exercise.category == "Cardio" {
-                                    Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
-                                } else {
-                                    Stepper("Reps: \(reps)", value: $reps, in: 1...100)
-                                    Stepper("Weight: \(Int(weight)) kg", value: $weight, in: 0...500, step: 1)
-                                }
-                            }
-                            
-                            Section("Notes") {
-                                TextField("Notes (optional)", text: $notes, axis: .vertical)
-                                    .foregroundColor(.textPrimary)
-                                    .lineLimit(2...4)
-                            }
-                        }
-                        .scrollContentBackground(.hidden)
-                    } else {
-                    // Exercise List
-                    ExerciseListView(
-                        exercises: filteredExercises,
-                        searchText: $searchText,
-                        onExerciseSelected: { exercise in
-                            selectedExercise = exercise
-                        },
-                        context: .picker
-                    )
+                        // Exercise List
+                        ExerciseListView(
+                            exercises: filteredExercises,
+                            searchText: $searchText,
+                            onExerciseSelected: { exercise in
+                                selectedExercise = exercise
+                            },
+                            context: .picker
+                        )
+                    }
                 }
             }
             .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button(selectedExercise == nil ? "Cancel" : "Back") {
-                            if selectedExercise != nil {
-                                selectedExercise = nil
-                            } else {
-                                dismiss()
-                            }
-                        }
-                        .foregroundColor(.accentPrimary)
-                    }
-                    
-                    if selectedExercise != nil {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Add") {
-                                addExercise()
-                            }
-                            .foregroundColor(.accentPrimary)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(selectedExercise == nil ? "Cancel" : "Back") {
+                        if selectedExercise != nil {
+                            selectedExercise = nil
+                        } else {
+                            dismiss()
                         }
                     }
+                    .foregroundColor(.accentPrimary)
                 }
             }
         }
+    }
     
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
