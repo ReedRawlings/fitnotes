@@ -120,7 +120,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        withAnimation(.standardSpring) {
+        _ = withAnimation(.standardSpring) {
             sets.append((id: UUID(), weight: 0, reps: 0))
         }
     }
@@ -130,7 +130,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        withAnimation(.deleteAnimation) {
+        _ = withAnimation(.deleteAnimation) {
             sets.remove(at: index)
         }
     }
