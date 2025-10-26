@@ -531,7 +531,7 @@ struct AddExerciseToWorkoutView: View {
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+                .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button("Cancel") {
                             dismiss()
@@ -539,7 +539,6 @@ struct AddExerciseToWorkoutView: View {
                         .foregroundColor(.accentPrimary)
                     }
                 }
-            }
             }
         }
         .alert("Exercise already exists", isPresented: $showingDuplicateAlert) {
