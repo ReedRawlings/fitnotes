@@ -333,7 +333,7 @@ struct SaveButton: View {
     TrackTabView(exercise: Exercise(
         name: "Bench Press",
         category: "Chest",
-        type: "Strength"
+        equipment: "Machine"
     ))
     .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, WorkoutExercise.self], inMemory: true)
 }
