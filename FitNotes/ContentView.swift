@@ -880,22 +880,28 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Segmented Control for Settings Sections
-                Picker("Settings Section", selection: $selectedTab) {
-                    Text("Routines").tag(0)
-                    Text("Exercises").tag(1)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
                 
-                Divider()
-                
-                // Content based on selected tab
-                if selectedTab == 0 {
-                    RoutinesView()
-                } else {
-                    ExercisesView()
+                VStack(spacing: 0) {
+                    // Segmented Control for Settings Sections
+                    Picker("Settings Section", selection: $selectedTab) {
+                        Text("Routines").tag(0)
+                        Text("Exercises").tag(1)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding()
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.06))
+                    
+                    // Content based on selected tab
+                    if selectedTab == 0 {
+                        RoutinesView()
+                    } else {
+                        ExercisesView()
+                    }
                 }
             }
             .navigationTitle("Settings")

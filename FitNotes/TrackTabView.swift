@@ -6,8 +6,8 @@ struct TrackTabView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var sets: [(id: UUID, weight: Double, reps: Int)] = []
-    @State private var showingSaveConfirmation = false
     @State private var isSaving = false
+    @State private var isSaved = false
     @State private var showingPicker = false
     @State private var pickerType: WeightRepsPicker.PickerType = .weight
     @State private var editingSetIndex: Int = 0
@@ -68,6 +68,7 @@ struct TrackTabView: View {
                 SaveButton(
                     isEnabled: !sets.isEmpty,
                     isSaving: isSaving,
+                    isSaved: isSaved,
                     onSave: saveSets
                 )
                 .padding(.horizontal, 20)
@@ -95,11 +96,6 @@ struct TrackTabView: View {
                 }
             ) : nil
         )
-        .alert("Sets Saved", isPresented: $showingSaveConfirmation) {
-            Button("OK") { }
-        } message: {
-            Text("Your sets have been saved successfully.")
-        }
     }
     
     private func loadSets() {
@@ -158,18 +154,24 @@ struct TrackTabView: View {
                 modelContext: modelContext
             )
             
+            // Show saved state
+            isSaving = false
+            isSaved = true
+            
             // Success haptic feedback
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.success)
             
-            showingSaveConfirmation = true
+            // Reset after animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                isSaved = false
+            }
         } else {
             // Error haptic feedback
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.error)
+            isSaving = false
         }
-        
-        isSaving = false
     }
 }
 
@@ -291,6 +293,7 @@ struct AddSetButton: View {
 struct SaveButton: View {
     let isEnabled: Bool
     let isSaving: Bool
+    let isSaved: Bool
     let onSave: () -> Void
     
     var body: some View {
@@ -301,28 +304,28 @@ struct SaveButton: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .textInverse))
                         .scaleEffect(0.8)
                 } else {
-                    Text("SAVE WORKOUT")
+                    Text(isSaved ? "WORKOUT SAVED" : "SAVE WORKOUT")
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                 }
             }
-            .foregroundColor(.textInverse)
+            .foregroundColor(isSaved ? .white : .textInverse)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
-                isEnabled ? Color.accentSuccess : Color.disabledOverlay
+                isSaved ? Color.white : (isEnabled ? Color.accentSuccess : Color.disabledOverlay)
             )
             .cornerRadius(16)
             .shadow(
-                color: isEnabled ? .accentSuccess.opacity(0.4) : .clear,
+                color: isSaved ? .clear : (isEnabled ? .accentSuccess.opacity(0.4) : .clear),
                 radius: 20,
                 x: 0,
                 y: 6
             )
         }
         .accessibilityLabel("Save workout")
-        .disabled(!isEnabled || isSaving)
+        .disabled(!isEnabled || isSaving || isSaved)
         .scaleEffect(1.0)
-        .animation(.buttonPress, value: false)
+        .animation(.buttonPress, value: isSaved)
     }
 }
 

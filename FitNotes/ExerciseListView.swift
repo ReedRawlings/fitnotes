@@ -32,15 +32,21 @@ struct ExerciseListView: View {
                 onAction: nil
             )
         } else {
-            List(filteredExercises) { exercise in
-                Button(action: {
-                    onExerciseSelected(exercise)
-                }) {
-                    ExerciseListRowView(exercise: exercise, context: context)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(filteredExercises) { exercise in
+                        Button(action: {
+                            onExerciseSelected(exercise)
+                        }) {
+                            ExerciseListRowView(exercise: exercise, context: context)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
-                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
             }
-            .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
         }
     }
 }
@@ -72,8 +78,7 @@ struct ExerciseListRowView: View {
                     .foregroundColor(.textSecondary)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
         .background(Color.secondaryBg)
         .cornerRadius(16)
         .overlay(
