@@ -25,6 +25,7 @@
 		25F88B33E5C5465EB1181C5B193E08F3 /* ExerciseSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F88B33E5C5465EB1181C5B193E08F4 /* ExerciseSearchService.swift */; };
 		741325522E9F733D0099C49A /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325502E9F733D0099C49A /* DesignSystem.swift */; };
 		741325532E9F733D0099C49A /* WeightRepsPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325512E9F733D0099C49A /* WeightRepsPicker.swift */; };
+		741325562E9F733D0099C49A /* StatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325542E9F733D0099C49A /* StatsService.swift */; };
 		741325122E9F73400099C49A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325112E9F73400099C49A /* Assets.xcassets */; };
 		741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325142E9F73400099C49A /* Preview Assets.xcassets */; };
 		741325212E9F73400099C49A /* FitNotesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325202E9F73400099C49A /* FitNotesTests.swift */; };
@@ -78,6 +79,7 @@
 		741325262E9F73400099C49A /* FitNotesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FitNotesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7413252A2E9F73400099C49A /* FitNotesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesUITests.swift; sourceTree = "<group>"; };
 		7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitNotesUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		741325542E9F733D0099C49A /* StatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +146,8 @@
 				741325472E9F733D0099C49A /* TrackTabView.swift */,
 				741325492E9F733D0099C49A /* HistoryTabView.swift */,
 				25F88B33E5C5465EB1181C5B193E08F4 /* ExerciseSearchService.swift */,
+				741325542E9F733D0099C49A /* StatsService.swift */,
+
 				741325112E9F73400099C49A /* Assets.xcassets */,
 				741325162E9F73400099C49A /* FitNotes.entitlements */,
 				741325172E9F73400099C49A /* Info.plist */,
@@ -324,6 +328,7 @@
 				25F88B33E5C5465EB1181C5B193E08F3 /* ExerciseSearchService.swift in Sources */,
 				741325522E9F733D0099C49A /* DesignSystem.swift in Sources */,
 				741325532E9F733D0099C49A /* WeightRepsPicker.swift in Sources */,
+				741325562E9F733D0099C49A /* StatsService.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
