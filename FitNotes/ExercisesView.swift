@@ -154,31 +154,57 @@ struct AddExerciseView: View {
                 Color.primaryBg
                     .ignoresSafeArea()
                 
-                Form {
-                    Section("Exercise Details") {
-                        TextField("Exercise Name", text: $name)
-                            .foregroundColor(.textPrimary)
-                        
-                        Picker("Muscle Group", selection: $selectedCategory) {
-                            ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
-                                Text(group).tag(group)
-                            }
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Exercise Details Card
+                        FormSectionCard(title: "Exercise Details") {
+                            LabeledTextInput(
+                                label: "Exercise Name",
+                                placeholder: "e.g., Bench Press",
+                                text: $name
+                            )
+                            
+                            LabeledMenuPicker(
+                                label: "Muscle Group",
+                                options: ExerciseDatabaseService.muscleGroups,
+                                selection: $selectedCategory
+                            )
+                            
+                            LabeledMenuPicker(
+                                label: "Equipment",
+                                options: ExerciseDatabaseService.equipmentTypes,
+                                selection: $selectedEquipment
+                            )
                         }
                         
-                        Picker("Equipment", selection: $selectedEquipment) {
-                            ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
-                                Text(equipment).tag(equipment)
-                            }
+                        // Notes Card
+                        FormSectionCard(title: "Notes (Optional)") {
+                            TextField("Personal notes...", text: $notes, axis: .vertical)
+                                .font(.bodyFont)
+                                .foregroundColor(.textPrimary)
+                                .padding(12)
+                                .background(Color.tertiaryBg)
+                                .cornerRadius(10)
+                                .lineLimit(2...4)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                )
                         }
+                        
+                        Spacer(minLength: 100)
                     }
-                    
-                    Section("Notes (Optional)") {
-                        TextField("Personal notes...", text: $notes, axis: .vertical)
-                            .foregroundColor(.textPrimary)
-                            .lineLimit(2...4)
-                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                 }
-                .scrollContentBackground(.hidden)
+                
+                // Fixed CTA at bottom
+                FixedModalCTAButton(
+                    title: "Save Exercise",
+                    icon: "checkmark",
+                    isEnabled: !name.isEmpty,
+                    action: saveExercise
+                )
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -188,14 +214,6 @@ struct AddExerciseView: View {
                         dismiss()
                     }
                     .foregroundColor(.accentPrimary)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveExercise()
-                    }
-                    .disabled(name.isEmpty)
-                    .foregroundColor(name.isEmpty ? .textTertiary : .accentPrimary)
                 }
             }
         }
