@@ -133,12 +133,87 @@ public struct ActiveWorkoutState: Codable {
     }
 }
 
+// MARK: - Stats Header Component
+struct StatsHeaderView: View {
+    let weeksActive: Int
+    let totalVolume: String
+    let daysSinceLastLift: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Weeks Active
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(weeksActive)")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(.accentPrimary)
+                Text("Weeks Active")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            
+            Divider()
+                .frame(height: 40)
+                .overlay(Color.white.opacity(0.1))
+            
+            // Total Volume
+            VStack(alignment: .leading, spacing: 4) {
+                Text(totalVolume)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(.accentPrimary)
+                Text("Total Volume")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            
+            Divider()
+                .frame(height: 40)
+                .overlay(Color.white.opacity(0.1))
+            
+            // Days Since Last Lift
+            VStack(alignment: .leading, spacing: 4) {
+                Text(daysSinceLastLift)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(.accentPrimary)
+                Text("Last Workout")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query(sort: \Routine.name) private var routines: [Routine]
+    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
+    @Query private var allSets: [WorkoutSet]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
+    
+    private var weeksActive: Int {
+        StatsService.shared.getWeeksActiveStreak(workouts: workouts)
+    }
+    
+    private var totalVolumeFormatted: String {
+        let volume = StatsService.shared.getTotalVolume(allSets: allSets)
+        return StatsService.shared.formatVolume(volume)
+    }
+    
+    private var daysSinceLastLiftText: String {
+        StatsService.shared.getDaysSinceLastLift(workouts: workouts)
+    }
     
     var body: some View {
         ZStack {
@@ -149,6 +224,15 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 12) {
+                        // Stats header
+                        StatsHeaderView(
+                            weeksActive: weeksActive,
+                            totalVolume: totalVolumeFormatted,
+                            daysSinceLastLift: daysSinceLastLiftText
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                        
                         // Routine cards
                         LazyVStack(spacing: 0) {
                             ForEach(routines) { routine in
