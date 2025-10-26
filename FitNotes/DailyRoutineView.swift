@@ -502,15 +502,22 @@ struct AddExerciseToWorkoutView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search Bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
-                    TextField("Search exercises...", text: $searchText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                .padding()
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.textSecondary)
+                        TextField("Search exercises...", text: $searchText)
+                            .foregroundColor(.textPrimary)
+                            .padding(8)
+                            .background(Color.tertiaryBg)
+                            .cornerRadius(10)
+                    }
+                    .padding()
                 
                 // Exercise List - simplified to single-step selection
                 ExerciseListView(
@@ -525,11 +532,14 @@ struct AddExerciseToWorkoutView: View {
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundColor(.accentPrimary)
                     }
                 }
+            }
             }
         }
         .alert("Exercise already exists", isPresented: $showingDuplicateAlert) {

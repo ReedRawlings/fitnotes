@@ -8,6 +8,33 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - UIColor Extension for Hex
+extension UIColor {
+    convenience init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+        
+        self.init(
+            red: CGFloat(r) / 255,
+            green: CGFloat(g) / 255,
+            blue: CGFloat(b) / 255,
+            alpha: CGFloat(a) / 255
+        )
+    }
+}
+
 // MARK: - App State Management
 public class AppState: ObservableObject {
     private var _activeWorkout: ActiveWorkoutState?
@@ -115,22 +142,15 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // Blue gradient background
-            LinearGradient(
-                colors: [
-                    Color.blue.opacity(0.3),
-                    Color.blue.opacity(0.6)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Dark theme background
+            Color.primaryBg
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 12) {
                         // Routine cards
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: 0) {
                             ForEach(routines) { routine in
                                 RoutineCardView(
                                     routine: routine,
@@ -169,7 +189,7 @@ struct HomeView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 20)
+                        .padding(.top, 12)
                         
                         Spacer(minLength: 100) // Space for tab bar
                     }
@@ -223,12 +243,12 @@ struct UnifiedCardView: View {
                     Text(title)
                         .font(.headline)
                         .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     if let subtitle = subtitle {
                         Text(subtitle)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                     }
                 }
                 
@@ -237,14 +257,17 @@ struct UnifiedCardView: View {
                 if showChevron {
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(Color.white)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .scaleEffect(1.0)
@@ -279,50 +302,61 @@ struct RoutineCardView: View {
                             Text(routine.name)
                                     .font(.headline)
                                 .fontWeight(.bold)
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(.textPrimary)
                                 Spacer()
                             }
                             
                         // Action buttons
-                        HStack(spacing: 0) {
+                        HStack(spacing: 12) {
                             if isActiveWorkout {
                                 // Only View button when workout is active
                                 Button(action: onView) {
                                     Text("View")
-                                        .font(.headline)
-                                        .foregroundColor(.accentColor)
+                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.accentPrimary)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.clear)
+                                        .frame(height: 44)
+                                        .background(Color.secondaryBg)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.accentColor, lineWidth: 2)
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.accentPrimary.opacity(0.3), lineWidth: 2)
                                         )
                                 }
                             } else {
                                 // View and Start buttons when no active workout
                                 Button(action: onView) {
                                     Text("View")
-                                        .font(.headline)
-                                        .foregroundColor(.accentColor)
+                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.accentPrimary)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.clear)
+                                        .frame(height: 44)
+                                        .background(Color.secondaryBg)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.accentColor, lineWidth: 2)
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.accentPrimary.opacity(0.3), lineWidth: 2)
                                         )
                                 }
                                 
                                 Button(action: onStart) {
                                     Text("Start")
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
+                                        .font(.buttonFont)
+                                        .foregroundColor(.textInverse)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(Color.green)
-                                        .cornerRadius(8)
+                                        .frame(height: 44)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.accentPrimary, .accentSecondary],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .cornerRadius(12)
+                                        .shadow(
+                                            color: .accentPrimary.opacity(0.3),
+                                            radius: 12,
+                                            x: 0,
+                                            y: 4
+                                        )
                                 }
                             }
                         }
@@ -336,11 +370,11 @@ struct RoutineCardView: View {
                             Text(routine.name)
                                 .font(.headline)
                                 .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .foregroundColor(.textPrimary)
                             
                             Text(lastDoneText)
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textSecondary)
                         }
                         
                         Spacer()
@@ -349,9 +383,12 @@ struct RoutineCardView: View {
                     .padding(.vertical, 16)
                 }
             }
-            .background(Color.white)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .animation(.easeInOut(duration: 0.3), value: isExpanded)
@@ -368,16 +405,9 @@ struct RoutinesView: View {
     
     var body: some View {
         ZStack {
-            // Blue gradient background
-            LinearGradient(
-                colors: [
-                    Color.blue.opacity(0.3),
-                    Color.blue.opacity(0.6)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Dark theme background
+            Color.primaryBg
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 if routines.isEmpty {
@@ -392,8 +422,8 @@ struct RoutinesView: View {
                     )
                 } else {
                     ScrollView {
-                        VStack(spacing: 12) {
-                            LazyVStack(spacing: 12) {
+                        VStack(spacing: 0) {
+                            LazyVStack(spacing: 0) {
                                 ForEach(routines) { routine in
                                     UnifiedCardView(
                                         title: routine.name,
@@ -407,7 +437,7 @@ struct RoutinesView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
-                            .padding(.top, 20)
+                            .padding(.top, 12)
                             
                             Spacer(minLength: 100) // Space for bottom button and tab bar
                         }
@@ -446,12 +476,20 @@ struct AddRoutineView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section("Routine Details") {
-                    TextField("Routine Name", text: $name)
-                    TextField("Description (optional)", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+                
+                Form {
+                    Section("Routine Details") {
+                        TextField("Routine Name", text: $name)
+                            .foregroundColor(.textPrimary)
+                        TextField("Description (optional)", text: $description, axis: .vertical)
+                            .foregroundColor(.textPrimary)
+                            .lineLimit(3...6)
+                    }
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("New Routine")
             .navigationBarTitleDisplayMode(.inline)
@@ -460,6 +498,7 @@ struct AddRoutineView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.accentPrimary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -467,6 +506,7 @@ struct AddRoutineView: View {
                         createRoutine()
                     }
                     .disabled(name.isEmpty)
+                    .foregroundColor(name.isEmpty ? .textTertiary : .accentPrimary)
                 }
             }
         }
@@ -497,29 +537,36 @@ struct RoutineDetailView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Routine Header
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(routine.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    if let description = routine.routineDescription, !description.isEmpty {
-                        Text(description)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color(.systemGray6))
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
                 
-                Divider()
+                VStack(spacing: 0) {
+                    // Routine Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(routine.name)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.textPrimary)
+                        
+                        if let description = routine.routineDescription, !description.isEmpty {
+                            Text(description)
+                                .font(.body)
+                                .foregroundColor(.textSecondary)
+                        }
+                    }
+                    .padding()
+                    .background(Color.secondaryBg)
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.06))
                 
                 // Exercises Section
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Exercises")
                             .font(.headline)
+                            .foregroundColor(.textPrimary)
                         
                         Spacer()
                         
@@ -529,7 +576,7 @@ struct RoutineDetailView: View {
                                 Text("Add Exercise")
                             }
                             .font(.subheadline)
-                            .foregroundColor(.accentColor)
+                            .foregroundColor(.accentPrimary)
                         }
                     }
                     .padding(.horizontal)
@@ -538,33 +585,40 @@ struct RoutineDetailView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "dumbbell")
                                 .font(.system(size: 32))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textSecondary)
                             
                             Text("No exercises added")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textSecondary)
                             
                             Text("Add exercises to build your routine")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textTertiary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .background(Color.secondaryBg)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        )
                         .padding(.horizontal)
                     } else {
-                        List {
-                            ForEach(sortedExercises, id: \.id) { routineExercise in
-                                RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ForEach(sortedExercises, id: \.id) { routineExercise in
+                                    RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                                }
                             }
-                            .onDelete(perform: deleteExercises)
+                            .padding(.horizontal)
                         }
-                        .listStyle(PlainListStyle())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
                 
-                Spacer()
+                    Spacer()
+                }
             }
             .navigationTitle("Routine Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -613,31 +667,43 @@ struct RoutineTemplateExerciseRowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                 Text(exercise?.name ?? "Unknown Exercise")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                 HStack(spacing: 8) {
                     if routineExercise.sets > 0 {
-                        Text("\(routineExercise.sets) sets")
+                        Text("\(routineExercise.sets)")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.textSecondary)
+                        Text("sets")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                 }
                 
                     if let reps = routineExercise.reps {
-                        Text("\(reps) reps")
+                        Text("\(reps)")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.textSecondary)
+                        Text("reps")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     }
                     
                     if let weight = routineExercise.weight {
-                        Text("\(Int(weight)) kg")
+                        Text("\(Int(weight))")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.textSecondary)
+                        Text("kg")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     }
                     
                     if let duration = routineExercise.duration {
-                        Text("\(duration) sec")
+                        Text("\(duration)")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.textSecondary)
+                        Text("sec")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     }
                     }
                 }
@@ -653,10 +719,17 @@ struct RoutineTemplateExerciseRowView: View {
             }) {
                 Image(systemName: "trash")
                     .font(.subheadline)
-                    .foregroundColor(.red)
+                    .foregroundColor(.errorRed)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 }
 
@@ -684,57 +757,68 @@ struct AddExerciseToRoutineTemplateView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                        TextField("Search exercises...", text: $searchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .onTapGesture {
-                                // Ensure proper focus management
-                                DispatchQueue.main.async {
-                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Search Bar
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.textSecondary)
+                            TextField("Search exercises...", text: $searchText)
+                                .foregroundColor(.textPrimary)
+                                .padding(8)
+                                .background(Color.tertiaryBg)
+                                .cornerRadius(10)
+                                .onTapGesture {
+                                    // Ensure proper focus management
+                                    DispatchQueue.main.async {
+                                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                    }
+                                }
+                        }
+                    .padding()
+                
+                    }
+                    if let exercise = selectedExercise {
+                        // Exercise Details Form
+                        Form {
+                            Section("Exercise") {
+                                HStack {
+                                    Text(exercise.name)
+                                        .font(.headline)
+                                        .foregroundColor(.textPrimary)
+                                    Spacer()
+                                    Text(exercise.category)
+                                            .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.accentPrimary.opacity(0.2))
+                                        .foregroundColor(.accentPrimary)
+                                        .cornerRadius(4)
                                 }
                             }
-                    }
-                .padding()
-                
-                if let exercise = selectedExercise {
-                    // Exercise Details Form
-                    Form {
-                        Section("Exercise") {
-                            HStack {
-                                Text(exercise.name)
-                                    .font(.headline)
-                                Spacer()
-                                Text(exercise.category)
-                                        .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.accentColor.opacity(0.2))
-                                    .foregroundColor(.accentColor)
-                                    .cornerRadius(4)
-                            }
-                        }
                         
-                        Section("Workout Details") {
-                            Stepper("Sets: \(sets)", value: $sets, in: 1...20)
+                            Section("Workout Details") {
+                                Stepper("Sets: \(sets)", value: $sets, in: 1...20)
+                                
+                                if exercise.type == "Strength" {
+                                    Stepper("Reps: \(reps)", value: $reps, in: 1...100)
+                                    Stepper("Weight: \(Int(weight)) kg", value: $weight, in: 0...500, step: 1)
+                                } else if exercise.type == "Cardio" {
+                                    Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
+                                }
+                            }
                             
-                            if exercise.type == "Strength" {
-                                Stepper("Reps: \(reps)", value: $reps, in: 1...100)
-                                Stepper("Weight: \(Int(weight)) kg", value: $weight, in: 0...500, step: 1)
-                            } else if exercise.type == "Cardio" {
-                                Stepper("Duration: \(sets * 60) sec", value: $sets, in: 1...60)
+                            Section("Notes") {
+                                TextField("Notes (optional)", text: $notes, axis: .vertical)
+                                    .foregroundColor(.textPrimary)
+                                    .lineLimit(2...4)
                             }
                         }
-                        
-                        Section("Notes") {
-                            TextField("Notes (optional)", text: $notes, axis: .vertical)
-                                .lineLimit(2...4)
-                        }
-                    }
-                } else {
+                        .scrollContentBackground(.hidden)
+                    } else {
                     // Exercise List
                     ExerciseListView(
                         exercises: filteredExercises,
@@ -749,26 +833,28 @@ struct AddExerciseToRoutineTemplateView: View {
             .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(selectedExercise == nil ? "Cancel" : "Back") {
-                        if selectedExercise != nil {
-                            selectedExercise = nil
-                        } else {
-                            dismiss()
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(selectedExercise == nil ? "Cancel" : "Back") {
+                            if selectedExercise != nil {
+                                selectedExercise = nil
+                            } else {
+                                dismiss()
+                            }
                         }
+                        .foregroundColor(.accentPrimary)
                     }
-                }
-                
-                if selectedExercise != nil {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Add") {
-                            addExercise()
+                    
+                    if selectedExercise != nil {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Add") {
+                                addExercise()
+                            }
+                            .foregroundColor(.accentPrimary)
                         }
                     }
                 }
             }
         }
-    }
     
     private func addExercise() {
         guard let exercise = selectedExercise else { return }
@@ -862,25 +948,25 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
-        .accentColor(.blue)
+        .accentColor(.accentPrimary)
         .environmentObject(appState)
         .onAppear {
-            // Customize tab bar appearance
+            // Customize tab bar appearance - Dark theme with coral-orange accent
             let appearance = UITabBarAppearance()
             appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor.systemBackground
+            appearance.backgroundColor = UIColor(hex: "#0A0E14") // primaryBg
             
-            // Active tab styling (blue accent color)
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemBlue
+            // Active tab styling (coral-orange accent)
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(hex: "#FF6B35") // accentPrimary
             appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor.systemBlue,
+                .foregroundColor: UIColor(hex: "#FF6B35"),
                 .font: UIFont.systemFont(ofSize: 12, weight: .semibold)
             ]
             
-            // Inactive tab styling (gray)
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray2
+            // Inactive tab styling (muted secondary)
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(hex: "#8B92A0") // textSecondary
             appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor.systemGray2,
+                .foregroundColor: UIColor(hex: "#8B92A0"),
                 .font: UIFont.systemFont(ofSize: 12, weight: .regular)
             ]
             

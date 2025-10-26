@@ -14,9 +14,12 @@ struct BaseCardView<Content: View>: View {
     var body: some View {
         content
             .padding(16)
-            .background(Color.white)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
     }
 }
 
@@ -32,14 +35,14 @@ struct CardListView<Item: Identifiable, Content: View>: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                LazyVStack(spacing: 12) {
+            VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(items) { item in
                         content(item)
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.top, 12)
                 
                 Spacer(minLength: 100)
             }
@@ -69,12 +72,12 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                 Text(title)
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.textPrimary)
                 
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                 }
             }
             
@@ -86,9 +89,12 @@ struct CardListView<Item: Identifiable, Content: View>: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 }
 
@@ -113,7 +119,7 @@ struct CardListView<Item: Identifiable, Content: View>: View {
             Text(title)
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.primary)
+                .foregroundColor(.textPrimary)
             
             Spacer()
             
@@ -124,7 +130,7 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                         Text(actionTitle)
                     }
                     .font(.subheadline)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(.accentPrimary)
                 }
             }
         }
@@ -184,9 +190,21 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .background(
+                        LinearGradient(
+                            colors: [.accentPrimary, .accentSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .foregroundColor(.textInverse)
+                    .cornerRadius(16)
+                    .shadow(
+                        color: .accentPrimary.opacity(0.3),
+                        radius: 16,
+                        x: 0,
+                        y: 4
+                    )
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -216,18 +234,28 @@ struct CardListView<Item: Identifiable, Content: View>: View {
         Button(action: onTap) {
             HStack {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.system(size: 16))
                 
                 Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.buttonFont)
             }
-            .foregroundColor(.white)
+            .foregroundColor(.textInverse)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.purple)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [.accentPrimary, .accentSecondary],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(16)
+            .shadow(
+                color: .accentPrimary.opacity(0.3),
+                radius: 16,
+                x: 0,
+                y: 4
+            )
         }
         .padding(.horizontal, 20)
     }
@@ -249,17 +277,20 @@ struct CardListView<Item: Identifiable, Content: View>: View {
         Button(action: onTap) {
             HStack {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.system(size: 16))
                 
                 Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
             }
-            .foregroundColor(.primary)
+            .foregroundColor(.accentPrimary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color(.systemGray5))
+            .frame(height: 44)
+            .background(Color.secondaryBg)
             .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.accentPrimary.opacity(0.3), lineWidth: 2)
+            )
         }
         .padding(.horizontal, 20)
     }

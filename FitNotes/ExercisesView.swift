@@ -24,16 +24,9 @@ struct ExercisesView: View {
     
     var body: some View {
         ZStack {
-            // Blue gradient background
-            LinearGradient(
-                colors: [
-                    Color.blue.opacity(0.3),
-                    Color.blue.opacity(0.6)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Dark theme background
+            Color.primaryBg
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Search and Filter Section
@@ -41,9 +34,12 @@ struct ExercisesView: View {
                     // Search Bar
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                         TextField("Search exercises...", text: $searchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .foregroundColor(.textPrimary)
+                            .padding(8)
+                            .background(Color.tertiaryBg)
+                            .cornerRadius(10)
                     }
                     .padding(.horizontal)
                     
@@ -60,13 +56,13 @@ struct ExercisesView: View {
                                         .padding(.vertical, 6)
                                         .background(
                                             selectedMuscleGroup == group
-                                                ? Color.accentColor
-                                                : Color(.systemGray5)
+                                                ? Color.accentPrimary
+                                                : Color.tertiaryBg
                                         )
                                         .foregroundColor(
                                             selectedMuscleGroup == group
-                                                ? .white
-                                                : .primary
+                                                ? .textInverse
+                                                : .textPrimary
                                         )
                                         .cornerRadius(16)
                                 }
@@ -137,27 +133,35 @@ struct AddExerciseView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section("Exercise Details") {
-                    TextField("Exercise Name", text: $name)
-                    
-                    Picker("Muscle Group", selection: $selectedCategory) {
-                        ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
-                            Text(group).tag(group)
-                        }
-                    }
-                    
-                    Picker("Type", selection: $selectedType) {
-                        ForEach(ExerciseDatabaseService.exerciseTypes, id: \.self) { type in
-                            Text(type).tag(type)
-                        }
-                    }
-                }
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
                 
-                Section("Notes (Optional)") {
-                    TextField("Personal notes...", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
+                Form {
+                    Section("Exercise Details") {
+                        TextField("Exercise Name", text: $name)
+                            .foregroundColor(.textPrimary)
+                        
+                        Picker("Muscle Group", selection: $selectedCategory) {
+                            ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
+                                Text(group).tag(group)
+                            }
+                        }
+                        
+                        Picker("Type", selection: $selectedType) {
+                            ForEach(ExerciseDatabaseService.exerciseTypes, id: \.self) { type in
+                                Text(type).tag(type)
+                            }
+                        }
+                    }
+                    
+                    Section("Notes (Optional)") {
+                        TextField("Personal notes...", text: $notes, axis: .vertical)
+                            .foregroundColor(.textPrimary)
+                            .lineLimit(2...4)
+                    }
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -166,6 +170,7 @@ struct AddExerciseView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.accentPrimary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -173,6 +178,7 @@ struct AddExerciseView: View {
                         saveExercise()
                     }
                     .disabled(name.isEmpty)
+                    .foregroundColor(name.isEmpty ? .textTertiary : .accentPrimary)
                 }
             }
         }
@@ -207,17 +213,22 @@ struct DetailCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .textCase(.uppercase)
             
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.medium)
+                .foregroundColor(.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 }
 
