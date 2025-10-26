@@ -82,8 +82,20 @@ public final class WorkoutService {
         workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
         
-        // Note: Sets are now managed independently through ExerciseService
-        // This method is kept for backward compatibility but sets should be added via ExerciseService
+        // Create sets from the provided setData
+        for (index, setInfo) in setData.enumerated() {
+            let workoutSet = WorkoutSet(
+                exerciseId: exerciseId,
+                order: index + 1,
+                reps: setInfo.reps,
+                weight: setInfo.weight,
+                duration: setInfo.duration,
+                distance: setInfo.distance,
+                notes: notes,
+                date: workout.date
+            )
+            modelContext.insert(workoutSet)
+        }
         
         do {
             try modelContext.save()
@@ -421,7 +433,7 @@ public final class RoutineService {
         )
         modelContext.insert(workout)
         
-        // Copy exercises from template
+        // Copy exercises from template and create sets
         for templateExercise in routine.exercises.sorted(by: { $0.order < $1.order }) {
             let workoutExercise = WorkoutExercise(
                 exerciseId: templateExercise.exerciseId,
@@ -431,8 +443,21 @@ public final class RoutineService {
             workoutExercise.workout = workout
             modelContext.insert(workoutExercise)
             
-            // Note: Sets are now managed independently through ExerciseService
-            // This method is kept for backward compatibility but sets should be added via ExerciseService
+            // Create sets from the routine template
+            let numberOfSets = templateExercise.sets > 0 ? templateExercise.sets : 1
+            for setIndex in 1...numberOfSets {
+                let workoutSet = WorkoutSet(
+                    exerciseId: templateExercise.exerciseId,
+                    order: setIndex,
+                    reps: templateExercise.reps ?? 10, // Default to 10 reps if not specified
+                    weight: templateExercise.weight ?? 0,
+                    duration: templateExercise.duration,
+                    distance: templateExercise.distance,
+                    notes: templateExercise.notes,
+                    date: date
+                )
+                modelContext.insert(workoutSet)
+            }
         }
         
         do {
@@ -474,8 +499,21 @@ public final class RoutineService {
             addedExercises.append(workoutExercise)
             orderOffset += 1
             
-            // Note: Sets are now managed independently through ExerciseService
-            // This method is kept for backward compatibility but sets should be added via ExerciseService
+            // Create sets from the routine template
+            let numberOfSets = templateExercise.sets > 0 ? templateExercise.sets : 1
+            for setIndex in 1...numberOfSets {
+                let workoutSet = WorkoutSet(
+                    exerciseId: templateExercise.exerciseId,
+                    order: setIndex,
+                    reps: templateExercise.reps ?? 10, // Default to 10 reps if not specified
+                    weight: templateExercise.weight ?? 0,
+                    duration: templateExercise.duration,
+                    distance: templateExercise.distance,
+                    notes: templateExercise.notes,
+                    date: workout.date
+                )
+                modelContext.insert(workoutSet)
+            }
         }
         
         do {
