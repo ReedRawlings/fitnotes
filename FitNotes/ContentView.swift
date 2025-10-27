@@ -839,11 +839,6 @@ struct AddExerciseToRoutineTemplateView: View {
     let routine: Routine
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
-    @State private var selectedExercise: Exercise?
-    @State private var sets = 1
-    @State private var reps = 10
-    @State private var weight: Double = 0
-    @State private var notes = ""
     
     private var filteredExercises: [Exercise] {
         if searchText.isEmpty {
@@ -859,160 +854,36 @@ struct AddExerciseToRoutineTemplateView: View {
                 Color.primaryBg
                     .ignoresSafeArea()
                 
-                if let exercise = selectedExercise {
-                    // Configuration View
-                    ZStack {
-                        Color.primaryBg
-                            .ignoresSafeArea()
-                        
-                        ScrollView {
-                            VStack(spacing: 16) {
-                                // Exercise Info Card (prominent at top)
-                                VStack(alignment: .leading, spacing: 12) {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(exercise.name)
-                                                .font(.system(size: 20, weight: .semibold))
-                                                .foregroundColor(.textPrimary)
-                                            
-                                            Text(exercise.category)
-                                                .font(.system(size: 13))
-                                                .foregroundColor(.textSecondary)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        // Equipment badge
-                                        Text(exercise.equipment)
-                                            .font(.system(size: 11, weight: .semibold))
-                                            .foregroundColor(.accentPrimary)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(Color.accentPrimary.opacity(0.2))
-                                            .cornerRadius(6)
-                                    }
-                                }
-                                .padding(16)
-                                .background(Color.secondaryBg)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                                )
-                                
-                                // Configuration Card
-                                FormSectionCard(title: "Workout Configuration") {
-                                    StepperRow(
-                                        label: "Sets",
-                                        value: $sets,
-                                        range: 1...20
-                                    )
-                                    
-                                    if exercise.equipment == "Body" || exercise.category == "Cardio" {
-                                        Divider()
-                                            .background(Color.white.opacity(0.06))
-                                        
-                                        StepperRow(
-                                            label: "Duration",
-                                            value: $sets,
-                                            range: 1...60,
-                                            suffix: " sec"
-                                        )
-                                    } else {
-                                        Divider()
-                                            .background(Color.white.opacity(0.06))
-                                        
-                                        StepperRow(
-                                            label: "Reps",
-                                            value: $reps,
-                                            range: 1...100
-                                        )
-                                        
-                                        Divider()
-                                            .background(Color.white.opacity(0.06))
-                                        
-                                        DoubleStepperRow(
-                                            label: "Weight",
-                                            value: $weight,
-                                            range: 0...500,
-                                            suffix: " kg",
-                                            step: 2.5
-                                        )
-                                    }
-                                }
-                                
-                                // Notes Card
-                                FormSectionCard(title: "Notes (Optional)") {
-                                    TextField("Add notes...", text: $notes, axis: .vertical)
-                                        .font(.bodyFont)
-                                        .foregroundColor(.textPrimary)
-                                        .padding(12)
-                                        .background(Color.tertiaryBg)
-                                        .cornerRadius(10)
-                                        .lineLimit(2...4)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                                        )
-                                }
-                                
-                                Spacer(minLength: 100)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
-                        }
-                        
-                        // Fixed CTA at bottom
-                        FixedModalCTAButton(
-                            title: "Add to Routine",
-                            icon: "plus",
-                            isEnabled: true,
-                            action: addExercise
-                        )
+                VStack(spacing: 0) {
+                    // Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.textSecondary)
+                        TextField("Search exercises...", text: $searchText)
+                            .foregroundColor(.textPrimary)
+                            .padding(8)
+                            .background(Color.tertiaryBg)
+                            .cornerRadius(10)
                     }
-                } else {
-                    // Search and Exercise List View
-                    VStack(spacing: 0) {
-                        // Search Bar
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.textSecondary)
-                            TextField("Search exercises...", text: $searchText)
-                                .foregroundColor(.textPrimary)
-                                .padding(8)
-                                .background(Color.tertiaryBg)
-                                .cornerRadius(10)
-                                .onTapGesture {
-                                    // Ensure proper focus management
-                                    DispatchQueue.main.async {
-                                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                    }
-                                }
-                        }
-                        .padding()
-                        
-                        // Exercise List
-                        ExerciseListView(
-                            exercises: filteredExercises,
-                            searchText: $searchText,
-                            onExerciseSelected: { exercise in
-                                selectedExercise = exercise
-                            },
-                            context: .picker
-                        )
-                    }
+                    .padding()
+                    
+                    // Exercise List
+                    ExerciseListView(
+                        exercises: filteredExercises,
+                        searchText: $searchText,
+                        onExerciseSelected: { exercise in
+                            addExerciseImmediately(exercise)
+                        },
+                        context: .picker
+                    )
                 }
             }
-            .navigationTitle(selectedExercise == nil ? "Add Exercise" : "Configure Exercise")
+            .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(selectedExercise == nil ? "Cancel" : "Back") {
-                        if selectedExercise != nil {
-                            selectedExercise = nil
-                        } else {
-                            dismiss()
-                        }
+                    Button("Cancel") {
+                        dismiss()
                     }
                     .foregroundColor(.accentPrimary)
                 }
@@ -1020,19 +891,43 @@ struct AddExerciseToRoutineTemplateView: View {
         }
     }
     
-    private func addExercise() {
-        guard let exercise = selectedExercise else { return }
+    private func addExerciseImmediately(_ exercise: Exercise) {
+        // Try to get last session data for this exercise
+        var sets = 1
+        var reps: Int? = nil
+        var weight: Double? = nil
+        var duration: Int? = nil
         
-        let isCardio = exercise.equipment == "Body" || exercise.category == "Cardio"
+        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+            exerciseId: exercise.id,
+            modelContext: modelContext
+        ), let firstSet = lastSession.first {
+            // Use last session data
+            sets = lastSession.count
+            reps = firstSet.reps
+            weight = firstSet.weight
+            duration = firstSet.duration
+        } else {
+            // No history - use blank/default based on exercise type
+            if exercise.equipment == "Body" || exercise.category == "Cardio" {
+                duration = 60
+                reps = nil
+                weight = nil
+            } else {
+                reps = 10
+                weight = 0
+                duration = nil
+            }
+        }
         
         _ = RoutineService.shared.addExerciseToRoutine(
             routine: routine,
             exerciseId: exercise.id,
             sets: sets,
-            reps: isCardio ? nil : reps,
-            weight: isCardio ? nil : weight,
-            duration: isCardio ? sets * 60 : nil,
-            notes: notes.isEmpty ? nil : notes,
+            reps: reps,
+            weight: weight,
+            duration: duration,
+            notes: nil,
             modelContext: modelContext
         )
         
@@ -1073,7 +968,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
         }
     }
 }

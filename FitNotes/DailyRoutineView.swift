@@ -149,19 +149,37 @@ struct WorkoutDetailView: View {
     @State private var showingAddExercise = false
     @State private var selectedExercise: WorkoutExercise?
     @State private var showingEditExercise = false
+    @State private var showingRoutineTemplates = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if workout.exercises.isEmpty {
-                    EmptyStateView(
-                        icon: "dumbbell",
-                        title: "No exercises",
-                        subtitle: "Add exercises to get started",
-                        actionTitle: nil,
-                        onAction: nil
-                    )
-                    .padding(.horizontal)
+                    VStack(spacing: 24) {
+                        EmptyStateView(
+                            icon: "dumbbell",
+                            title: "No exercises",
+                            subtitle: "Choose how to get started",
+                            actionTitle: nil,
+                            onAction: nil
+                        )
+                        
+                        VStack(spacing: 12) {
+                            // Use Routine Template button
+                            Button(action: { showingRoutineTemplates = true }) {
+                                HStack {
+                                    Image(systemName: "list.bullet")
+                                    Text("Use Routine Template")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.secondaryBg)
+                                .foregroundColor(.textPrimary)
+                                .cornerRadius(12)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
                 } else {
                     CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
                         WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
@@ -173,6 +191,9 @@ struct WorkoutDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
+        }
+        .sheet(isPresented: $showingRoutineTemplates) {
+            RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
         }
     }
 }
@@ -617,6 +638,12 @@ struct RoutineTemplateSelectorView: View {
     @Query(sort: \Routine.name) private var routines: [Routine]
     
     let selectedDate: Date
+    let existingWorkout: Workout?
+    
+    init(selectedDate: Date, existingWorkout: Workout? = nil) {
+        self.selectedDate = selectedDate
+        self.existingWorkout = existingWorkout
+    }
     
     var body: some View {
         NavigationView {
@@ -692,11 +719,21 @@ struct RoutineTemplateSelectorView: View {
     }
     
     private func useRoutineTemplate(_ routine: Routine) {
-        _ = RoutineService.shared.createWorkoutFromTemplate(
-            routine: routine,
-            date: selectedDate,
-            modelContext: modelContext
-        )
+        if let existingWorkout = existingWorkout {
+            // Add exercises to existing workout
+            _ = DailyRoutineService.shared.addExercisesFromRoutineToWorkout(
+                workout: existingWorkout,
+                routine: routine,
+                modelContext: modelContext
+            )
+        } else {
+            // Create new workout
+            _ = RoutineService.shared.createWorkoutFromTemplate(
+                routine: routine,
+                date: selectedDate,
+                modelContext: modelContext
+            )
+        }
         
         dismiss()
     }
