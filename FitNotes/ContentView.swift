@@ -968,7 +968,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.light, for: .navigationBar)
         }
     }
 }
@@ -1020,29 +1019,6 @@ struct ContentView: View {
         }
         .accentColor(.accentPrimary)
         .environmentObject(appState)
-        .onAppear {
-            // Customize tab bar appearance - Dark theme with coral-orange accent
-            let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(hex: "#0A0E14") // primaryBg
-            
-            // Active tab styling (coral-orange accent)
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(hex: "#FF6B35") // accentPrimary
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor(hex: "#FF6B35"),
-                .font: UIFont.systemFont(ofSize: 12, weight: .semibold)
-            ]
-            
-            // Inactive tab styling (muted secondary)
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(hex: "#8B92A0") // textSecondary
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor(hex: "#8B92A0"),
-                .font: UIFont.systemFont(ofSize: 12, weight: .regular)
-            ]
-            
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
-        }
         .onAppear {
             // Sync active workout state from SwiftData on app launch
             appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
