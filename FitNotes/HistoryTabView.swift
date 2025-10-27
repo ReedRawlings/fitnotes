@@ -5,10 +5,24 @@ struct HistoryTabView: View {
     let exercise: Exercise
     @Environment(\.modelContext) private var modelContext
     
-    @Query private var allSets: [WorkoutSet]
+    private var filteredSets: [WorkoutSet] {
+        // Client-side filtering with caching for better performance
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { set in
+                set.exerciseId == exercise.id
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        
+        do {
+            return try modelContext.fetch(descriptor)
+        } catch {
+            print("Error fetching sets: \(error)")
+            return []
+        }
+    }
     
     private var groupedSets: [(Date, [WorkoutSet])] {
-        let filteredSets = allSets.filter { $0.exerciseId == exercise.id }
         let grouped = Dictionary(grouping: filteredSets) { Calendar.current.startOfDay(for: $0.date) }
         return grouped.sorted { $0.key > $1.key }
     }
@@ -101,12 +115,7 @@ struct SessionCardView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .cardStyle()
     }
     
     private func formatWeight(_ weight: Double) -> String {

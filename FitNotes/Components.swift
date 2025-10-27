@@ -3,26 +3,6 @@
 
 import SwiftUI
 
-// MARK: - BaseCardView
-struct BaseCardView<Content: View>: View {
-    let content: Content
-    
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        content
-            .padding(16)
-            .background(Color.secondaryBg)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-    }
-}
-
 // MARK: - CardListView
 struct CardListView<Item: Identifiable, Content: View>: View {
     let items: [Item]
@@ -47,95 +27,6 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                 Spacer(minLength: 100)
             }
         }
-    }
-}
-
-// MARK: - CardRowView
- struct CardRowView<Trailing: View>: View {
-    let title: String
-    let subtitle: String?
-    let trailingContent: Trailing?
-    
- init(
-        title: String,
-        subtitle: String? = nil,
-        @ViewBuilder trailingContent: @escaping () -> Trailing? = { nil }
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.trailingContent = trailingContent()
-    }
-    
- var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
-                
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
-            }
-            
-            Spacer()
-            
-            if let trailing = trailingContent {
-                trailing
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
-    }
-}
-
-// MARK: - SectionHeaderView
- struct SectionHeaderView: View {
-    let title: String
-    let actionTitle: String?
-    let onAction: (() -> Void)?
-    
- init(
-        title: String,
-        actionTitle: String? = nil,
-        onAction: (() -> Void)? = nil
-    ) {
-        self.title = title
-        self.actionTitle = actionTitle
-        self.onAction = onAction
-    }
-    
- var body: some View {
-        HStack {
-            Text(title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.textPrimary)
-            
-            Spacer()
-            
-            if let actionTitle = actionTitle, let onAction = onAction {
-                Button(action: onAction) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "plus")
-                        Text(actionTitle)
-                    }
-                    .font(.subheadline)
-                    .foregroundColor(.accentPrimary)
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
     }
 }
 
@@ -255,41 +146,6 @@ struct CardListView<Item: Identifiable, Content: View>: View {
                 radius: 16,
                 x: 0,
                 y: 4
-            )
-        }
-        .padding(.horizontal, 20)
-    }
-}
-
-// MARK: - SecondaryActionButton
- struct SecondaryActionButton: View {
-    let title: String
-    let icon: String
-    let onTap: () -> Void
-    
- init(title: String, icon: String = "pause", onTap: @escaping () -> Void) {
-        self.title = title
-        self.icon = icon
-        self.onTap = onTap
-    }
-    
- var body: some View {
-        Button(action: onTap) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                
-                Text(title)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-            }
-            .foregroundColor(.accentPrimary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(Color.secondaryBg)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.accentPrimary.opacity(0.3), lineWidth: 2)
             )
         }
         .padding(.horizontal, 20)

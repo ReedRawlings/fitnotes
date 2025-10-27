@@ -150,3 +150,16 @@ struct Shadow {
     static let accentPrimary = (color: Color.accentPrimary.opacity(0.3), radius: CGFloat(16), x: CGFloat(0), y: CGFloat(4))
     static let accentSuccess = (color: Color.accentSuccess.opacity(0.4), radius: CGFloat(20), x: CGFloat(0), y: CGFloat(6))
 }
+
+// MARK: - View Extensions
+extension View {
+    func cardStyle() -> some View {
+        self
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+    }
+}
