@@ -5,21 +5,11 @@ struct HistoryTabView: View {
     let exercise: Exercise
     @Environment(\.modelContext) private var modelContext
     
+    @Query private var allSets: [WorkoutSet]
+    
     private var filteredSets: [WorkoutSet] {
-        // Client-side filtering with caching for better performance
-        let descriptor = FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate<WorkoutSet> { set in
-                set.exerciseId == exercise.id
-            },
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        
-        do {
-            return try modelContext.fetch(descriptor)
-        } catch {
-            print("Error fetching sets: \(error)")
-            return []
-        }
+        // Filter sets for this exercise (client-side filtering)
+        allSets.filter { $0.exerciseId == exercise.id }
     }
     
     private var groupedSets: [(Date, [WorkoutSet])] {
