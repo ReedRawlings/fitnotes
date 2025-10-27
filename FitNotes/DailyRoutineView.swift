@@ -75,33 +75,9 @@ struct WorkoutView: View {
                     Spacer()
                     
                     // V2 Gradient Add Exercise button
-                    Button(action: { showingAddExercise = true }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 16))
-                            
-                            Text("Add Exercise")
-                                .font(.buttonFont)
-                        }
-                        .foregroundColor(.textInverse)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: [.accentPrimary, .accentSecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .cornerRadius(16)
-                        .shadow(
-                            color: .accentPrimary.opacity(0.3),
-                            radius: 16,
-                            x: 0,
-                            y: 4
-                        )
+                    PrimaryActionButton(title: "Add Exercise") {
+                        showingAddExercise = true
                     }
-                    .padding(.horizontal, 20)
                     .padding(.bottom, 20) // 20pt from safe area
                 }
             }

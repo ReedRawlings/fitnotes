@@ -232,7 +232,7 @@ struct CardListView<Item: Identifiable, Content: View>: View {
     
  var body: some View {
         Button(action: onTap) {
-            HStack {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 16))
                 

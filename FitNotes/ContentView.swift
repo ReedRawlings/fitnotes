@@ -640,82 +640,51 @@ struct RoutineDetailView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Routine Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(routine.name)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.textPrimary)
-                        
-                        if let description = routine.routineDescription, !description.isEmpty {
-                            Text(description)
-                                .font(.body)
-                                .foregroundColor(.textSecondary)
-                        }
-                    }
-                    .padding()
-                    .background(Color.secondaryBg)
-                    
-                    Divider()
-                        .background(Color.white.opacity(0.06))
-                
-                // Exercises Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Exercises")
-                            .font(.headline)
-                            .foregroundColor(.textPrimary)
-                        
-                        Spacer()
-                        
-                        Button(action: { showingAddExercise = true }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus")
-                                Text("Add Exercise")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.accentPrimary)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
                     if routine.exercises.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "dumbbell")
-                                .font(.system(size: 32))
-                                .foregroundColor(.textSecondary)
-                            
-                            Text("No exercises added")
-                                .font(.subheadline)
-                                .foregroundColor(.textSecondary)
-                            
-                            Text("Add exercises to build your routine")
-                                .font(.caption)
-                                .foregroundColor(.textTertiary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .background(Color.secondaryBg)
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        EmptyStateView(
+                            icon: "dumbbell",
+                            title: "No exercises added",
+                            subtitle: "Add exercises to build your routine",
+                            actionTitle: nil,
+                            onAction: nil
                         )
-                        .padding(.horizontal)
                     } else {
                         ScrollView {
-                            VStack(spacing: 0) {
-                                ForEach(sortedExercises, id: \.id) { routineExercise in
-                                    RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                            VStack(spacing: 12) {
+                                // Routine Header Card
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(routine.name)
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.textPrimary)
+                                    
+                                    if let description = routine.routineDescription, !description.isEmpty {
+                                        Text(description)
+                                            .font(.body)
+                                            .foregroundColor(.textSecondary)
+                                    }
                                 }
+                                .padding()
+                                .background(Color.secondaryBg)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                )
+                                
+                                // Exercises List
+                                VStack(spacing: 12) {
+                                    ForEach(sortedExercises, id: \.id) { routineExercise in
+                                        RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                                    }
+                                }
+                                
+                                Spacer(minLength: 80) // Space for fixed button
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                }
-                
-                    Spacer()
                 }
             }
             .navigationTitle("Routine Details")
@@ -725,8 +694,19 @@ struct RoutineDetailView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundColor(.accentPrimary)
                 }
             }
+            .overlay(
+                // Fixed bottom button - overlay on top
+                VStack {
+                    Spacer()
+                    PrimaryActionButton(title: "Add Exercise") {
+                        showingAddExercise = true
+                    }
+                    .padding(.bottom, 8) // Small padding above safe area
+                }
+            )
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToRoutineTemplateView(routine: routine)
@@ -736,16 +716,6 @@ struct RoutineDetailView: View {
                         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                 }
-        }
-    }
-    
-    private func deleteExercises(offsets: IndexSet) {
-        for index in offsets {
-            let exercise = sortedExercises[index]
-            RoutineService.shared.removeExerciseFromRoutine(
-                routineExercise: exercise,
-                modelContext: modelContext
-            )
         }
     }
 }
@@ -1030,3 +1000,4 @@ struct ContentView: View {
     ContentView()
         .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, RoutineExercise.self, Routine.self], inMemory: true)
 }
+
