@@ -122,9 +122,6 @@ struct WorkoutView: View {
 struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
-    @State private var showingAddExercise = false
-    @State private var selectedExercise: WorkoutExercise?
-    @State private var showingEditExercise = false
     @State private var showingRoutineTemplates = false
     
     var body: some View {
@@ -164,9 +161,6 @@ struct WorkoutDetailView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-        }
-        .sheet(isPresented: $showingAddExercise) {
-            AddExerciseToWorkoutView(selectedDate: workout.date, workout: workout)
         }
         .sheet(isPresented: $showingRoutineTemplates) {
             RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
@@ -233,12 +227,7 @@ struct WorkoutExerciseRowView: View {
             }
         }
         .padding(12)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .cardStyle()
         .onTapGesture {
             showingExerciseDetail = true
         }
@@ -263,179 +252,6 @@ struct WorkoutExerciseRowView: View {
             )
         }
         print("Delete operation completed")
-    }
-}
-
-// MARK: - EditWorkoutExerciseView
-struct EditWorkoutExerciseView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @Query private var exercises: [Exercise]
-    @Query private var allSets: [WorkoutSet]
-    
-    let workoutExercise: WorkoutExercise
-    let workout: Workout
-    
-    @State private var showingHistory = false
-    
-    private var exercise: Exercise? {
-        exercises.first { $0.id == workoutExercise.exerciseId }
-    }
-    
-    private var sortedSets: [WorkoutSet] {
-        let exerciseSets = allSets.filter { 
-            $0.exerciseId == workoutExercise.exerciseId && 
-            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
-        }
-        return exerciseSets.sorted { $0.order < $1.order }
-    }
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Exercise name header with history button
-                    HStack {
-                        Text(exercise?.name ?? "Unknown Exercise")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        Button(action: { showingHistory = true }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock.arrow.circlepath")
-                                Text("View History")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.accentColor)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Sets editor
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Sets")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        ForEach(Array(sortedSets.enumerated()), id: \.element.id) { index, set in
-                            VStack(spacing: 8) {
-                                HStack(spacing: 12) {
-                                    Text("Set \(index + 1)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Spacer()
-                                    
-                                    HStack(spacing: 8) {
-                                        TextField("Weight", value: Binding(
-                                            get: { set.weight },
-                                            set: { newValue in
-                                                _ = ExerciseService.shared.updateSet(
-                                                    setId: set.id,
-                                                    weight: newValue,
-                                                    reps: set.reps,
-                                                    modelContext: modelContext
-                                                )
-                                            }
-                                        ), format: .number)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .frame(width: 60)
-                                        
-                                        Text("kg")
-                                            .foregroundColor(.secondary)
-                                        
-                                        TextField("Reps", value: Binding(
-                                            get: { set.reps },
-                                            set: { newValue in
-                                                _ = ExerciseService.shared.updateSet(
-                                                    setId: set.id,
-                                                    weight: set.weight,
-                                                    reps: newValue,
-                                                    modelContext: modelContext
-                                                )
-                                            }
-                                        ), format: .number)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .frame(width: 60)
-                                        
-                                        Text("reps")
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                
-                                Button(action: { deleteSet(set) }) {
-                                    HStack {
-                                        Image(systemName: "trash")
-                                        Text("Remove set")
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                        }
-                        
-                        Button(action: { addNewSet() }) {
-                            HStack {
-                                Image(systemName: "plus")
-                                Text("Add Set")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.accentColor.opacity(0.1))
-                            .foregroundColor(.accentColor)
-                            .cornerRadius(8)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    Spacer(minLength: 20)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        saveChanges()
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingHistory) {
-            if let exercise = exercise {
-                ExerciseDetailView(exercise: exercise)
-            }
-        }
-    }
-    
-    private func addNewSet() {
-        let newOrder = (sortedSets.map { $0.order }.max() ?? 0) + 1
-        let newSet = WorkoutSet(
-            exerciseId: workoutExercise.exerciseId,
-            order: newOrder,
-            reps: 10,
-            weight: 0,
-            date: workout.date
-        )
-        modelContext.insert(newSet)
-        try? modelContext.save()
-    }
-    
-    private func deleteSet(_ set: WorkoutSet) {
-        _ = ExerciseService.shared.deleteSet(
-            setId: set.id,
-            modelContext: modelContext
-        )
-    }
-    
-    private func saveChanges() {
-        try? modelContext.save()
-        dismiss()
     }
 }
 

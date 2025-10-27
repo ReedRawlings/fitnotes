@@ -80,12 +80,7 @@ struct ExerciseListRowView: View {
             }
         }
         .padding(.vertical, 10)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .cardStyle()
     }
 }
 
