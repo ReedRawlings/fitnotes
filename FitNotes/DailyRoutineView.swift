@@ -177,17 +177,21 @@ struct WorkoutExerciseRowView: View {
     @Query private var allSets: [WorkoutSet]
     
     @State private var showingExerciseDetail = false
+    @State private var cachedSets: [WorkoutSet] = []
     
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
     private var sortedSets: [WorkoutSet] {
-        let exerciseSets = allSets.filter { 
-            $0.exerciseId == workoutExercise.exerciseId && 
-            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
+        if cachedSets.isEmpty {
+            let exerciseSets = allSets.filter { 
+                $0.exerciseId == workoutExercise.exerciseId && 
+                Calendar.current.isDate($0.date, inSameDayAs: workout.date)
+            }
+            cachedSets = exerciseSets.sorted { $0.order < $1.order }
         }
-        return exerciseSets.sorted { $0.order < $1.order }
+        return cachedSets
     }
     
     var body: some View {

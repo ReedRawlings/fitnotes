@@ -201,18 +201,34 @@ struct HomeView: View {
     @Query private var allSets: [WorkoutSet]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
+    @State private var cachedStats: (weeksActive: Int?, totalVolume: String?, daysSince: String?) = (nil, nil, nil)
     
     private var weeksActive: Int {
-        StatsService.shared.getWeeksActiveStreak(workouts: workouts)
+        if let cached = cachedStats.weeksActive {
+            return cached
+        }
+        let value = StatsService.shared.getWeeksActiveStreak(workouts: workouts)
+        cachedStats.weeksActive = value
+        return value
     }
     
     private var totalVolumeFormatted: String {
+        if let cached = cachedStats.totalVolume {
+            return cached
+        }
         let volume = StatsService.shared.getTotalVolume(allSets: allSets)
-        return StatsService.shared.formatVolume(volume)
+        let value = StatsService.shared.formatVolume(volume)
+        cachedStats.totalVolume = value
+        return value
     }
     
     private var daysSinceLastLiftText: String {
-        StatsService.shared.getDaysSinceLastLift(workouts: workouts)
+        if let cached = cachedStats.daysSince {
+            return cached
+        }
+        let value = StatsService.shared.getDaysSinceLastLift(workouts: workouts)
+        cachedStats.daysSince = value
+        return value
     }
     
     var body: some View {
@@ -301,6 +317,8 @@ struct HomeView: View {
         .onAppear {
             // Fix for RTIInputSystemClient error - dismiss any active text input
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            // Invalidate cache on appear
+            cachedStats = (nil, nil, nil)
         }
     }
     
