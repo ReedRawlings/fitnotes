@@ -149,72 +149,70 @@ struct AddExerciseView: View {
     @State private var notes = ""
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 16) {
-                        // Exercise Details Card
-                        FormSectionCard(title: "Exercise Details") {
-                            LabeledTextInput(
-                                label: "Exercise Name",
-                                placeholder: "e.g., Bench Press",
-                                text: $name
-                            )
-                            
-                            LabeledMenuPicker(
-                                label: "Muscle Group",
-                                options: ExerciseDatabaseService.muscleGroups,
-                                selection: $selectedCategory
-                            )
-                            
-                            LabeledMenuPicker(
-                                label: "Equipment",
-                                options: ExerciseDatabaseService.equipmentTypes,
-                                selection: $selectedEquipment
-                            )
-                        }
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Exercise Details Card
+                    FormSectionCard(title: "Exercise Details") {
+                        LabeledTextInput(
+                            label: "Exercise Name",
+                            placeholder: "e.g., Bench Press",
+                            text: $name
+                        )
                         
-                        // Notes Card
-                        FormSectionCard(title: "Notes (Optional)") {
-                            TextField("Personal notes...", text: $notes, axis: .vertical)
-                                .font(.bodyFont)
-                                .foregroundColor(.textPrimary)
-                                .padding(12)
-                                .background(Color.tertiaryBg)
-                                .cornerRadius(10)
-                                .lineLimit(2...4)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                                )
-                        }
+                        LabeledMenuPicker(
+                            label: "Muscle Group",
+                            options: ExerciseDatabaseService.muscleGroups,
+                            selection: $selectedCategory
+                        )
                         
-                        Spacer(minLength: 100)
+                        LabeledMenuPicker(
+                            label: "Equipment",
+                            options: ExerciseDatabaseService.equipmentTypes,
+                            selection: $selectedEquipment
+                        )
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    
+                    // Notes Card
+                    FormSectionCard(title: "Notes (Optional)") {
+                        TextField("Personal notes...", text: $notes, axis: .vertical)
+                            .font(.bodyFont)
+                            .foregroundColor(.textPrimary)
+                            .padding(12)
+                            .background(Color.tertiaryBg)
+                            .cornerRadius(10)
+                            .lineLimit(2...4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                            )
+                    }
+                    
+                    Spacer(minLength: 100)
                 }
-                
-                // Fixed CTA at bottom
-                FixedModalCTAButton(
-                    title: "Save Exercise",
-                    icon: "checkmark",
-                    isEnabled: !name.isEmpty,
-                    action: saveExercise
-                )
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
             }
-            .navigationTitle("Add Exercise")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.accentPrimary)
+            
+            // Fixed CTA at bottom
+            FixedModalCTAButton(
+                title: "Save Exercise",
+                icon: "checkmark",
+                isEnabled: !name.isEmpty,
+                action: saveExercise
+            )
+        }
+        .navigationTitle("Add Exercise")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    dismiss()
                 }
+                .foregroundColor(.accentPrimary)
             }
         }
     }

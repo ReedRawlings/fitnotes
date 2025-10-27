@@ -559,53 +559,51 @@ struct AddRoutineView: View {
     @State private var description = ""
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 16) {
-                        // Routine Details Card
-                        FormSectionCard(title: "Routine Details") {
-                            LabeledTextInput(
-                                label: "Routine Name",
-                                placeholder: "e.g., Upper Body Day",
-                                text: $name
-                            )
-                            
-                            LabeledTextInput(
-                                label: "Description (optional)",
-                                placeholder: "Add a description...",
-                                text: $description,
-                                axis: .vertical,
-                                lineLimit: 3...6
-                            )
-                        }
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Routine Details Card
+                    FormSectionCard(title: "Routine Details") {
+                        LabeledTextInput(
+                            label: "Routine Name",
+                            placeholder: "e.g., Upper Body Day",
+                            text: $name
+                        )
                         
-                        Spacer(minLength: 100) // Space for fixed button
+                        LabeledTextInput(
+                            label: "Description (optional)",
+                            placeholder: "Add a description...",
+                            text: $description,
+                            axis: .vertical,
+                            lineLimit: 3...6
+                        )
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    
+                    Spacer(minLength: 100) // Space for fixed button
                 }
-                
-                // Fixed CTA at bottom
-                FixedModalCTAButton(
-                    title: "Create Routine",
-                    icon: "checkmark",
-                    isEnabled: !name.isEmpty,
-                    action: createRoutine
-                )
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
             }
-            .navigationTitle("New Routine")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.accentPrimary)
+            
+            // Fixed CTA at bottom
+            FixedModalCTAButton(
+                title: "Create Routine",
+                icon: "checkmark",
+                isEnabled: !name.isEmpty,
+                action: createRoutine
+            )
+        }
+        .navigationTitle("New Routine")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    dismiss()
                 }
+                .foregroundColor(.accentPrimary)
             }
         }
     }
@@ -634,56 +632,54 @@ struct RoutineDetailView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    if routine.exercises.isEmpty {
-                        EmptyStateView(
-                            icon: "dumbbell",
-                            title: "No exercises added",
-                            subtitle: "Add exercises to build your routine",
-                            actionTitle: nil,
-                            onAction: nil
-                        )
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                // Routine Header Card
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(routine.name)
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.textPrimary)
-                                    
-                                    if let description = routine.routineDescription, !description.isEmpty {
-                                        Text(description)
-                                            .font(.body)
-                                            .foregroundColor(.textSecondary)
-                                    }
-                                }
-                                .padding()
-                                .background(Color.secondaryBg)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                                )
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if routine.exercises.isEmpty {
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No exercises added",
+                        subtitle: "Add exercises to build your routine",
+                        actionTitle: nil,
+                        onAction: nil
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            // Routine Header Card
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(routine.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.textPrimary)
                                 
-                                // Exercises List
-                                VStack(spacing: 12) {
-                                    ForEach(sortedExercises, id: \.id) { routineExercise in
-                                        RoutineTemplateExerciseRowView(routineExercise: routineExercise)
-                                    }
+                                if let description = routine.routineDescription, !description.isEmpty {
+                                    Text(description)
+                                        .font(.body)
+                                        .foregroundColor(.textSecondary)
                                 }
-                                
-                                Spacer(minLength: 80) // Space for fixed button
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 12)
+                            .padding()
+                            .background(Color.secondaryBg)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                            )
+                            
+                            // Exercises List
+                            VStack(spacing: 12) {
+                                ForEach(sortedExercises, id: \.id) { routineExercise in
+                                    RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                                }
+                            }
+                            
+                            Spacer(minLength: 80) // Space for fixed button
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
                     }
                 }
             }
@@ -819,34 +815,32 @@ struct AddExerciseToRoutineTemplateView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.textSecondary)
-                        TextField("Search exercises...", text: $searchText)
-                            .foregroundColor(.textPrimary)
-                            .padding(8)
-                            .background(Color.tertiaryBg)
-                            .cornerRadius(10)
-                    }
-                    .padding()
-                    
-                    // Exercise List
-                    ExerciseListView(
-                        exercises: filteredExercises,
-                        searchText: $searchText,
-                        onExerciseSelected: { exercise in
-                            addExerciseImmediately(exercise)
-                        },
-                        context: .picker
-                    )
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Search Bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.textSecondary)
+                    TextField("Search exercises...", text: $searchText)
+                        .foregroundColor(.textPrimary)
+                        .padding(8)
+                        .background(Color.tertiaryBg)
+                        .cornerRadius(10)
                 }
+                .padding()
+                
+                // Exercise List
+                ExerciseListView(
+                    exercises: filteredExercises,
+                    searchText: $searchText,
+                    onExerciseSelected: { exercise in
+                        addExerciseImmediately(exercise)
+                    },
+                    context: .picker
+                )
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)

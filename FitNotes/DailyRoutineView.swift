@@ -315,43 +315,41 @@ struct AddExerciseToWorkoutView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.textSecondary)
-                        TextField("Search exercises...", text: $searchText)
-                            .foregroundColor(.textPrimary)
-                            .padding(8)
-                            .background(Color.tertiaryBg)
-                            .cornerRadius(10)
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Search Bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.textSecondary)
+                    TextField("Search exercises...", text: $searchText)
+                        .foregroundColor(.textPrimary)
+                        .padding(8)
+                        .background(Color.tertiaryBg)
+                        .cornerRadius(10)
+                }
+                .padding()
+            
+            // Exercise List - simplified to single-step selection
+            ExerciseListView(
+                exercises: filteredExercises,
+                searchText: $searchText,
+                onExerciseSelected: { exercise in
+                    addExerciseImmediately(exercise)
+                },
+                context: .picker
+            )
+        }
+        .navigationTitle("Add Exercise")
+        .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
                     }
-                    .padding()
-                
-                // Exercise List - simplified to single-step selection
-                ExerciseListView(
-                    exercises: filteredExercises,
-                    searchText: $searchText,
-                    onExerciseSelected: { exercise in
-                        addExerciseImmediately(exercise)
-                    },
-                    context: .picker
-                )
-            }
-            .navigationTitle("Add Exercise")
-            .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Cancel") {
-                            dismiss()
-                        }
-                        .foregroundColor(.accentPrimary)
-                    }
+                    .foregroundColor(.accentPrimary)
                 }
             }
         }
