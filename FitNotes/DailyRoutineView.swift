@@ -721,7 +721,7 @@ struct RoutineTemplateSelectorView: View {
     private func useRoutineTemplate(_ routine: Routine) {
         if let existingWorkout = existingWorkout {
             // Add exercises to existing workout
-            _ = DailyRoutineService.shared.addExercisesFromRoutineToWorkout(
+            _ = RoutineService.shared.addExercisesFromRoutineToWorkout(
                 workout: existingWorkout,
                 routine: routine,
                 modelContext: modelContext
