@@ -916,14 +916,52 @@ struct SettingsView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Segmented Control for Settings Sections
-                    Picker("Settings Section", selection: $selectedTab) {
-                        Text("Routines").tag(0)
-                        Text("Exercises").tag(1)
+                    // Custom Segmented Control for Settings Sections
+                    HStack(spacing: 0) {
+                        // Routines Tab
+                        Button(action: {
+                            withAnimation(.standardSpring) {
+                                selectedTab = 0
+                            }
+                        }) {
+                            Text("Routines")
+                                .font(selectedTab == 0 ? .system(size: 15, weight: .semibold) : .tabFont)
+                                .foregroundColor(selectedTab == 0 ? .textPrimary : .textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(selectedTab == 0 ? Color.tertiaryBg : Color.clear)
+                                )
+                                .scaleEffect(selectedTab == 0 ? 1.02 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: selectedTab)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Exercises Tab
+                        Button(action: {
+                            withAnimation(.standardSpring) {
+                                selectedTab = 1
+                            }
+                        }) {
+                            Text("Exercises")
+                                .font(selectedTab == 1 ? .system(size: 15, weight: .semibold) : .tabFont)
+                                .foregroundColor(selectedTab == 1 ? .textPrimary : .textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(selectedTab == 1 ? Color.tertiaryBg : Color.clear)
+                                )
+                                .scaleEffect(selectedTab == 1 ? 1.02 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: selectedTab)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(4)
+                    .background(Color.secondaryBg)
+                    .cornerRadius(12)
                     .padding()
-                    .tint(.textPrimary)
                     
                     Divider()
                         .background(Color.white.opacity(0.06))
