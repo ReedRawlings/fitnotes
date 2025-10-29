@@ -177,21 +177,17 @@ struct WorkoutExerciseRowView: View {
     @Query private var allSets: [WorkoutSet]
     
     @State private var showingExerciseDetail = false
-    @State private var cachedSets: [WorkoutSet] = []
     
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
     
     private var sortedSets: [WorkoutSet] {
-        if cachedSets.isEmpty {
-            let exerciseSets = allSets.filter { 
-                $0.exerciseId == workoutExercise.exerciseId && 
-                Calendar.current.isDate($0.date, inSameDayAs: workout.date)
-            }
-            cachedSets = exerciseSets.sorted { $0.order < $1.order }
+        let exerciseSets = allSets.filter { 
+            $0.exerciseId == workoutExercise.exerciseId && 
+            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
         }
-        return cachedSets
+        return exerciseSets.sorted { $0.order < $1.order }
     }
     
     var body: some View {
@@ -440,76 +436,57 @@ struct RoutineTemplateSelectorView: View {
     }
     
     var body: some View {
-        NavigationView {
+        ZStack {
+            // Dark theme background
+            Color.primaryBg
+                .ignoresSafeArea()
+            
             VStack(spacing: 0) {
-                if routines.isEmpty {
-                    VStack(spacing: 20) {
-                        Spacer()
-                        
-                        Image(systemName: "list.bullet.rectangle")
-                            .font(.system(size: 64))
-                            .foregroundColor(.secondary)
-                        
-                        Text("No routine templates")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                        
-                        Text("Create routine templates in the Routines tab first")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                        
-                        Spacer()
-                    }
-                    .padding()
-                } else {
-                    List(routines) { routine in
-                        Button(action: {
-                            useRoutineTemplate(routine)
-                        }) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(routine.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    if let description = routine.routineDescription, !description.isEmpty {
-                                        Text(description)
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(2)
-                                    }
-                                    
-                                    Text("\(routine.exercises.count) exercises")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.accentColor)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .listStyle(PlainListStyle())
-                }
-            }
-            .navigationTitle("Use Template")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                // Custom header
+                HStack {
+                    Text("Use Template")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
                     Button("Cancel") {
                         dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.accentPrimary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+                
+                Divider()
+                
+                // Content
+                if routines.isEmpty {
+                    EmptyStateView(
+                        icon: "list.bullet.rectangle",
+                        title: "No routine templates",
+                        subtitle: "Create routine templates in the Routines tab first",
+                        actionTitle: nil,
+                        onAction: nil
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(routines) { routine in
+                                RoutineCardView(routine: routine) {
+                                    useRoutineTemplate(routine)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
                     }
                 }
             }
         }
+        .navigationBarHidden(true)
     }
     
     private func useRoutineTemplate(_ routine: Routine) {
@@ -530,6 +507,54 @@ struct RoutineTemplateSelectorView: View {
         }
         
         dismiss()
+    }
+}
+
+// MARK: - RoutineCardView
+struct RoutineCardView: View {
+    let routine: Routine
+    let onAdd: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(routine.name)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundColor(.textPrimary)
+                    .lineLimit(1)
+                
+                if let description = routine.routineDescription, !description.isEmpty {
+                    Text(description)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                        .lineLimit(2)
+                }
+                
+                Text("\(routine.exercises.count) exercises")
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundColor(.textSecondary)
+            }
+            
+            Spacer()
+            
+            Button(action: onAdd) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.accentPrimary, Color.accentSecondary]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: Color.accentPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+        }
+        .padding(14)
+        .cardStyle()
     }
 }
 

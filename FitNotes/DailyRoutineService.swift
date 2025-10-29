@@ -443,17 +443,40 @@ public final class RoutineService {
             workoutExercise.workout = workout
             modelContext.insert(workoutExercise)
             
-            // Create sets from the routine template
-            let numberOfSets = templateExercise.sets > 0 ? templateExercise.sets : 1
-            for setIndex in 1...numberOfSets {
+            // Try to get last session data for this exercise
+            if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+                exerciseId: templateExercise.exerciseId,
+                modelContext: modelContext
+            ) {
+                // Use history data
+                for (index, historicalSet) in lastSession.enumerated() {
+                    let workoutSet = WorkoutSet(
+                        exerciseId: templateExercise.exerciseId,
+                        order: index + 1,
+                        reps: historicalSet.reps,
+                        weight: historicalSet.weight,
+                        duration: historicalSet.duration,
+                        distance: historicalSet.distance,
+                        notes: nil,
+                        date: date
+                    )
+                    modelContext.insert(workoutSet)
+                }
+            } else {
+                // No history - use sensible defaults
+                let exercise = ExerciseService.shared.getExercise(by: templateExercise.exerciseId, modelContext: modelContext)
+                let defaultReps = (exercise?.equipment == "Body" || exercise?.category == "Cardio") ? 0 : 10
+                let defaultWeight = 0.0
+                let defaultDuration = (exercise?.equipment == "Body" || exercise?.category == "Cardio") ? 60 : nil
+                
                 let workoutSet = WorkoutSet(
                     exerciseId: templateExercise.exerciseId,
-                    order: setIndex,
-                    reps: templateExercise.reps ?? 10, // Default to 10 reps if not specified
-                    weight: templateExercise.weight ?? 0,
-                    duration: templateExercise.duration,
-                    distance: templateExercise.distance,
-                    notes: templateExercise.notes,
+                    order: 1,
+                    reps: defaultReps,
+                    weight: defaultWeight,
+                    duration: defaultDuration,
+                    distance: nil,
+                    notes: nil,
                     date: date
                 )
                 modelContext.insert(workoutSet)
@@ -499,17 +522,40 @@ public final class RoutineService {
             addedExercises.append(workoutExercise)
             orderOffset += 1
             
-            // Create sets from the routine template
-            let numberOfSets = templateExercise.sets > 0 ? templateExercise.sets : 1
-            for setIndex in 1...numberOfSets {
+            // Try to get last session data for this exercise
+            if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+                exerciseId: templateExercise.exerciseId,
+                modelContext: modelContext
+            ) {
+                // Use history data
+                for (index, historicalSet) in lastSession.enumerated() {
+                    let workoutSet = WorkoutSet(
+                        exerciseId: templateExercise.exerciseId,
+                        order: index + 1,
+                        reps: historicalSet.reps,
+                        weight: historicalSet.weight,
+                        duration: historicalSet.duration,
+                        distance: historicalSet.distance,
+                        notes: nil,
+                        date: workout.date
+                    )
+                    modelContext.insert(workoutSet)
+                }
+            } else {
+                // No history - use sensible defaults
+                let exercise = ExerciseService.shared.getExercise(by: templateExercise.exerciseId, modelContext: modelContext)
+                let defaultReps = (exercise?.equipment == "Body" || exercise?.category == "Cardio") ? 0 : 10
+                let defaultWeight = 0.0
+                let defaultDuration = (exercise?.equipment == "Body" || exercise?.category == "Cardio") ? 60 : nil
+                
                 let workoutSet = WorkoutSet(
                     exerciseId: templateExercise.exerciseId,
-                    order: setIndex,
-                    reps: templateExercise.reps ?? 10, // Default to 10 reps if not specified
-                    weight: templateExercise.weight ?? 0,
-                    duration: templateExercise.duration,
-                    distance: templateExercise.distance,
-                    notes: templateExercise.notes,
+                    order: 1,
+                    reps: defaultReps,
+                    weight: defaultWeight,
+                    duration: defaultDuration,
+                    distance: nil,
+                    notes: nil,
                     date: workout.date
                 )
                 modelContext.insert(workoutSet)
