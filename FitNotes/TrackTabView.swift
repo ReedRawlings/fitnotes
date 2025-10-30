@@ -71,7 +71,7 @@ struct TrackTabView: View {
                 
                 // Fixed Save Button
                 SaveButton(
-                    isEnabled: sets.contains { $0.isChecked },
+                    isEnabled: !sets.isEmpty,
                     isSaving: isSaving,
                     isSaved: isSaved,
                     onSave: saveSets
@@ -98,6 +98,7 @@ struct TrackTabView: View {
                 },
                 onDismiss: {
                     showingPicker = false
+                    persistCurrentSets()
                 }
             ) : nil
         )

@@ -10,6 +10,8 @@ struct WeightRepsPicker: View {
     let onValueChanged: (Double) -> Void
     let onDismiss: () -> Void
     
+    @State private var commitNearest: (() -> Void)? = nil
+    
     enum PickerType {
         case weight
         case reps
@@ -44,6 +46,8 @@ struct WeightRepsPicker: View {
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
+                    // Force-commit nearest row before dismissing
+                    commitNearest?()
                     onDismiss()
                 }
             
@@ -58,6 +62,8 @@ struct WeightRepsPicker: View {
                     Spacer()
                     
                     Button("Done") {
+                        // Force-commit nearest row before dismissing
+                        commitNearest?()
                         onDismiss()
                     }
                     .font(.system(size: 17, weight: .semibold))
@@ -77,7 +83,11 @@ struct WeightRepsPicker: View {
                 PickerView(
                     pickerType: pickerType,
                     currentValue: currentValue,
-                    onValueChanged: onValueChanged
+                    onValueChanged: onValueChanged,
+                    onProvideCommit: { commit in
+                        // Capture coordinator-provided commit closure
+                        self.commitNearest = commit
+                    }
                 )
                 .frame(height: 200)
             }
@@ -95,6 +105,7 @@ struct PickerView: UIViewRepresentable {
     let pickerType: WeightRepsPicker.PickerType
     let currentValue: Double
     let onValueChanged: (Double) -> Void
+    let onProvideCommit: (((() -> Void)) -> Void)?
     
     func makeUIView(context: Context) -> UIPickerView {
         let picker = UIPickerView()
@@ -123,6 +134,13 @@ struct PickerView: UIViewRepresentable {
             scrollView.decelerationRate = .fast
             scrollView.delegate = context.coordinator
             context.coordinator.scrollView = scrollView
+        }
+        
+        // Provide a commit closure back to SwiftUI parent
+        if let provide = onProvideCommit {
+            provide { [weak coordinator = context.coordinator] in
+                coordinator?.commitNearestNow()
+            }
         }
         
         return picker
@@ -197,6 +215,21 @@ struct PickerView: UIViewRepresentable {
         let maxIndex = max(0, parent.pickerType.values.count - 1)
         if nearest > maxIndex { nearest = maxIndex }
         picker.selectRow(nearest, inComponent: 0, animated: animated)
+        let value = parent.pickerType.values[nearest]
+        parent.onValueChanged(value)
+        lastReportedRow = nearest
+    }
+    
+    // Expose an explicit commit for dismissal
+    func commitNearestNow() {
+        guard let picker = pickerView, let scroll = scrollView else { return }
+        let height = rowHeight()
+        if height <= 0 { return }
+        let rawRow = (scroll.contentOffset.y / height).rounded()
+        var nearest = max(0, Int(rawRow))
+        let maxIndex = max(0, parent.pickerType.values.count - 1)
+        if nearest > maxIndex { nearest = maxIndex }
+        picker.selectRow(nearest, inComponent: 0, animated: false)
         let value = parent.pickerType.values[nearest]
         parent.onValueChanged(value)
         lastReportedRow = nearest
