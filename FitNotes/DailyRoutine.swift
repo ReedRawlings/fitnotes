@@ -111,6 +111,7 @@ public final class WorkoutSet {
     public var duration: Int?         // For cardio/timed
     public var distance: Double?      // For distance-based
     public var notes: String?
+    public var isCompleted: Bool
     public var date: Date             // When this was logged (used for grouping by day)
     public var createdAt: Date
     public var updatedAt: Date
@@ -124,6 +125,7 @@ public final class WorkoutSet {
         duration: Int? = nil,
         distance: Double? = nil,
         notes: String? = nil,
+        isCompleted: Bool = false,
         date: Date = Date(),
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -136,6 +138,7 @@ public final class WorkoutSet {
         self.duration = duration
         self.distance = distance
         self.notes = notes
+        self.isCompleted = isCompleted
         self.date = date
         self.createdAt = createdAt
         self.updatedAt = updatedAt

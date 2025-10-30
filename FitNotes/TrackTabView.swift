@@ -47,6 +47,7 @@ struct TrackTabView: View {
                                         },
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
+                                            persistCurrentSets()
                                         },
                                         onDelete: {
                                             deleteSet(at: index)
@@ -103,6 +104,19 @@ struct TrackTabView: View {
     }
     
     private func loadSets() {
+        // Prefer today's persisted sets; if none, prefill from last session
+        let todaysSets = ExerciseService.shared.getSetsByDate(
+            exerciseId: exercise.id,
+            date: Date(),
+            modelContext: modelContext
+        )
+        if !todaysSets.isEmpty {
+            sets = todaysSets.sorted { $0.order < $1.order }.map { s in
+                (id: s.id, weight: s.weight, reps: s.reps, isChecked: s.isCompleted)
+            }
+            return
+        }
+        
         let lastSession = ExerciseService.shared.getLastSessionForExercise(
             exerciseId: exercise.id,
             modelContext: modelContext
@@ -137,13 +151,13 @@ struct TrackTabView: View {
         _ = withAnimation(.deleteAnimation) {
             sets.remove(at: index)
         }
+        persistCurrentSets()
     }
     
     private func saveSets() {
         isSaving = true
         let today = Date()
-        let checkedSets = sets.filter { $0.isChecked }
-        let setData = checkedSets.map { (weight: $0.weight, reps: $0.reps) }
+        let setData = sets.map { (weight: $0.weight, reps: $0.reps, isCompleted: $0.isChecked) }
         
         let success = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
@@ -184,6 +198,17 @@ struct TrackTabView: View {
             notificationFeedback.notificationOccurred(.error)
             isSaving = false
         }
+    }
+    
+    private func persistCurrentSets() {
+        let today = Date()
+        let setData = sets.map { (weight: $0.weight, reps: $0.reps, isCompleted: $0.isChecked) }
+        _ = ExerciseService.shared.saveSets(
+            exerciseId: exercise.id,
+            date: today,
+            sets: setData,
+            modelContext: modelContext
+        )
     }
 }
 

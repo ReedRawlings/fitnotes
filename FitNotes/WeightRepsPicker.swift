@@ -144,6 +144,7 @@ struct PickerView: UIViewRepresentable {
         let parent: PickerView
         weak var pickerView: UIPickerView?
         weak var scrollView: UIScrollView?
+        private var lastReportedRow: Int?
         
         init(_ parent: PickerView) {
             self.parent = parent
@@ -198,6 +199,21 @@ struct PickerView: UIViewRepresentable {
         picker.selectRow(nearest, inComponent: 0, animated: animated)
         let value = parent.pickerType.values[nearest]
         parent.onValueChanged(value)
+        lastReportedRow = nearest
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let height = rowHeight()
+        if height <= 0 { return }
+        let rawRow = (scrollView.contentOffset.y / height).rounded()
+        var nearest = max(0, Int(rawRow))
+        let maxIndex = max(0, parent.pickerType.values.count - 1)
+        if nearest > maxIndex { nearest = maxIndex }
+        if nearest != lastReportedRow {
+            let value = parent.pickerType.values[nearest]
+            parent.onValueChanged(value)
+            lastReportedRow = nearest
+        }
     }
     
     func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
