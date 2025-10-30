@@ -8,6 +8,9 @@ struct WorkoutView: View {
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
     
+    // Track the last workout count to force refresh
+    private var workoutCount: Int { workouts.count }
+    
     var displayDate: Date {
         if let activeWorkout = appState.activeWorkout {
             return activeWorkout.startDate
@@ -68,6 +71,7 @@ struct WorkoutView: View {
                     // Always use the same view for workouts
                     if let workout = getWorkoutForDate(displayDate) {
                         WorkoutDetailView(workout: workout)
+                            .id(workout.id) // Force refresh when workout changes
                     } else {
                         EmptyWorkoutView(selectedDate: displayDate)
                     }
