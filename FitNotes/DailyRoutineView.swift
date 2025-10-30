@@ -129,10 +129,14 @@ struct WorkoutDetailView: View {
     @State private var showingRoutineTemplates = false
     @State private var editMode: EditMode = .inactive
     
+    private var sortedExercises: [WorkoutExercise] {
+        workout.exercises.sorted { $0.order < $1.order }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                if workout.exercises.isEmpty {
+                if sortedExercises.isEmpty {
                     VStack(spacing: 24) {
                         EmptyStateView(
                             icon: "dumbbell",
@@ -160,7 +164,7 @@ struct WorkoutDetailView: View {
                     }
                 } else {
                     List {
-                        ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                        ForEach(sortedExercises, id: \.id) { workoutExercise in
                             WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets())
