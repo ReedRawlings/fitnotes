@@ -101,6 +101,7 @@ struct PickerView: UIViewRepresentable {
         picker.delegate = context.coordinator
         picker.dataSource = context.coordinator
         picker.backgroundColor = UIColor.clear
+        context.coordinator.pickerView = picker
         
         // Disable sound effects (showsSelectionIndicator is deprecated)
         
@@ -110,6 +111,20 @@ struct PickerView: UIViewRepresentable {
             picker.selectRow(index, inComponent: 0, animated: false)
         }
         
+        // Configure underlying scroll behavior to reduce lag and enable snapping
+        func findScrollView(in view: UIView) -> UIScrollView? {
+            if let sv = view as? UIScrollView { return sv }
+            for sub in view.subviews {
+                if let found = findScrollView(in: sub) { return found }
+            }
+            return nil
+        }
+        if let scrollView = findScrollView(in: picker) {
+            scrollView.decelerationRate = .fast
+            scrollView.delegate = context.coordinator
+            context.coordinator.scrollView = scrollView
+        }
+        
         return picker
     }
     
@@ -117,7 +132,7 @@ struct PickerView: UIViewRepresentable {
         // Update selection if needed
         let values = pickerType.values
         if let index = values.firstIndex(of: currentValue) {
-            uiView.selectRow(index, inComponent: 0, animated: true)
+            uiView.selectRow(index, inComponent: 0, animated: false)
         }
     }
     
@@ -125,8 +140,10 @@ struct PickerView: UIViewRepresentable {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
+    class Coordinator: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UIScrollViewDelegate {
         let parent: PickerView
+        weak var pickerView: UIPickerView?
+        weak var scrollView: UIScrollView?
         
         init(_ parent: PickerView) {
             self.parent = parent
@@ -165,6 +182,38 @@ struct PickerView: UIViewRepresentable {
     
     func pickerView(_ pickerView: UIPickerView, rowHeightForComponent component: Int) -> CGFloat {
         return 44
+    }
+    
+    // MARK: - UIScrollViewDelegate snapping
+    private func rowHeight() -> CGFloat { 44 }
+    
+    private func snapToNearestRowAndNotify(animated: Bool) {
+        guard let picker = pickerView, let scroll = scrollView else { return }
+        let height = rowHeight()
+        if height <= 0 { return }
+        let rawRow = (scroll.contentOffset.y / height).rounded()
+        var nearest = max(0, Int(rawRow))
+        let maxIndex = max(0, parent.pickerType.values.count - 1)
+        if nearest > maxIndex { nearest = maxIndex }
+        picker.selectRow(nearest, inComponent: 0, animated: animated)
+        let value = parent.pickerType.values[nearest]
+        parent.onValueChanged(value)
+    }
+    
+    func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        let height = rowHeight()
+        if height <= 0 { return }
+        let projected = targetContentOffset.pointee.y / height
+        let nearest = (projected.rounded()) * height
+        targetContentOffset.pointee.y = nearest
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { snapToNearestRowAndNotify(animated: true) }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        snapToNearestRowAndNotify(animated: true)
     }
     }
 }

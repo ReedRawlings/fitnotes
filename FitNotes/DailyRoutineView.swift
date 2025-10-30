@@ -387,37 +387,16 @@ struct AddExerciseToWorkoutView: View {
             return
         }
         
-        // Try to get last session data for this exercise
-        var setData: [(reps: Int, weight: Double, duration: Int?, distance: Double?)] = []
-        
-        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
-            exerciseId: exercise.id,
-            modelContext: modelContext
-        ) {
-            // Pre-populate with last session data
-            for set in lastSession {
-                setData.append((
-                    reps: set.reps,
-                    weight: set.weight,
-                    duration: set.duration,
-                    distance: set.distance
-                ))
-            }
-        } else {
-            // No history found, use sensible defaults based on equipment type
-            if exercise.equipment == "Body" || exercise.category == "Cardio" {
-                setData.append((reps: 0, weight: 0, duration: 60, distance: nil))
-            } else {
-                setData.append((reps: 10, weight: 0, duration: nil, distance: nil))
-            }
-        }
-        
-        // Add exercise to workout with the prepared set data
-        _ = WorkoutService.shared.addExerciseToWorkoutWithSets(
+        // Add exercise to workout without creating sets; sets will be logged in Track tab
+        _ = WorkoutService.shared.addExerciseToWorkout(
             workout: targetWorkout,
             exerciseId: exercise.id,
-            setData: setData,
-            notes: nil, // No notes on initial add - user can add them in workout view
+            sets: 0,
+            reps: nil,
+            weight: nil,
+            duration: nil,
+            distance: nil,
+            notes: nil,
             modelContext: modelContext
         )
         
