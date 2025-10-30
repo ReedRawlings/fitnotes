@@ -364,6 +364,12 @@ struct AddExerciseToWorkoutView: View {
         } message: {
             Text("\(duplicateExerciseName) is already in this workout.")
         }
+        .onAppear {
+            // Ensure the exercise library is seeded the first time this view is opened
+            if exercises.isEmpty {
+                ExerciseDatabaseService.shared.createDefaultExercises(modelContext: modelContext)
+            }
+        }
     }
     
     private func addExerciseImmediately(_ exercise: Exercise) {
