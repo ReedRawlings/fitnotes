@@ -24,7 +24,7 @@
 		741325482E9F733D0099C49A /* HistoryTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325492E9F733D0099C49A /* HistoryTabView.swift */; };
 		25F88B33E5C5465EB1181C5B193E08F3 /* ExerciseSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F88B33E5C5465EB1181C5B193E08F4 /* ExerciseSearchService.swift */; };
 		741325522E9F733D0099C49A /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325502E9F733D0099C49A /* DesignSystem.swift */; };
-		741325532E9F733D0099C49A /* WeightRepsPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325512E9F733D0099C49A /* WeightRepsPicker.swift */; };
+        /* 741325532E9F733D0099C49A WeightRepsPicker removed */
 		741325562E9F733D0099C49A /* StatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741325542E9F733D0099C49A /* StatsService.swift */; };
 		741325122E9F73400099C49A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325112E9F73400099C49A /* Assets.xcassets */; };
 		741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 741325142E9F73400099C49A /* Preview Assets.xcassets */; };
@@ -69,7 +69,7 @@
 		741325492E9F733D0099C49A /* HistoryTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTabView.swift; sourceTree = "<group>"; };
 		25F88B33E5C5465EB1181C5B193E08F4 /* ExerciseSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSearchService.swift; sourceTree = "<group>"; };
 		741325502E9F733D0099C49A /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FitNotes/DesignSystem.swift"; sourceTree = "<group>"; };
-		741325512E9F733D0099C49A /* WeightRepsPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FitNotes/WeightRepsPicker.swift"; sourceTree = "<group>"; };
+        /* 741325512E9F733D0099C49A WeightRepsPicker removed */
 		741325112E9F73400099C49A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		741325142E9F73400099C49A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		741325162E9F73400099C49A /* FitNotes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitNotes.entitlements; sourceTree = "<group>"; };
@@ -327,7 +327,7 @@
 				741325482E9F733D0099C49A /* HistoryTabView.swift in Sources */,
 				25F88B33E5C5465EB1181C5B193E08F3 /* ExerciseSearchService.swift in Sources */,
 				741325522E9F733D0099C49A /* DesignSystem.swift in Sources */,
-				741325532E9F733D0099C49A /* WeightRepsPicker.swift in Sources */,
+                /* WeightRepsPicker.swift removed from Sources */
 				741325562E9F733D0099C49A /* StatsService.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
 			);
