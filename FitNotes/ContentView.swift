@@ -489,6 +489,7 @@ struct RoutinesView: View {
     @Query(sort: \Routine.name) private var routines: [Routine]
     @State private var showingAddRoutine = false
     @State private var selectedRoutine: Routine?
+    @State private var addExerciseRoutine: Routine?
     
     var body: some View {
         ZStack {
@@ -544,6 +545,14 @@ struct RoutinesView: View {
         }
         .sheet(item: $selectedRoutine) { routine in
             RoutineDetailView(routine: routine)
+        }
+        .sheet(item: $addExerciseRoutine) { routine in
+            AddExerciseToRoutineTemplateView(routine: routine)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ShowAddExerciseForRoutine"))) { notification in
+            if let routine = notification.object as? Routine {
+                addExerciseRoutine = routine
+            }
         }
     }
 }
@@ -610,13 +619,24 @@ struct AddRoutineView: View {
     }
     
     private func createRoutine() {
-        _ = RoutineService.shared.createRoutine(
+        let routine = RoutineService.shared.createRoutine(
             name: name,
             description: description.isEmpty ? nil : description,
             modelContext: modelContext
         )
         
-        dismiss()
+        // Immediately present the Add Exercises picker for the new routine
+        // Using sheet to keep consistent with modal add flows
+        // Dismiss creation view and then show picker
+        DispatchQueue.main.async {
+            dismiss()
+            // Present AddExerciseToRoutineTemplateView for the new routine
+            // This relies on RoutinesView's sheet presentation when a routine is selected
+            NotificationCenter.default.post(
+                name: Notification.Name("ShowAddExerciseForRoutine"),
+                object: routine
+            )
+        }
     }
 }
 
@@ -670,12 +690,24 @@ struct RoutineDetailView: View {
                                     .stroke(Color.white.opacity(0.06), lineWidth: 1)
                             )
                             
-                            // Exercises List
-                            VStack(spacing: 12) {
+                            // Exercises List with reordering support
+                            List {
                                 ForEach(sortedExercises, id: \.id) { routineExercise in
                                     RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                                        .listRowBackground(Color.clear)
+                                        .listRowInsets(EdgeInsets())
+                                }
+                                .onMove { indices, newOffset in
+                                    RoutineService.shared.reorderRoutineExercises(
+                                        routine: routine,
+                                        from: indices,
+                                        to: newOffset,
+                                        modelContext: modelContext
+                                    )
                                 }
                             }
+                            .listStyle(.plain)
+                            .frame(maxHeight: .infinity)
                             
                             Spacer(minLength: 80) // Space for fixed button
                         }
@@ -692,6 +724,9 @@ struct RoutineDetailView: View {
                         dismiss()
                     }
                     .foregroundColor(.accentPrimary)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    EditButton()
                 }
             }
             .overlay(
@@ -806,14 +841,17 @@ struct AddExerciseToRoutineTemplateView: View {
     let routine: Routine
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
+    @State private var selectedMuscleGroup: String = ""
+    @State private var selectedEquipment: String = ""
     @State private var selectedIds: Set<UUID> = []
     
     private var filteredExercises: [Exercise] {
-        if searchText.isEmpty {
-            return exercises
-        } else {
-            return exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
+        ExerciseSearchService.shared.searchExercises(
+            query: searchText,
+            category: selectedMuscleGroup.isEmpty ? nil : selectedMuscleGroup,
+            equipment: selectedEquipment.isEmpty ? nil : selectedEquipment,
+            exercises: exercises
+        )
     }
     
     var body: some View {
@@ -833,6 +871,49 @@ struct AddExerciseToRoutineTemplateView: View {
                         .cornerRadius(10)
                 }
                 .padding()
+                
+                // Filters
+                VStack(spacing: 8) {
+                    // Equipment chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
+                                Button(action: {
+                                    selectedEquipment = selectedEquipment == equipment ? "" : equipment
+                                }) {
+                                    Text(equipment)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedEquipment == equipment ? Color.accentPrimary : Color.tertiaryBg)
+                                        .foregroundColor(selectedEquipment == equipment ? .textInverse : .textPrimary)
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    // Muscle group chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            let groups = Array(Set(exercises.map { $0.primaryCategory })).sorted()
+                            ForEach(groups, id: \.self) { group in
+                                Button(action: {
+                                    selectedMuscleGroup = selectedMuscleGroup == group ? "" : group
+                                }) {
+                                    Text(group)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedMuscleGroup == group ? Color.accentPrimary : Color.tertiaryBg)
+                                        .foregroundColor(selectedMuscleGroup == group ? .textInverse : .textPrimary)
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
                 
                 // Exercise List with multi-select support
                 ExerciseListView(
