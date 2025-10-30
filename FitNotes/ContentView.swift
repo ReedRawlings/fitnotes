@@ -667,53 +667,48 @@ struct RoutineDetailView: View {
                         onAction: nil
                     )
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            // Routine Header Card
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(routine.name)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.textPrimary)
-                                
-                                if let description = routine.routineDescription, !description.isEmpty {
-                                    Text(description)
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                            }
-                            .padding()
-                            .background(Color.secondaryBg)
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                            )
+                    List {
+                        // Routine Header Card as first row
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(routine.name)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.textPrimary)
                             
-                            // Exercises List with reordering support
-                            List {
-                                ForEach(sortedExercises, id: \.id) { routineExercise in
-                                    RoutineTemplateExerciseRowView(routineExercise: routineExercise)
-                                        .listRowBackground(Color.clear)
-                                        .listRowInsets(EdgeInsets())
-                                }
-                                .onMove { indices, newOffset in
-                                    RoutineService.shared.reorderRoutineExercises(
-                                        routine: routine,
-                                        from: indices,
-                                        to: newOffset,
-                                        modelContext: modelContext
-                                    )
-                                }
+                            if let description = routine.routineDescription, !description.isEmpty {
+                                Text(description)
+                                    .font(.body)
+                                    .foregroundColor(.textSecondary)
                             }
-                            .listStyle(.plain)
-                            .frame(maxHeight: .infinity)
-                            
-                            Spacer(minLength: 80) // Space for fixed button
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                        .padding()
+                        .background(Color.secondaryBg)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+
+                        // Exercises List with reordering support
+                        ForEach(sortedExercises, id: \.id) { routineExercise in
+                            RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets())
+                        }
+                        .onMove { indices, newOffset in
+                            RoutineService.shared.reorderRoutineExercises(
+                                routine: routine,
+                                from: indices,
+                                to: newOffset,
+                                modelContext: modelContext
+                            )
+                        }
                     }
+                    .listStyle(.plain)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
                 }
             }
             .navigationTitle("Routine Details")

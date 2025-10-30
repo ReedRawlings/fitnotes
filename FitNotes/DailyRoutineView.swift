@@ -159,17 +159,6 @@ struct WorkoutDetailView: View {
                         .padding(.horizontal, 20)
                     }
                 } else {
-                    // Reorder toggle
-                    HStack {
-                        Spacer()
-                        Button(editMode == .active ? "Done Reordering" : "Reorder") {
-                            withAnimation { editMode = (editMode == .active ? .inactive : .active) }
-                        }
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.accentPrimary)
-                    }
-                    .padding(.horizontal, 4)
-
                     List {
                         ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
                             WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
@@ -186,7 +175,7 @@ struct WorkoutDetailView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .environment(\.editMode, $editMode)
+                    .environment(\.editMode, .constant(.active))
                 }
             }
             .padding(.horizontal, 20)
@@ -419,16 +408,16 @@ struct AddExerciseToWorkoutView: View {
                 context: .picker,
                 selectedIds: $selectedIds
             )
-            // Fixed CTA at bottom
-            FixedModalCTAButton(
-                title: selectedIds.isEmpty ? "Select exercises" : "Add \(selectedIds.count) Exercise\(selectedIds.count == 1 ? "" : "s")",
-                icon: "checkmark",
-                isEnabled: !selectedIds.isEmpty,
-                action: {
-                    addExercises(selected: Array(selectedIds))
-                }
-            )
         }
+        // Fixed CTA at bottom (overlayed, not affecting list layout)
+        FixedModalCTAButton(
+            title: selectedIds.isEmpty ? "Select exercises" : "Add \(selectedIds.count) Exercise\(selectedIds.count == 1 ? "" : "s")",
+            icon: "checkmark",
+            isEnabled: !selectedIds.isEmpty,
+            action: {
+                addExercises(selected: Array(selectedIds))
+            }
+        )
         .navigationTitle("Add Exercise")
         .navigationBarTitleDisplayMode(.inline)
             .toolbar {
