@@ -237,7 +237,7 @@ struct WorkoutExerciseRowView: View {
         }
         .sheet(isPresented: $showingExerciseDetail) {
             if let exercise = exercise {
-                ExerciseDetailView(exercise: exercise)
+                ExerciseDetailView(exercise: exercise, shouldDismissOnSave: true)
             }
         }
     }

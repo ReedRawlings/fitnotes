@@ -4,6 +4,7 @@ import SwiftData
 struct TrackTabView: View {
     let exercise: Exercise
     @Environment(\.modelContext) private var modelContext
+    var onSaveSuccess: (() -> Void)? = nil
     
     @State private var sets: [(id: UUID, weight: Double, reps: Int)] = []
     @State private var isSaving = false
@@ -162,9 +163,16 @@ struct TrackTabView: View {
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.success)
             
-            // Reset after animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                isSaved = false
+            // Call onSaveSuccess callback if provided (e.g., when opening from workout tab)
+            if let onSaveSuccess = onSaveSuccess {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    onSaveSuccess()
+                }
+            } else {
+                // Reset after animation when no callback
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    isSaved = false
+                }
             }
         } else {
             // Error haptic feedback
@@ -308,7 +316,7 @@ struct SaveButton: View {
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                 }
             }
-            .foregroundColor(isSaved ? .white : .textInverse)
+            .foregroundColor(isSaved ? .accentSuccess : .textInverse)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
