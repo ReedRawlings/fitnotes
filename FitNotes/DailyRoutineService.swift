@@ -7,7 +7,8 @@ public final class WorkoutService {
     private init() {}
     
     private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
-        Task { @MainActor in
+        // Use asyncAfter to defer the save to the next run loop, allowing UI to update first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             do {
                 try modelContext.save()
             } catch {
@@ -316,7 +317,8 @@ public final class RoutineService {
     private init() {}
     
     private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
-        Task { @MainActor in
+        // Use asyncAfter to defer the save to the next run loop, allowing UI to update first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             do {
                 try modelContext.save()
             } catch {
