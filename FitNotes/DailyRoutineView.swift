@@ -134,56 +134,57 @@ struct WorkoutDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if sortedExercises.isEmpty {
-                    VStack(spacing: 24) {
-                        EmptyStateView(
-                            icon: "dumbbell",
-                            title: "No exercises",
-                            subtitle: "Choose how to get started",
-                            actionTitle: nil,
-                            onAction: nil
-                        )
-                        
-                        VStack(spacing: 12) {
-                            // Use Routine Template button
-                            Button(action: { showingRoutineTemplates = true }) {
-                                HStack {
-                                    Image(systemName: "list.bullet")
-                                    Text("Use Routine Template")
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.secondaryBg)
-                                .foregroundColor(.textPrimary)
-                                .cornerRadius(12)
+        Group {
+            if sortedExercises.isEmpty {
+                VStack(spacing: 24) {
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No exercises",
+                        subtitle: "Choose how to get started",
+                        actionTitle: nil,
+                        onAction: nil
+                    )
+                    
+                    VStack(spacing: 12) {
+                        // Use Routine Template button
+                        Button(action: { showingRoutineTemplates = true }) {
+                            HStack {
+                                Image(systemName: "list.bullet")
+                                Text("Use Routine Template")
                             }
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                } else {
-                    List {
-                        ForEach(sortedExercises, id: \.id) { workoutExercise in
-                            WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets())
-                        }
-                        .onMove { indices, newOffset in
-                            WorkoutService.shared.reorderExercises(
-                                workout: workout,
-                                from: indices,
-                                to: newOffset,
-                                modelContext: modelContext
-                            )
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.secondaryBg)
+                            .foregroundColor(.textPrimary)
+                            .cornerRadius(12)
                         }
                     }
-                    .listStyle(.plain)
-                    .environment(\.editMode, .constant(.active))
+                    .padding(.horizontal, 20)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+            } else {
+                List {
+                    ForEach(sortedExercises, id: \.id) { workoutExercise in
+                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                    }
+                    .onMove { indices, newOffset in
+                        WorkoutService.shared.reorderExercises(
+                            workout: workout,
+                            from: indices,
+                            to: newOffset,
+                            modelContext: modelContext
+                        )
+                    }
+                }
+                .listStyle(.plain)
+                .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
+                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
         }
         .sheet(isPresented: $showingRoutineTemplates) {
             RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
