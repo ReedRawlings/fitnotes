@@ -9,14 +9,7 @@ struct TrackTabView: View {
     @State private var sets: [(id: UUID, weight: Double, reps: Int, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
-    @State private var showingPicker = false
-    @State private var pickerType: WeightRepsPicker.PickerType = .weight
-    @State private var editingSetIndex: Int = 0
-    @State private var editingField: FieldType = .weight
-    
-    enum FieldType {
-        case weight, reps
-    }
+    // Inline numeric inputs replaced the old wheel picker
     
     enum InputFocus: Hashable {
         case weight(UUID)
@@ -43,12 +36,14 @@ struct TrackTabView: View {
                                             get: { sets[index].weight },
                                             set: { newVal in
                                                 sets[index].weight = newVal
+                                                persistCurrentSets()
                                             }
                                         ),
                                         reps: Binding<Int>(
                                             get: { sets[index].reps },
                                             set: { newVal in
                                                 sets[index].reps = newVal
+                                                persistCurrentSets()
                                             }
                                         ),
                                         focusedInput: $focusedInput,
@@ -252,6 +247,11 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: .weight(set.id))
                 .accessibilityLabel("Weight input")
+                .contentShape(Rectangle())
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedInput = .weight(set.id)
             }
             
             // Reps Column
@@ -285,6 +285,11 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: .reps(set.id))
                 .accessibilityLabel("Reps input")
+                .contentShape(Rectangle())
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedInput = .reps(set.id)
             }
             
             // Checkbox Button
