@@ -18,6 +18,12 @@ struct TrackTabView: View {
         case weight, reps
     }
     
+    enum InputFocus: Hashable {
+        case weight(UUID)
+        case reps(UUID)
+    }
+    @FocusState private var focusedInput: InputFocus?
+    
     var body: some View {
         ZStack {
             // Dark background
@@ -33,18 +39,19 @@ struct TrackTabView: View {
                                 ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                                     SetRowView(
                                         set: set,
-                                        onWeightTap: {
-                                            editingSetIndex = index
-                                            editingField = .weight
-                                            pickerType = .weight
-                                            showingPicker = true
-                                        },
-                                        onRepsTap: {
-                                            editingSetIndex = index
-                                            editingField = .reps
-                                            pickerType = .reps
-                                            showingPicker = true
-                                        },
+                                        weight: Binding<Double>(
+                                            get: { sets[index].weight },
+                                            set: { newVal in
+                                                sets[index].weight = newVal
+                                            }
+                                        ),
+                                        reps: Binding<Int>(
+                                            get: { sets[index].reps },
+                                            set: { newVal in
+                                                sets[index].reps = newVal
+                                            }
+                                        ),
+                                        focusedInput: $focusedInput,
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
@@ -85,22 +92,7 @@ struct TrackTabView: View {
             loadSets()
         }
         .overlay(
-            showingPicker ? 
-            WeightRepsPicker(
-                pickerType: pickerType,
-                currentValue: editingField == .weight ? sets[editingSetIndex].weight : Double(sets[editingSetIndex].reps),
-                onValueChanged: { newValue in
-                    if editingField == .weight {
-                        sets[editingSetIndex].weight = newValue
-                    } else {
-                        sets[editingSetIndex].reps = Int(newValue)
-                    }
-                },
-                onDismiss: {
-                    showingPicker = false
-                    persistCurrentSets()
-                }
-            ) : nil
+            nil // Removed overlay picker; using inline numeric inputs
         )
     }
     
@@ -217,8 +209,9 @@ struct TrackTabView: View {
 // MARK: - Set Row View
 struct SetRowView: View {
     let set: (id: UUID, weight: Double, reps: Int, isChecked: Bool)
-    let onWeightTap: () -> Void
-    let onRepsTap: () -> Void
+    @Binding var weight: Double
+    @Binding var reps: Int
+    @Binding var focusedInput: TrackTabView.InputFocus?
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
     
@@ -237,16 +230,30 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary.opacity(0.6))
                 }
                 
-                Button(action: onWeightTap) {
-                    Text(formatWeight(set.weight))
-                        .font(.dataFont)
-                        .foregroundColor(.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)  // Reduced from 14
-                        .background(Color.white.opacity(0.04))
-                        .cornerRadius(10)
-                }
-                .accessibilityLabel("Weight, \(formatWeight(set.weight)) kilograms")
+                TextField(
+                    "0",
+                    text: Binding<String>(
+                        get: { formatWeight(weight) },
+                        set: { newText in
+                            let cleaned = newText.replacingOccurrences(of: ",", with: ".")
+                            if let val = Double(cleaned) {
+                                weight = val
+                            } else if cleaned.isEmpty {
+                                weight = 0
+                            }
+                        }
+                    )
+                )
+                .keyboardType(.decimalPad)
+                .font(.dataFont)
+                .foregroundColor(.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.04))
+                .cornerRadius(10)
+                .focused($focusedInput, equals: .weight(set.id))
+                .accessibilityLabel("Weight input")
             }
             
             // Reps Column
@@ -256,16 +263,30 @@ struct SetRowView: View {
                     .foregroundColor(.textTertiary)
                     .kerning(0.3)
                 
-                Button(action: onRepsTap) {
-                    Text("\(set.reps)")
-                        .font(.dataFont)
-                        .foregroundColor(.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)  // Reduced from 14
-                        .background(Color.white.opacity(0.04))
-                        .cornerRadius(10)
-                }
-                .accessibilityLabel("Reps, \(set.reps)")
+                TextField(
+                    "0",
+                    text: Binding<String>(
+                        get: { String(reps) },
+                        set: { newText in
+                            let filtered = newText.filter { $0.isNumber }
+                            if let val = Int(filtered) {
+                                reps = val
+                            } else if filtered.isEmpty {
+                                reps = 0
+                            }
+                        }
+                    )
+                )
+                .keyboardType(.numberPad)
+                .font(.dataFont)
+                .foregroundColor(.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.04))
+                .cornerRadius(10)
+                .focused($focusedInput, equals: .reps(set.id))
+                .accessibilityLabel("Reps input")
             }
             
             // Checkbox Button
