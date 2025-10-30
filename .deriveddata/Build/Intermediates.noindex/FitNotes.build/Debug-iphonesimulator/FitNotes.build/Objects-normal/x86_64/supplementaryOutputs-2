@@ -1,0 +1,18 @@
+"/Users/reedrawlings/fitnotes/FitNotes/ContentView.swift":
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.swiftdeps"
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.d"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.o"
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.dia"
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.swiftconstvalues"
+"/Users/reedrawlings/fitnotes/FitNotes/Models.swift":
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.d"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.o"
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.swiftconstvalues"
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.dia"
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.swiftdeps"
+"/Users/reedrawlings/fitnotes/FitNotes/Exercise.swift":
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.swiftconstvalues"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.o"
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.swiftdeps"
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.dia"
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.d"

@@ -5,7 +5,8 @@ import SwiftData
 public final class Exercise {
     @Attribute(.unique) public var id: UUID
     public var name: String
-    public var category: String // Primary muscle group
+    public var primaryCategory: String // Primary muscle group
+    public var secondaryCategories: [String] // Secondary muscle groups
     public var equipment: String // e.g., "Machine", "Free Weight", "Body"
     public var notes: String?
     public var unit: String
@@ -16,7 +17,8 @@ public final class Exercise {
     public init(
         id: UUID = UUID(),
         name: String,
-        category: String,
+        primaryCategory: String,
+        secondaryCategories: [String] = [],
         equipment: String = "Free Weight",
         notes: String? = nil,
         unit: String = "kg",
@@ -26,7 +28,8 @@ public final class Exercise {
     ) {
         self.id = id
         self.name = name
-        self.category = category
+        self.primaryCategory = primaryCategory
+        self.secondaryCategories = secondaryCategories
         self.equipment = equipment
         self.notes = notes
         self.unit = unit

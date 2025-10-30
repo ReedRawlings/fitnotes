@@ -884,7 +884,7 @@ struct AddExerciseToRoutineTemplateView: View {
             weight = firstSet.weight
             duration = firstSet.duration
         } else {
-            if exercise.equipment == "Body" || exercise.category == "Cardio" {
+            if exercise.equipment == "Body" || exercise.primaryCategory == "Cardio" {
                 duration = 60
                 reps = nil
                 weight = nil

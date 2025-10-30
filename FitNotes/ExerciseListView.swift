@@ -80,7 +80,7 @@ struct ExerciseListRowView: View {
                     .font(.headline)
                     .foregroundColor(.textPrimary)
                 
-                Text(exercise.category)
+                Text(exercise.primaryCategory)
                     .font(.subheadline)
                     .foregroundColor(.textSecondary)
             }
