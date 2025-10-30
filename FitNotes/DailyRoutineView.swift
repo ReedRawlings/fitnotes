@@ -27,7 +27,7 @@ struct WorkoutView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Dark theme background
                 Color.primaryBg
