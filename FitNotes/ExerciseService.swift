@@ -183,12 +183,15 @@ public final class ExerciseService {
             
             // Create new sets
             for (index, setData) in sets.enumerated() {
+                let completedAt: Date? = setData.isCompleted ? date : nil
                 let newSet = WorkoutSet(
                     exerciseId: exerciseId,
                     order: index + 1,
                     reps: setData.reps,
                     weight: setData.weight,
+                    notes: nil,
                     isCompleted: setData.isCompleted,
+                    completedAt: completedAt,
                     date: date
                 )
                 modelContext.insert(newSet)

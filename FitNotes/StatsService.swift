@@ -41,9 +41,9 @@ public final class StatsService {
     
     // MARK: - Total Volume
     
-    /// Calculates total volume (weight × reps) for all time from workout sets
+    /// Calculates total completed volume (weight × reps) for all time from workout sets
     public func getTotalVolume(allSets: [WorkoutSet]) -> Double {
-        return allSets.reduce(0) { total, set in
+        return allSets.filter { $0.isCompleted }.reduce(0) { total, set in
             total + (set.weight * Double(set.reps))
         }
     }

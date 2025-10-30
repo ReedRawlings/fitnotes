@@ -127,6 +127,7 @@ struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
     @State private var showingRoutineTemplates = false
+    @State private var editMode: EditMode = .inactive
     
     var body: some View {
         ScrollView {
@@ -158,9 +159,34 @@ struct WorkoutDetailView: View {
                         .padding(.horizontal, 20)
                     }
                 } else {
-                    CardListView(workout.exercises.sorted { $0.order < $1.order }) { workoutExercise in
-                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
+                    // Reorder toggle
+                    HStack {
+                        Spacer()
+                        Button(editMode == .active ? "Done Reordering" : "Reorder") {
+                            withAnimation { editMode = (editMode == .active ? .inactive : .active) }
+                        }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.accentPrimary)
                     }
+                    .padding(.horizontal, 4)
+
+                    List {
+                        ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                            WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets())
+                        }
+                        .onMove { indices, newOffset in
+                            WorkoutService.shared.reorderExercises(
+                                workout: workout,
+                                from: indices,
+                                to: newOffset,
+                                modelContext: modelContext
+                            )
+                        }
+                    }
+                    .listStyle(.plain)
+                    .environment(\.editMode, $editMode)
                 }
             }
             .padding(.horizontal, 20)
@@ -306,6 +332,8 @@ struct AddExerciseToWorkoutView: View {
     
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
+    @State private var selectedMuscleGroup: String = ""
+    @State private var selectedEquipment: String = ""
     @State private var showingDuplicateAlert = false
     @State private var duplicateExerciseName = ""
     @State private var selectedIds: Set<UUID> = []
@@ -313,8 +341,8 @@ struct AddExerciseToWorkoutView: View {
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
             query: searchText,
-            category: nil,
-            equipment: nil,
+            category: selectedMuscleGroup.isEmpty ? nil : selectedMuscleGroup,
+            equipment: selectedEquipment.isEmpty ? nil : selectedEquipment,
             exercises: exercises
         )
     }
@@ -336,6 +364,49 @@ struct AddExerciseToWorkoutView: View {
                         .cornerRadius(10)
                 }
                 .padding()
+                
+                // Filters
+                VStack(spacing: 8) {
+                    // Equipment chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ExerciseDatabaseService.equipmentTypes, id: \.self) { equipment in
+                                Button(action: {
+                                    selectedEquipment = selectedEquipment == equipment ? "" : equipment
+                                }) {
+                                    Text(equipment)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedEquipment == equipment ? Color.accentPrimary : Color.tertiaryBg)
+                                        .foregroundColor(selectedEquipment == equipment ? .textInverse : .textPrimary)
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    // Muscle group chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            let groups = Array(Set(exercises.map { $0.primaryCategory })).sorted()
+                            ForEach(groups, id: \.self) { group in
+                                Button(action: {
+                                    selectedMuscleGroup = selectedMuscleGroup == group ? "" : group
+                                }) {
+                                    Text(group)
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedMuscleGroup == group ? Color.accentPrimary : Color.tertiaryBg)
+                                        .foregroundColor(selectedMuscleGroup == group ? .textInverse : .textPrimary)
+                                        .cornerRadius(16)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
             
             // Exercise List with multi-select support
             ExerciseListView(

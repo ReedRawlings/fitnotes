@@ -60,6 +60,7 @@ struct ExerciseListView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
+                .padding(.bottom, 76) // ensure content is not obscured by floating button
             }
             .scrollContentBackground(.hidden)
         }

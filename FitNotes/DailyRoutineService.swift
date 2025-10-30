@@ -366,6 +366,25 @@ public final class RoutineService {
         }
     }
     
+    public func reorderRoutineExercises(
+        routine: Routine,
+        from: IndexSet,
+        to: Int,
+        modelContext: ModelContext
+    ) {
+        // Reorder by adjusting the `order` field on the sorted collection
+        var ordered = routine.exercises.sorted { $0.order < $1.order }
+        ordered.move(fromOffsets: from, toOffset: to)
+        for (index, exercise) in ordered.enumerated() {
+            exercise.order = index + 1
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error reordering routine exercises: \(error)")
+        }
+    }
+    
     public func deleteRoutine(
         routine: Routine,
         modelContext: ModelContext
@@ -435,7 +454,7 @@ public final class RoutineService {
         )
         modelContext.insert(workout)
         
-        // Copy exercises from template (reference-only, no sets created)
+        // Copy exercises from template and hydrate initial sets
         for templateExercise in routine.exercises.sorted(by: { $0.order < $1.order }) {
             let workoutExercise = WorkoutExercise(
                 exerciseId: templateExercise.exerciseId,
@@ -445,9 +464,13 @@ public final class RoutineService {
             workoutExercise.workout = workout
             workout.exercises.append(workoutExercise)  // Explicitly maintain bidirectional relationship
             modelContext.insert(workoutExercise)
-            
-            // Note: Sets are not created here. Routines are reference-only templates.
-            // Sets will be created when users log their workout in ExerciseDetailView/TrackTabView.
+
+            // Hydrate sets for the workout exercise so they are visible immediately
+            hydrateInitialSets(
+                for: templateExercise,
+                on: workout,
+                modelContext: modelContext
+            )
         }
         
         do {
@@ -489,9 +512,13 @@ public final class RoutineService {
             modelContext.insert(workoutExercise)
             addedExercises.append(workoutExercise)
             orderOffset += 1
-            
-            // Note: Sets are not created here. Routines are reference-only templates.
-            // Sets will be created when users log their workout in ExerciseDetailView/TrackTabView.
+
+            // Hydrate sets for the newly added exercise
+            hydrateInitialSets(
+                for: templateExercise,
+                on: workout,
+                modelContext: modelContext
+            )
         }
         
         do {
@@ -501,5 +528,58 @@ public final class RoutineService {
         }
         
         return addedExercises
+    }
+
+    // MARK: - Helpers
+    /// Creates initial sets for a workout based on the routine template defaults or last session fallback
+    private func hydrateInitialSets(
+        for templateExercise: RoutineExercise,
+        on workout: Workout,
+        modelContext: ModelContext
+    ) {
+        let exerciseId = templateExercise.exerciseId
+        let date = workout.date
+
+        // Determine number of sets
+        var setCount = max(0, templateExercise.sets)
+
+        // Try to load last session for fallback values
+        let lastSession = ExerciseService.shared.getLastSessionForExercise(
+            exerciseId: exerciseId,
+            modelContext: modelContext
+        )
+
+        // Determine base reps/weight/duration/distance
+        var baseReps: Int?
+        var baseWeight: Double?
+
+        if let reps = templateExercise.reps { baseReps = reps }
+        if let weight = templateExercise.weight { baseWeight = weight }
+
+        if baseReps == nil || baseWeight == nil || setCount == 0 {
+            if let last = lastSession, let first = last.first {
+                // Fallback to last session
+                baseReps = baseReps ?? first.reps
+                baseWeight = baseWeight ?? first.weight
+                if setCount == 0 { setCount = last.count }
+            }
+        }
+
+        // Final defaults if still missing
+        if setCount == 0 { setCount = 3 }
+        if baseReps == nil { baseReps = 10 }
+        if baseWeight == nil { baseWeight = 0 }
+
+        // Build sets array (all not completed initially)
+        let setsData: [(weight: Double, reps: Int, isCompleted: Bool)] = (0..<setCount).map { _ in
+            (weight: baseWeight ?? 0, reps: baseReps ?? 0, isCompleted: false)
+        }
+
+        _ = ExerciseService.shared.saveSets(
+            exerciseId: exerciseId,
+            date: date,
+            sets: setsData,
+            modelContext: modelContext
+        )
     }
 }
