@@ -105,7 +105,7 @@ struct PickerView: UIViewRepresentable {
     let pickerType: WeightRepsPicker.PickerType
     let currentValue: Double
     let onValueChanged: (Double) -> Void
-    let onProvideCommit: (((() -> Void)) -> Void)?
+    let onProvideCommit: (((@escaping () -> Void)) -> Void)?
     
     func makeUIView(context: Context) -> UIPickerView {
         let picker = UIPickerView()
