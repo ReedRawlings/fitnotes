@@ -502,10 +502,8 @@ struct RoutinesView: View {
                         icon: "list.bullet.rectangle",
                         title: "No routines yet",
                         subtitle: "Create reusable exercise routines that you can easily add to any day",
-                        actionTitle: "New Routine",
-                        onAction: {
-                            showingAddRoutine = true
-                        }
+                        actionTitle: nil,
+                        onAction: nil
                     )
                 } else {
                     ScrollView {
@@ -532,7 +530,7 @@ struct RoutinesView: View {
                 }
             }
             
-            // Fixed bottom button - overlay on top
+            // Fixed bottom button - overlay on top (always visible for consistency)
             VStack {
                 Spacer()
                 PrimaryActionButton(title: "New Routine") {
