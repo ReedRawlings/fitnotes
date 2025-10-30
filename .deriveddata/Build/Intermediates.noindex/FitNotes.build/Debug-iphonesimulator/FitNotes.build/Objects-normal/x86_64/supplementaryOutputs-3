@@ -1,0 +1,18 @@
+"/Users/reedrawlings/fitnotes/FitNotes/ExerciseDatabaseService.swift":
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.dia"
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.d"
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.swiftdeps"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.o"
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.swiftconstvalues"
+"/Users/reedrawlings/fitnotes/FitNotes/DailyRoutineService.swift":
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.d"
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.swiftdeps"
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.dia"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.o"
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.swiftconstvalues"
+"/Users/reedrawlings/fitnotes/FitNotes/DailyRoutine.swift":
+  diagnostics: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.dia"
+  const-values: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.swiftconstvalues"
+  object: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.o"
+  dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.d"
+  swift-dependencies: "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.swiftdeps"

@@ -8,7 +8,7 @@ public final class ExerciseSearchService {
     /// Search exercises by query and optional category and equipment filters
     /// - Parameters:
     ///   - query: Search text to match against exercise names
-    ///   - category: Optional category filter (muscle group)
+    ///   - category: Optional primary category filter (muscle group)
     ///   - equipment: Optional equipment filter
     ///   - exercises: Array of exercises to search through
     /// - Returns: Filtered array of exercises matching the criteria
@@ -20,9 +20,9 @@ public final class ExerciseSearchService {
     ) -> [Exercise] {
         var filteredExercises = exercises
         
-        // Filter by category if provided
+        // Filter by primary category if provided
         if let category = category, !category.isEmpty {
-            filteredExercises = filteredExercises.filter { $0.category == category }
+            filteredExercises = filteredExercises.filter { $0.primaryCategory == category }
         }
         
         // Filter by equipment if provided

@@ -1,0 +1,198 @@
+{
+  "" : {
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotes-master.dia",
+    "emit-module-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotes-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotes-master-emit-module.dia",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotes-master.swiftdeps"
+  },
+  "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/Components.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Components~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ContentView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ContentView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/DailyRoutine.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutine~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/DailyRoutineService.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineService~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/DailyRoutineView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DailyRoutineView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/DesignSystem.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/DesignSystem~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/Exercise.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Exercise~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExerciseDatabaseService.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDatabaseService~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExerciseDetailView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseDetailView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExerciseListView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseListView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExerciseSearchService.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseSearchService~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExerciseService.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExerciseService~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/ExercisesView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/ExercisesView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/FitNotesApp.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/FitNotesApp~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/HistoryTabView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/HistoryTabView~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/Models.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/Models~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/StatsService.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/StatsService~partial.swiftmodule"
+  },
+  "/Users/reedrawlings/fitnotes/FitNotes/TrackTabView.swift" : {
+    "const-values" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.swiftconstvalues",
+    "dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.d",
+    "diagnostics" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.dia",
+    "index-unit-output-path" : "/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.o",
+    "llvm-bc" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.bc",
+    "object" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.o",
+    "swift-dependencies" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView.swiftdeps",
+    "swiftmodule" : "/Users/reedrawlings/fitnotes/.deriveddata/Build/Intermediates.noindex/FitNotes.build/Debug-iphonesimulator/FitNotes.build/Objects-normal/x86_64/TrackTabView~partial.swiftmodule"
+  }
+}

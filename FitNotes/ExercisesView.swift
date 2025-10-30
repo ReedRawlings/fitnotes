@@ -20,7 +20,7 @@ struct ExercisesView: View {
     }
     
     private var muscleGroups: [String] {
-        let groups = Set(allExercises.map { $0.category })
+        let groups = Set(allExercises.map { $0.primaryCategory })
         return groups.sorted()
     }
     
@@ -221,7 +221,8 @@ struct AddExerciseView: View {
     private func saveExercise() {
         let exercise = Exercise(
             name: name,
-            category: selectedCategory,
+            primaryCategory: selectedCategory,
+            secondaryCategories: [],
             equipment: selectedEquipment,
             notes: notes.isEmpty ? nil : notes,
             isCustom: true
