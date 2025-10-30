@@ -308,6 +308,7 @@ struct AddExerciseToWorkoutView: View {
     @State private var searchText = ""
     @State private var showingDuplicateAlert = false
     @State private var duplicateExerciseName = ""
+    @State private var selectedIds: Set<UUID> = []
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -336,14 +337,25 @@ struct AddExerciseToWorkoutView: View {
                 }
                 .padding()
             
-            // Exercise List - simplified to single-step selection
+            // Exercise List with multi-select support
             ExerciseListView(
                 exercises: filteredExercises,
                 searchText: $searchText,
                 onExerciseSelected: { exercise in
-                    addExerciseImmediately(exercise)
+                    // Fallback single add (should not trigger when selectedIds is provided)
+                    addExercises(selected: [exercise.id])
                 },
-                context: .picker
+                context: .picker,
+                selectedIds: $selectedIds
+            )
+            // Fixed CTA at bottom
+            FixedModalCTAButton(
+                title: selectedIds.isEmpty ? "Select exercises" : "Add \(selectedIds.count) Exercise\(selectedIds.count == 1 ? "" : "s")",
+                icon: "checkmark",
+                isEnabled: !selectedIds.isEmpty,
+                action: {
+                    addExercises(selected: Array(selectedIds))
+                }
             )
         }
         .navigationTitle("Add Exercise")
@@ -372,13 +384,12 @@ struct AddExerciseToWorkoutView: View {
         }
     }
     
-    private func addExerciseImmediately(_ exercise: Exercise) {
+    private func addExercises(selected: [UUID]) {
         // Fetch or create workout for selectedDate
         let targetWorkout: Workout
         if let existing = workout {
             targetWorkout = existing
         } else {
-            // Create new workout for selectedDate
             targetWorkout = WorkoutService.shared.createWorkout(
                 name: "Workout - \(selectedDate.formatted(date: .abbreviated, time: .omitted))",
                 date: selectedDate,
@@ -386,25 +397,23 @@ struct AddExerciseToWorkoutView: View {
             )
         }
         
-        // Check if exercise already exists in workout
-        if WorkoutService.shared.exerciseExistsInWorkout(workout: targetWorkout, exerciseId: exercise.id) {
-            duplicateExerciseName = exercise.name
-            showingDuplicateAlert = true
-            return
+        // Add each selected exercise, skipping duplicates
+        for exerciseId in selected {
+            if WorkoutService.shared.exerciseExistsInWorkout(workout: targetWorkout, exerciseId: exerciseId) {
+                continue
+            }
+            _ = WorkoutService.shared.addExerciseToWorkout(
+                workout: targetWorkout,
+                exerciseId: exerciseId,
+                sets: 0,
+                reps: nil,
+                weight: nil,
+                duration: nil,
+                distance: nil,
+                notes: nil,
+                modelContext: modelContext
+            )
         }
-        
-        // Add exercise to workout without creating sets; sets will be logged in Track tab
-        _ = WorkoutService.shared.addExerciseToWorkout(
-            workout: targetWorkout,
-            exerciseId: exercise.id,
-            sets: 0,
-            reps: nil,
-            weight: nil,
-            duration: nil,
-            distance: nil,
-            notes: nil,
-            modelContext: modelContext
-        )
         
         dismiss()
     }
