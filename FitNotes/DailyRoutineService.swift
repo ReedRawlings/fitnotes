@@ -205,11 +205,7 @@ public final class WorkoutService {
             exercise.order = index + 1
         }
         
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error reordering exercises: \(error)")
-        }
+        saveContextAsync(modelContext, logMessage: "Error reordering exercises")
     }
     
     public func getTodaysWorkout(modelContext: ModelContext) -> Workout? {
@@ -399,11 +395,7 @@ public final class RoutineService {
             exercise.order = index + 1
         }
         
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error reordering routine exercises: \(error)")
-        }
+        saveContextAsync(modelContext, logMessage: "Error reordering routine exercises")
     }
     
     public func deleteRoutine(
