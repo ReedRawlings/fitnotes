@@ -204,31 +204,16 @@ struct HomeView: View {
     @State private var cachedStats: (weeksActive: Int?, totalVolume: String?, daysSince: String?) = (nil, nil, nil)
     
     private var weeksActive: Int {
-        if let cached = cachedStats.weeksActive {
-            return cached
-        }
-        let value = StatsService.shared.getWeeksActiveStreak(workouts: workouts)
-        cachedStats.weeksActive = value
-        return value
+        StatsService.shared.getWeeksActiveStreak(workouts: workouts)
     }
     
     private var totalVolumeFormatted: String {
-        if let cached = cachedStats.totalVolume {
-            return cached
-        }
         let volume = StatsService.shared.getTotalVolume(allSets: allSets)
-        let value = StatsService.shared.formatVolume(volume)
-        cachedStats.totalVolume = value
-        return value
+        return StatsService.shared.formatVolume(volume)
     }
     
     private var daysSinceLastLiftText: String {
-        if let cached = cachedStats.daysSince {
-            return cached
-        }
-        let value = StatsService.shared.getDaysSinceLastLift(workouts: workouts)
-        cachedStats.daysSince = value
-        return value
+        StatsService.shared.getDaysSinceLastLift(workouts: workouts)
     }
     
     var body: some View {
