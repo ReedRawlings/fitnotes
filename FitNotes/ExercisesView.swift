@@ -8,7 +8,7 @@ struct ExercisesView: View {
     @State private var selectedEquipment: String = ""
     @State private var showingAddExercise = false
     @State private var selectedExercise: Exercise?
-    @State private var cachedMuscleGroups: [String] = []
+    
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -20,11 +20,8 @@ struct ExercisesView: View {
     }
     
     private var muscleGroups: [String] {
-        if cachedMuscleGroups.isEmpty {
-            let groups = Set(allExercises.map { $0.category })
-            cachedMuscleGroups = groups.sorted()
-        }
-        return cachedMuscleGroups
+        let groups = Set(allExercises.map { $0.category })
+        return groups.sorted()
     }
     
     var body: some View {
@@ -138,8 +135,6 @@ struct ExercisesView: View {
             if allExercises.isEmpty {
                 ExerciseDatabaseService.shared.createDefaultExercises(modelContext: modelContext)
             }
-            // Invalidate muscle groups cache
-            cachedMuscleGroups = []
         }
     }
 }
