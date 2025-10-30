@@ -6,7 +6,7 @@ struct TrackTabView: View {
     @Environment(\.modelContext) private var modelContext
     var onSaveSuccess: (() -> Void)? = nil
     
-    @State private var sets: [(id: UUID, weight: Double, reps: Int)] = []
+    @State private var sets: [(id: UUID, weight: Double, reps: Int, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
     @State private var showingPicker = false
@@ -45,6 +45,9 @@ struct TrackTabView: View {
                                             pickerType = .reps
                                             showingPicker = true
                                         },
+                                        onToggleCheck: {
+                                            sets[index].isChecked.toggle()
+                                        },
                                         onDelete: {
                                             deleteSet(at: index)
                                         }
@@ -67,7 +70,7 @@ struct TrackTabView: View {
                 
                 // Fixed Save Button
                 SaveButton(
-                    isEnabled: !sets.isEmpty,
+                    isEnabled: sets.contains { $0.isChecked },
                     isSaving: isSaving,
                     isSaved: isSaved,
                     onSave: saveSets
@@ -108,11 +111,11 @@ struct TrackTabView: View {
         if let lastSession = lastSession, !lastSession.isEmpty {
             // Pre-populate with last session data
             sets = lastSession.map { set in
-                (id: set.id, weight: set.weight, reps: set.reps)
+                (id: set.id, weight: set.weight, reps: set.reps, isChecked: false)
             }
         } else {
             // No history, start with one empty set
-            sets = [(id: UUID(), weight: 0, reps: 0)]
+            sets = [(id: UUID(), weight: 0, reps: 0, isChecked: false)]
         }
     }
     
@@ -122,7 +125,7 @@ struct TrackTabView: View {
         impactFeedback.impactOccurred()
         
         _ = withAnimation(.standardSpring) {
-            sets.append((id: UUID(), weight: 0, reps: 0))
+            sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
         }
     }
     
@@ -139,7 +142,8 @@ struct TrackTabView: View {
     private func saveSets() {
         isSaving = true
         let today = Date()
-        let setData = sets.map { (weight: $0.weight, reps: $0.reps) }
+        let checkedSets = sets.filter { $0.isChecked }
+        let setData = checkedSets.map { (weight: $0.weight, reps: $0.reps) }
         
         let success = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
@@ -155,17 +159,17 @@ struct TrackTabView: View {
                 modelContext: modelContext
             )
             
-            // Show saved state
-            isSaving = false
-            isSaved = true
-            
             // Success haptic feedback
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.success)
             
+            // Immediately show saved state without delay
+            isSaving = false
+            isSaved = true
+            
             // Call onSaveSuccess callback if provided (e.g., when opening from workout tab)
             if let onSaveSuccess = onSaveSuccess {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     onSaveSuccess()
                 }
             } else {
@@ -186,9 +190,10 @@ struct TrackTabView: View {
 
 // MARK: - Set Row View
 struct SetRowView: View {
-    let set: (id: UUID, weight: Double, reps: Int)
+    let set: (id: UUID, weight: Double, reps: Int, isChecked: Bool)
     let onWeightTap: () -> Void
     let onRepsTap: () -> Void
+    let onToggleCheck: () -> Void
     let onDelete: () -> Void
     
     var body: some View {
@@ -237,17 +242,20 @@ struct SetRowView: View {
                 .accessibilityLabel("Reps, \(set.reps)")
             }
             
-            // Delete Button
-            Button(action: onDelete) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 20))  // Reduced from 22
-                    .foregroundColor(.errorRed)
+            // Checkbox Button
+            Button(action: onToggleCheck) {
+                Image(systemName: set.isChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundColor(set.isChecked ? .accentSuccess : .textSecondary)
                     .frame(width: 44, height: 44)
             }
-            .accessibilityLabel("Delete set")
+            .accessibilityLabel(set.isChecked ? "Uncheck set" : "Check set")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
+        .onLongPressGesture(minimumDuration: 0.5) {
+            onDelete()
+        }
         // Removed background and corner radius
     }
     
