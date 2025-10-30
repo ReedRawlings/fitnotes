@@ -707,6 +707,9 @@ struct RoutineDetailView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
+                    .scrollContentBackground(.hidden)
+                    .animation(nil, value: sortedExercises) // Disable animation during reordering for smoother drag
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                 }
@@ -719,9 +722,6 @@ struct RoutineDetailView: View {
                         dismiss()
                     }
                     .foregroundColor(.accentPrimary)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
                 }
             }
             .overlay(

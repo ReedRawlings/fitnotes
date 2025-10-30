@@ -39,6 +39,10 @@ public final class WorkoutService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> WorkoutExercise {
+        // Prevent duplicates: if the exercise is already in this workout, return the existing item
+        if let existing = workout.exercises.first(where: { $0.exerciseId == exerciseId }) {
+            return existing
+        }
         let order = workout.exercises.count + 1
         
         let workoutExercise = WorkoutExercise(
@@ -70,6 +74,10 @@ public final class WorkoutService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> WorkoutExercise {
+        // Prevent duplicates: if the exercise is already in this workout, return the existing item
+        if let existing = workout.exercises.first(where: { $0.exerciseId == exerciseId }) {
+            return existing
+        }
         let order = workout.exercises.count + 1
         
         let workoutExercise = WorkoutExercise(
@@ -265,6 +273,14 @@ public final class WorkoutService {
         return workout.exercises.contains { $0.exerciseId == exerciseId }
     }
     
+    /// Checks if an exercise already exists in a routine
+    public func exerciseExistsInRoutine(
+        routine: Routine,
+        exerciseId: UUID
+    ) -> Bool {
+        return routine.exercises.contains { $0.exerciseId == exerciseId }
+    }
+    
     public func getWorkoutsForWeek(modelContext: ModelContext) -> [Workout] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -326,6 +342,10 @@ public final class RoutineService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> RoutineExercise {
+        // Prevent duplicates: if the exercise is already in this routine, return the existing item
+        if let existing = routine.exercises.first(where: { $0.exerciseId == exerciseId }) {
+            return existing
+        }
         let order = routine.exercises.count + 1
         
         let routineExercise = RoutineExercise(
@@ -372,12 +392,13 @@ public final class RoutineService {
         to: Int,
         modelContext: ModelContext
     ) {
-        // Reorder by adjusting the `order` field on the sorted collection
-        var ordered = routine.exercises.sorted { $0.order < $1.order }
-        ordered.move(fromOffsets: from, toOffset: to)
-        for (index, exercise) in ordered.enumerated() {
+        routine.exercises.move(fromOffsets: from, toOffset: to)
+        
+        // Update order values
+        for (index, exercise) in routine.exercises.enumerated() {
             exercise.order = index + 1
         }
+        
         do {
             try modelContext.save()
         } catch {
