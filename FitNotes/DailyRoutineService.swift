@@ -340,6 +340,8 @@ public final class RoutineService {
         )
         
         routineExercise.routine = routine
+        // Maintain bidirectional relationship so UI updates immediately
+        routine.exercises.append(routineExercise)
         modelContext.insert(routineExercise)
         
         do {

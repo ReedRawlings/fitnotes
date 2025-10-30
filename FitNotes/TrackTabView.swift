@@ -234,6 +234,7 @@ struct SetRowView: View {
                     )
                 )
                 .keyboardType(.decimalPad)
+                .submitLabel(.done)
                 .font(.dataFont)
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
@@ -244,6 +245,12 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
                 .contentShape(Rectangle())
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { focusedInput.wrappedValue = nil }
+                    }
+                }
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -272,6 +279,7 @@ struct SetRowView: View {
                     )
                 )
                 .keyboardType(.numberPad)
+                .submitLabel(.done)
                 .font(.dataFont)
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
@@ -282,6 +290,12 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
                 .contentShape(Rectangle())
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { focusedInput.wrappedValue = nil }
+                    }
+                }
             }
             .contentShape(Rectangle())
             .onTapGesture {

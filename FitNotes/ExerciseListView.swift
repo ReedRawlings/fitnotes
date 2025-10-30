@@ -13,6 +13,8 @@ struct ExerciseListView: View {
     @Binding var searchText: String
     let onExerciseSelected: (Exercise) -> Void
     let context: ExerciseListContext
+    // Optional multi-select mode: when provided, tapping toggles selection instead of immediate callback
+    var selectedIds: Binding<Set<UUID>>? = nil
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -37,9 +39,21 @@ struct ExerciseListView: View {
                 VStack(spacing: 0) {
                     ForEach(filteredExercises) { exercise in
                         Button(action: {
-                            onExerciseSelected(exercise)
+                            if var binding = selectedIds {
+                                if binding.wrappedValue.contains(exercise.id) {
+                                    binding.wrappedValue.remove(exercise.id)
+                                } else {
+                                    binding.wrappedValue.insert(exercise.id)
+                                }
+                            } else {
+                                onExerciseSelected(exercise)
+                            }
                         }) {
-                            ExerciseListRowView(exercise: exercise, context: context)
+                            ExerciseListRowView(
+                                exercise: exercise,
+                                context: context,
+                                isSelected: selectedIds?.wrappedValue.contains(exercise.id) ?? false
+                            )
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -56,6 +70,7 @@ struct ExerciseListView: View {
 struct ExerciseListRowView: View {
     let exercise: Exercise
     let context: ExerciseListContext
+    var isSelected: Bool = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -72,11 +87,11 @@ struct ExerciseListRowView: View {
             
             Spacer()
             
-            // Chevron if selectable
+            // Trailing indicator: checkmark in picker mode (multi-select) or chevron in simple pick
             if context == .picker {
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.textSecondary)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(isSelected ? .accentPrimary : .textSecondary)
             }
         }
         .padding(.vertical, 10)

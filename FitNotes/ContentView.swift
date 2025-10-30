@@ -808,6 +808,7 @@ struct AddExerciseToRoutineTemplateView: View {
     let routine: Routine
     @Query(sort: \Exercise.name) private var exercises: [Exercise]
     @State private var searchText = ""
+    @State private var selectedIds: Set<UUID> = []
     
     private var filteredExercises: [Exercise] {
         if searchText.isEmpty {
@@ -835,14 +836,16 @@ struct AddExerciseToRoutineTemplateView: View {
                 }
                 .padding()
                 
-                // Exercise List
+                // Exercise List with multi-select support
                 ExerciseListView(
                     exercises: filteredExercises,
                     searchText: $searchText,
                     onExerciseSelected: { exercise in
-                        addExerciseImmediately(exercise)
+                        // Fallback single add (should not trigger when selectedIds is provided)
+                        addExercisesToRoutine(ids: [exercise.id])
                     },
-                    context: .picker
+                    context: .picker,
+                    selectedIds: $selectedIds
                 )
             }
             .navigationTitle("Add Exercise")
@@ -855,27 +858,32 @@ struct AddExerciseToRoutineTemplateView: View {
                     .foregroundColor(.accentPrimary)
                 }
             }
+            // Fixed CTA at bottom
+            FixedModalCTAButton(
+                title: selectedIds.isEmpty ? "Select exercises" : "Add \(selectedIds.count) Exercise\(selectedIds.count == 1 ? "" : "s")",
+                icon: "checkmark",
+                isEnabled: !selectedIds.isEmpty,
+                action: {
+                    addExercisesToRoutine(ids: Array(selectedIds))
+                }
+            )
         }
     }
     
-    private func addExerciseImmediately(_ exercise: Exercise) {
-        // Try to get last session data for this exercise
+    private func defaultsForExercise(exercise: Exercise) -> (sets: Int, reps: Int?, weight: Double?, duration: Int?) {
         var sets = 1
         var reps: Int? = nil
         var weight: Double? = nil
         var duration: Int? = nil
-        
         if let lastSession = ExerciseService.shared.getLastSessionForExercise(
             exerciseId: exercise.id,
             modelContext: modelContext
         ), let firstSet = lastSession.first {
-            // Use last session data
             sets = lastSession.count
             reps = firstSet.reps
             weight = firstSet.weight
             duration = firstSet.duration
         } else {
-            // No history - use blank/default based on exercise type
             if exercise.equipment == "Body" || exercise.category == "Cardio" {
                 duration = 60
                 reps = nil
@@ -886,18 +894,26 @@ struct AddExerciseToRoutineTemplateView: View {
                 duration = nil
             }
         }
-        
-        _ = RoutineService.shared.addExerciseToRoutine(
-            routine: routine,
-            exerciseId: exercise.id,
-            sets: sets,
-            reps: reps,
-            weight: weight,
-            duration: duration,
-            notes: nil,
-            modelContext: modelContext
-        )
-        
+        return (sets, reps, weight, duration)
+    }
+    
+    private func addExercisesToRoutine(ids: [UUID]) {
+        // Map selected IDs to Exercise models
+        let byId = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+        for id in ids {
+            guard let exercise = byId[id] else { continue }
+            let defaults = defaultsForExercise(exercise: exercise)
+            _ = RoutineService.shared.addExerciseToRoutine(
+                routine: routine,
+                exerciseId: exercise.id,
+                sets: defaults.sets,
+                reps: defaults.reps,
+                weight: defaults.weight,
+                duration: defaults.duration,
+                notes: nil,
+                modelContext: modelContext
+            )
+        }
         dismiss()
     }
 }
