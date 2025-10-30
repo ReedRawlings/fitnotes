@@ -10,7 +10,7 @@ struct WeightRepsPicker: View {
     let onValueChanged: (Double) -> Void
     let onDismiss: () -> Void
     
-    @State private var commitNearest: (() -> Void)? = nil
+    // Removed commitNearest storage to avoid state mutation during updates
     
     enum PickerType {
         case weight
@@ -46,8 +46,6 @@ struct WeightRepsPicker: View {
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    // Force-commit nearest row before dismissing
-                    commitNearest?()
                     onDismiss()
                 }
             
@@ -62,8 +60,6 @@ struct WeightRepsPicker: View {
                     Spacer()
                     
                     Button("Done") {
-                        // Force-commit nearest row before dismissing
-                        commitNearest?()
                         onDismiss()
                     }
                     .font(.system(size: 17, weight: .semibold))
@@ -84,10 +80,7 @@ struct WeightRepsPicker: View {
                     pickerType: pickerType,
                     currentValue: currentValue,
                     onValueChanged: onValueChanged,
-                    onProvideCommit: { commit in
-                        // Capture coordinator-provided commit closure
-                        self.commitNearest = commit
-                    }
+                    onProvideCommit: { _ in }
                 )
                 .frame(height: 200)
             }

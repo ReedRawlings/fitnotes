@@ -91,9 +91,7 @@ struct TrackTabView: View {
         .onAppear {
             loadSets()
         }
-        .overlay(
-            nil // Removed overlay picker; using inline numeric inputs
-        )
+        // Overlay removed; using inline numeric inputs
     }
     
     private func loadSets() {
@@ -131,7 +129,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        _ = withAnimation(.standardSpring) {
+        withAnimation(.standardSpring) {
             sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
         }
     }
@@ -141,7 +139,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        _ = withAnimation(.deleteAnimation) {
+        withAnimation(.deleteAnimation) {
             sets.remove(at: index)
         }
         persistCurrentSets()
@@ -211,7 +209,7 @@ struct SetRowView: View {
     let set: (id: UUID, weight: Double, reps: Int, isChecked: Bool)
     @Binding var weight: Double
     @Binding var reps: Int
-    @Binding var focusedInput: TrackTabView.InputFocus?
+    var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
     
@@ -252,7 +250,7 @@ struct SetRowView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused($focusedInput, equals: .weight(set.id))
+                .focused(focusedInput, equals: .weight(set.id))
                 .accessibilityLabel("Weight input")
             }
             
@@ -285,7 +283,7 @@ struct SetRowView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused($focusedInput, equals: .reps(set.id))
+                .focused(focusedInput, equals: .reps(set.id))
                 .accessibilityLabel("Reps input")
             }
             
