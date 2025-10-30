@@ -3,6 +3,7 @@ import SwiftData
 
 struct ExerciseDetailView: View {
     let exercise: Exercise
+    var shouldDismissOnSave: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
@@ -15,21 +16,6 @@ struct ExerciseDetailView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Navigation Bar
-                HStack {
-                    Spacer()
-                    
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.accentPrimary)
-                    .accessibilityLabel("Done")
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .frame(height: 44)
-                
                 // Exercise Title Section
                 HStack {
                     // Exercise Name
@@ -53,8 +39,8 @@ struct ExerciseDetailView: View {
                     .accessibilityLabel("Exercise settings")
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 16)  // Reduced from 24
-                .padding(.bottom, 12)  // Reduced from 16
+                .padding(.top, 20)
+                .padding(.bottom, 12)
                 
                 // Custom Tab Bar
                 CustomTabBar(selectedTab: $selectedTab)
@@ -63,7 +49,9 @@ struct ExerciseDetailView: View {
                 
                 // Tab Content
                 if selectedTab == 0 {
-                    TrackTabView(exercise: exercise)
+                    TrackTabView(exercise: exercise, onSaveSuccess: shouldDismissOnSave ? {
+                        dismiss()
+                    } : nil)
                 } else {
                     HistoryTabView(exercise: exercise)
                 }
