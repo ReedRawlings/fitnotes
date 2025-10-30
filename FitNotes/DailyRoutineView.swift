@@ -475,7 +475,7 @@ struct RoutineTemplateSelectorView: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             ForEach(routines) { routine in
-                                RoutineCardView(routine: routine) {
+                                RoutineTemplateCardView(routine: routine) {
                                     useRoutineTemplate(routine)
                                 }
                             }
@@ -510,8 +510,8 @@ struct RoutineTemplateSelectorView: View {
     }
 }
 
-// MARK: - RoutineCardView
-struct RoutineCardView: View {
+// MARK: - RoutineTemplateCardView
+struct RoutineTemplateCardView: View {
     let routine: Routine
     let onAdd: () -> Void
     
