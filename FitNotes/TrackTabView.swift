@@ -124,9 +124,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        withAnimation(.standardSpring) {
-            sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
-        }
+        sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
     }
     
     private func deleteSet(at index: Int) {
@@ -134,9 +132,7 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        withAnimation(.deleteAnimation) {
-            sets.remove(at: index)
-        }
+        sets.remove(at: index)
         persistCurrentSets()
     }
     
@@ -245,13 +241,13 @@ struct SetRowView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused(focusedInput, equals: .weight(set.id))
+                .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
                 .contentShape(Rectangle())
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                focusedInput = .weight(set.id)
+                focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
             }
             
             // Reps Column
@@ -283,13 +279,13 @@ struct SetRowView: View {
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused(focusedInput, equals: .reps(set.id))
+                .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
                 .contentShape(Rectangle())
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                focusedInput = .reps(set.id)
+                focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
             }
             
             // Checkbox Button
