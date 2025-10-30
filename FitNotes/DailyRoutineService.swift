@@ -5,6 +5,16 @@ import SwiftData
 public final class WorkoutService {
     public static let shared = WorkoutService()
     private init() {}
+    
+    private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
+        Task { @MainActor in
+            do {
+                try modelContext.save()
+            } catch {
+                print("\(logMessage): \(error)")
+            }
+        }
+    }
 
     public func createWorkout(
         name: String,
@@ -304,6 +314,16 @@ public final class WorkoutService {
 public final class RoutineService {
     public static let shared = RoutineService()
     private init() {}
+    
+    private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
+        Task { @MainActor in
+            do {
+                try modelContext.save()
+            } catch {
+                print("\(logMessage): \(error)")
+            }
+        }
+    }
     
     // MARK: - Routine Template Management
     

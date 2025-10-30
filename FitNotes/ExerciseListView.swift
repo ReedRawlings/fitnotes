@@ -39,7 +39,7 @@ struct ExerciseListView: View {
                 VStack(spacing: 0) {
                     ForEach(filteredExercises) { exercise in
                         Button(action: {
-                            if var binding = selectedIds {
+                            if let binding = selectedIds {
                                 if binding.wrappedValue.contains(exercise.id) {
                                     binding.wrappedValue.remove(exercise.id)
                                 } else {
