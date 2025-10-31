@@ -648,8 +648,7 @@ struct RoutineDetailView: View {
     @Query private var exercises: [Exercise]
     @State private var showingAddExercise = false
     @State private var cachedExercises: [RoutineExercise] = []
-    @State private var isDragging = false
-    @State private var pendingDatabaseWrite = false
+    @State private var hasUncommittedChanges = false
     
     var body: some View {
         ZStack {
@@ -692,70 +691,35 @@ struct RoutineDetailView: View {
 
                         // Exercises List with reordering support
                         ForEach(cachedExercises, id: \.id) { routineExercise in
-                            RoutineTemplateExerciseRowView(routineExercise: routineExercise, isDragging: isDragging)
+                            RoutineTemplateExerciseRowView(routineExercise: routineExercise)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets())
                         }
                         .onMove { indices, newOffset in
-                            // Update UI state immediately
-                            var reordered = cachedExercises
-                            reordered.move(fromOffsets: indices, toOffset: newOffset)
-                            
+                            // Update UI immediately with animation
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                cachedExercises = reordered
-                                isDragging = false
+                                cachedExercises.move(fromOffsets: indices, toOffset: newOffset)
                             }
                             
-                            // Provide haptic feedback
+                            // Haptic feedback
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
                             
-                            // Set flag to prevent cache updates during database write
-                            pendingDatabaseWrite = true
-                            
-                            // Debounce database write
-                            Task {
-                                try? await Task.sleep(nanoseconds: 300_000_000)
-                                await MainActor.run {
-                                    RoutineService.shared.reorderRoutineExercises(
-                                        routine: routine,
-                                        from: indices,
-                                        to: newOffset,
-                                        modelContext: modelContext
-                                    )
-                                    // Reset flag after database write completes
-                                    pendingDatabaseWrite = false
-                                }
-                            }
+                            // Mark as having uncommitted changes
+                            hasUncommittedChanges = true
                         }
                     }
                     .listStyle(.plain)
-                    .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
+                    .environment(\.editMode, .constant(.active))
                     .scrollContentBackground(.hidden)
-                    .gesture(
-                        LongPressGesture(minimumDuration: 0.3)
-                            .onEnded { _ in
-                                isDragging = true
-                                let generator = UIImpactFeedbackGenerator(style: .medium)
-                                generator.prepare()
-                                generator.impactOccurred()
-                            }
-                            .sequenced(before: DragGesture(minimumDistance: 0))
-                            .onEnded { _ in
-                                // Reset drag state after gesture ends with delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    isDragging = false
-                                }
-                            }
-                    )
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                     .onAppear {
                         cachedExercises = routine.exercises.sorted { $0.order < $1.order }
                     }
-                    .onChange(of: routine.exercises) { _, newExercises in
-                        if !isDragging && !pendingDatabaseWrite {
-                            cachedExercises = newExercises.sorted { $0.order < $1.order }
+                    .onDisappear {
+                        if hasUncommittedChanges {
+                            commitReorder()
                         }
                     }
                 }
@@ -791,11 +755,27 @@ struct RoutineDetailView: View {
                 }
         }
     }
+    
+    private func commitReorder() {
+        // Update order values in the actual routine.exercises array
+        for (index, cachedExercise) in cachedExercises.enumerated() {
+            if let actualExercise = routine.exercises.first(where: { $0.id == cachedExercise.id }) {
+                actualExercise.order = index + 1
+            }
+        }
+        
+        // Single database save
+        do {
+            try modelContext.save()
+            hasUncommittedChanges = false
+        } catch {
+            print("Error saving reordered exercises: \(error)")
+        }
+    }
 }
 
 struct RoutineTemplateExerciseRowView: View {
     let routineExercise: RoutineExercise
-    var isDragging: Bool = false
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     
@@ -873,13 +853,6 @@ struct RoutineTemplateExerciseRowView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
-        )
-        .scaleEffect(isDragging ? 1.02 : 1.0)
-        .shadow(
-            color: isDragging ? Color.black.opacity(0.3) : Color.clear,
-            radius: isDragging ? 12 : 0,
-            x: 0,
-            y: isDragging ? 4 : 0
         )
     }
 }

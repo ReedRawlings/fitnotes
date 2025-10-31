@@ -6,17 +6,6 @@ public final class WorkoutService {
     public static let shared = WorkoutService()
     private init() {}
     
-    private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
-        // Use asyncAfter to defer the save to the next run loop, allowing UI to update first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            do {
-                try modelContext.save()
-            } catch {
-                print("\(logMessage): \(error)")
-            }
-        }
-    }
-
     public func createWorkout(
         name: String,
         date: Date = Date(),
@@ -203,22 +192,6 @@ public final class WorkoutService {
         }
     }
     
-    public func reorderExercises(
-        workout: Workout,
-        from: IndexSet,
-        to: Int,
-        modelContext: ModelContext
-    ) {
-        workout.exercises.move(fromOffsets: from, toOffset: to)
-        
-        // Update order values
-        for (index, exercise) in workout.exercises.enumerated() {
-            exercise.order = index + 1
-        }
-        
-        saveContextAsync(modelContext, logMessage: "Error reordering exercises")
-    }
-    
     public func getTodaysWorkout(modelContext: ModelContext) -> Workout? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -316,17 +289,6 @@ public final class RoutineService {
     public static let shared = RoutineService()
     private init() {}
     
-    private func saveContextAsync(_ modelContext: ModelContext, logMessage: String) {
-        // Use asyncAfter to defer the save to the next run loop, allowing UI to update first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            do {
-                try modelContext.save()
-            } catch {
-                print("\(logMessage): \(error)")
-            }
-        }
-    }
-    
     // MARK: - Routine Template Management
     
     public func createRoutine(
@@ -402,22 +364,6 @@ public final class RoutineService {
         } catch {
             print("Error removing routine exercise: \(error)")
         }
-    }
-    
-    public func reorderRoutineExercises(
-        routine: Routine,
-        from: IndexSet,
-        to: Int,
-        modelContext: ModelContext
-    ) {
-        routine.exercises.move(fromOffsets: from, toOffset: to)
-        
-        // Update order values
-        for (index, exercise) in routine.exercises.enumerated() {
-            exercise.order = index + 1
-        }
-        
-        saveContextAsync(modelContext, logMessage: "Error reordering routine exercises")
     }
     
     public func deleteRoutine(
