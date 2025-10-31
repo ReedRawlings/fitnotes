@@ -647,10 +647,8 @@ struct RoutineDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     @State private var showingAddExercise = false
-    
-    private var sortedExercises: [RoutineExercise] {
-        routine.exercises.sorted { $0.order < $1.order }
-    }
+    @State private var cachedExercises: [RoutineExercise] = []
+    @State private var isDragging = false
     
     var body: some View {
         ZStack {
@@ -692,26 +690,61 @@ struct RoutineDetailView: View {
                         .listRowInsets(EdgeInsets())
 
                         // Exercises List with reordering support
-                        ForEach(sortedExercises, id: \.id) { routineExercise in
-                            RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                        ForEach(cachedExercises, id: \.id) { routineExercise in
+                            RoutineTemplateExerciseRowView(routineExercise: routineExercise, isDragging: isDragging)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets())
                         }
                         .onMove { indices, newOffset in
-                            RoutineService.shared.reorderRoutineExercises(
-                                routine: routine,
-                                from: indices,
-                                to: newOffset,
-                                modelContext: modelContext
-                            )
+                            // Update UI state immediately
+                            var reordered = cachedExercises
+                            reordered.move(fromOffsets: indices, toOffset: newOffset)
+                            
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                cachedExercises = reordered
+                                isDragging = false
+                            }
+                            
+                            // Provide haptic feedback
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            
+                            // Debounce database write
+                            Task {
+                                try? await Task.sleep(nanoseconds: 300_000_000)
+                                await MainActor.run {
+                                    RoutineService.shared.reorderRoutineExercises(
+                                        routine: routine,
+                                        from: indices,
+                                        to: newOffset,
+                                        modelContext: modelContext
+                                    )
+                                }
+                            }
                         }
                     }
                     .listStyle(.plain)
                     .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
                     .scrollContentBackground(.hidden)
-                    .animation(nil, value: sortedExercises) // Disable animation during reordering for smoother drag
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 0.3)
+                            .onEnded { _ in
+                                isDragging = true
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.prepare()
+                                generator.impactOccurred()
+                            }
+                    )
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
+                    .onAppear {
+                        cachedExercises = routine.exercises.sorted { $0.order < $1.order }
+                    }
+                    .onChange(of: routine.exercises) { _, newExercises in
+                        if !isDragging {
+                            cachedExercises = newExercises.sorted { $0.order < $1.order }
+                        }
+                    }
                 }
             }
             .navigationTitle("Routine Details")
@@ -749,6 +782,7 @@ struct RoutineDetailView: View {
 
 struct RoutineTemplateExerciseRowView: View {
     let routineExercise: RoutineExercise
+    var isDragging: Bool = false
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     
@@ -819,11 +853,20 @@ struct RoutineTemplateExerciseRowView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 20)
-        .background(Color.secondaryBg)
-        .cornerRadius(16)
-        .overlay(
+        .background(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .fill(Color.secondaryBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                )
+        )
+        .scaleEffect(isDragging ? 1.02 : 1.0)
+        .shadow(
+            color: isDragging ? Color.black.opacity(0.3) : Color.clear,
+            radius: isDragging ? 12 : 0,
+            x: 0,
+            y: isDragging ? 4 : 0
         )
     }
 }
