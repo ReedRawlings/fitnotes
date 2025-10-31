@@ -130,9 +130,15 @@ struct WorkoutDetailView: View {
     @State private var cachedExercises: [WorkoutExercise] = []
     @State private var hasUncommittedChanges = false
     
+    init(workout: Workout) {
+        self.workout = workout
+        // Initialize cached exercises immediately from workout
+        _cachedExercises = State(initialValue: workout.exercises.sorted { $0.order < $1.order })
+    }
+    
     var body: some View {
         Group {
-            if cachedExercises.isEmpty {
+            if workout.exercises.isEmpty {
                 VStack(spacing: 24) {
                     EmptyStateView(
                         icon: "dumbbell",
@@ -187,7 +193,10 @@ struct WorkoutDetailView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
                 .onAppear {
-                    cachedExercises = workout.exercises.sorted { $0.order < $1.order }
+                    // Initialize cache from workout exercises
+                    if cachedExercises.isEmpty || !hasUncommittedChanges {
+                        cachedExercises = workout.exercises.sorted { $0.order < $1.order }
+                    }
                 }
                 .onChange(of: workout.exercises) { _, newExercises in
                     // Update cache when exercises are added/removed (but preserve reordering)
