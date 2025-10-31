@@ -128,14 +128,12 @@ struct WorkoutDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingRoutineTemplates = false
     @State private var editMode: EditMode = .inactive
-    
-    private var sortedExercises: [WorkoutExercise] {
-        workout.exercises.sorted { $0.order < $1.order }
-    }
+    @State private var cachedExercises: [WorkoutExercise] = []
+    @State private var isDragging = false
     
     var body: some View {
         Group {
-            if sortedExercises.isEmpty {
+            if cachedExercises.isEmpty {
                 VStack(spacing: 24) {
                     EmptyStateView(
                         icon: "dumbbell",
@@ -165,26 +163,61 @@ struct WorkoutDetailView: View {
                 .padding(.top, 12)
             } else {
                 List {
-                    ForEach(sortedExercises, id: \.id) { workoutExercise in
-                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
+                    ForEach(cachedExercises, id: \.id) { workoutExercise in
+                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout, isDragging: isDragging)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets())
                     }
                     .onMove { indices, newOffset in
-                        WorkoutService.shared.reorderExercises(
-                            workout: workout,
-                            from: indices,
-                            to: newOffset,
-                            modelContext: modelContext
-                        )
+                        // Update UI state immediately
+                        var reordered = cachedExercises
+                        reordered.move(fromOffsets: indices, toOffset: newOffset)
+                        
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            cachedExercises = reordered
+                            isDragging = false
+                        }
+                        
+                        // Provide haptic feedback
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        
+                        // Debounce database write
+                        Task {
+                            try? await Task.sleep(nanoseconds: 300_000_000)
+                            await MainActor.run {
+                                WorkoutService.shared.reorderExercises(
+                                    workout: workout,
+                                    from: indices,
+                                    to: newOffset,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }
                     }
                 }
                 .listStyle(.plain)
                 .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
                 .scrollContentBackground(.hidden)
-                .animation(nil, value: sortedExercises) // Disable animation during reordering for smoother drag
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.3)
+                        .onEnded { _ in
+                            isDragging = true
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.prepare()
+                            generator.impactOccurred()
+                        }
+                )
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
+                .onAppear {
+                    cachedExercises = workout.exercises.sorted { $0.order < $1.order }
+                }
+                .onChange(of: workout.exercises) { _, newExercises in
+                    if !isDragging {
+                        cachedExercises = newExercises.sorted { $0.order < $1.order }
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingRoutineTemplates) {
@@ -196,6 +229,7 @@ struct WorkoutDetailView: View {
 struct WorkoutExerciseRowView: View {
     let workoutExercise: WorkoutExercise
     let workout: Workout
+    var isDragging: Bool = false
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query private var exercises: [Exercise]
@@ -252,7 +286,21 @@ struct WorkoutExerciseRowView: View {
             }
         }
         .padding(12)
-        .cardStyle()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.secondaryBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                )
+        )
+        .scaleEffect(isDragging ? 1.02 : 1.0)
+        .shadow(
+            color: isDragging ? Color.black.opacity(0.3) : Color.clear,
+            radius: isDragging ? 12 : 0,
+            x: 0,
+            y: isDragging ? 4 : 0
+        )
         .onTapGesture {
             showingExerciseDetail = true
         }
