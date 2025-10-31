@@ -130,6 +130,7 @@ struct WorkoutDetailView: View {
     @State private var editMode: EditMode = .inactive
     @State private var cachedExercises: [WorkoutExercise] = []
     @State private var isDragging = false
+    @State private var pendingDatabaseWrite = false
     
     var body: some View {
         Group {
@@ -182,6 +183,9 @@ struct WorkoutDetailView: View {
                         let generator = UIImpactFeedbackGenerator(style: .light)
                         generator.impactOccurred()
                         
+                        // Set flag to prevent cache updates during database write
+                        pendingDatabaseWrite = true
+                        
                         // Debounce database write
                         Task {
                             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -192,6 +196,8 @@ struct WorkoutDetailView: View {
                                     to: newOffset,
                                     modelContext: modelContext
                                 )
+                                // Reset flag after database write completes
+                                pendingDatabaseWrite = false
                             }
                         }
                     }
@@ -199,13 +205,20 @@ struct WorkoutDetailView: View {
                 .listStyle(.plain)
                 .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
                 .scrollContentBackground(.hidden)
-                .simultaneousGesture(
+                .gesture(
                     LongPressGesture(minimumDuration: 0.3)
                         .onEnded { _ in
                             isDragging = true
                             let generator = UIImpactFeedbackGenerator(style: .medium)
                             generator.prepare()
                             generator.impactOccurred()
+                        }
+                        .sequenced(before: DragGesture(minimumDistance: 0))
+                        .onEnded { _ in
+                            // Reset drag state after gesture ends with delay
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isDragging = false
+                            }
                         }
                 )
                 .padding(.horizontal, 20)
@@ -214,7 +227,7 @@ struct WorkoutDetailView: View {
                     cachedExercises = workout.exercises.sorted { $0.order < $1.order }
                 }
                 .onChange(of: workout.exercises) { _, newExercises in
-                    if !isDragging {
+                    if !isDragging && !pendingDatabaseWrite {
                         cachedExercises = newExercises.sorted { $0.order < $1.order }
                     }
                 }
@@ -242,9 +255,14 @@ struct WorkoutExerciseRowView: View {
     }
     
     private var sortedSets: [WorkoutSet] {
-        let exerciseSets = allSets.filter { 
-            $0.exerciseId == workoutExercise.exerciseId && 
-            Calendar.current.isDate($0.date, inSameDayAs: workout.date)
+        let calendar = Calendar.current
+        let workoutStart = calendar.startOfDay(for: workout.date)
+        let workoutEnd = calendar.date(byAdding: .day, value: 1, to: workoutStart)!
+        
+        let exerciseSets = allSets.filter { set in
+            set.exerciseId == workoutExercise.exerciseId &&
+            set.date >= workoutStart &&
+            set.date < workoutEnd
         }
         return exerciseSets.sorted { $0.order < $1.order }
     }
@@ -258,6 +276,12 @@ struct WorkoutExerciseRowView: View {
                         .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
+                        .onAppear {
+                            if exercise == nil {
+                                print("⚠️ Exercise not found for ID: \(workoutExercise.exerciseId)")
+                            }
+                            print("📊 Exercise: \(exercise?.name ?? "nil") | Sets count: \(sortedSets.count)")
+                        }
                     
                     // Set history - grid layout (2 columns)
                     if !sortedSets.isEmpty {
@@ -271,6 +295,11 @@ struct WorkoutExerciseRowView: View {
                                     .foregroundColor(.textSecondary)
                             }
                         }
+                    } else {
+                        Text("Tap to add sets")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.textTertiary)
+                            .padding(.top, 2)
                     }
                 }
                     

@@ -649,6 +649,7 @@ struct RoutineDetailView: View {
     @State private var showingAddExercise = false
     @State private var cachedExercises: [RoutineExercise] = []
     @State private var isDragging = false
+    @State private var pendingDatabaseWrite = false
     
     var body: some View {
         ZStack {
@@ -709,6 +710,9 @@ struct RoutineDetailView: View {
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
                             
+                            // Set flag to prevent cache updates during database write
+                            pendingDatabaseWrite = true
+                            
                             // Debounce database write
                             Task {
                                 try? await Task.sleep(nanoseconds: 300_000_000)
@@ -719,6 +723,8 @@ struct RoutineDetailView: View {
                                         to: newOffset,
                                         modelContext: modelContext
                                     )
+                                    // Reset flag after database write completes
+                                    pendingDatabaseWrite = false
                                 }
                             }
                         }
@@ -726,13 +732,20 @@ struct RoutineDetailView: View {
                     .listStyle(.plain)
                     .environment(\.editMode, .constant(.active)) // Enable long-press drag to reorder
                     .scrollContentBackground(.hidden)
-                    .simultaneousGesture(
+                    .gesture(
                         LongPressGesture(minimumDuration: 0.3)
                             .onEnded { _ in
                                 isDragging = true
                                 let generator = UIImpactFeedbackGenerator(style: .medium)
                                 generator.prepare()
                                 generator.impactOccurred()
+                            }
+                            .sequenced(before: DragGesture(minimumDistance: 0))
+                            .onEnded { _ in
+                                // Reset drag state after gesture ends with delay
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isDragging = false
+                                }
                             }
                     )
                     .padding(.horizontal, 20)
@@ -741,7 +754,7 @@ struct RoutineDetailView: View {
                         cachedExercises = routine.exercises.sorted { $0.order < $1.order }
                     }
                     .onChange(of: routine.exercises) { _, newExercises in
-                        if !isDragging {
+                        if !isDragging && !pendingDatabaseWrite {
                             cachedExercises = newExercises.sorted { $0.order < $1.order }
                         }
                     }
