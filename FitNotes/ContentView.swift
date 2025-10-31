@@ -693,7 +693,7 @@ struct RoutineDetailView: View {
                         ForEach(cachedExercises, id: \.id) { routineExercise in
                             RoutineTemplateExerciseRowView(routineExercise: routineExercise)
                                 .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 0, leading: -20, bottom: 0, trailing: 0))
+                                .listRowInsets(EdgeInsets())
                         }
                         .onMove { indices, newOffset in
                             // Update UI immediately with animation
@@ -710,7 +710,6 @@ struct RoutineDetailView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .environment(\.editMode, .constant(.active))
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 20)
                     .padding(.top, 12)

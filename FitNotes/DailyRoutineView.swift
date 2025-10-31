@@ -171,7 +171,7 @@ struct WorkoutDetailView: View {
                     ForEach(cachedExercises, id: \.id) { workoutExercise in
                         WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 0, leading: -20, bottom: 0, trailing: 0))
+                            .listRowInsets(EdgeInsets())
                     }
                     .onMove { indices, newOffset in
                         // Update UI immediately with animation
@@ -188,7 +188,6 @@ struct WorkoutDetailView: View {
                     }
                 }
                 .listStyle(.plain)
-                .environment(\.editMode, .constant(.active))
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
