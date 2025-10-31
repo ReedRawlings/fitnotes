@@ -693,7 +693,7 @@ struct RoutineDetailView: View {
                         ForEach(cachedExercises, id: \.id) { routineExercise in
                             RoutineTemplateExerciseRowView(routineExercise: routineExercise)
                                 .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets())
+                                .listRowInsets(EdgeInsets(top: 0, leading: -20, bottom: 0, trailing: 0))
                         }
                         .onMove { indices, newOffset in
                             // Update UI immediately with animation
@@ -795,7 +795,7 @@ struct RoutineTemplateExerciseRowView: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             // Exercise Info
                 VStack(alignment: .leading, spacing: 4) {
                 Text(exercise?.name ?? "Unknown Exercise")

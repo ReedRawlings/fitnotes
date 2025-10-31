@@ -171,7 +171,7 @@ struct WorkoutDetailView: View {
                     ForEach(cachedExercises, id: \.id) { workoutExercise in
                         WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
+                            .listRowInsets(EdgeInsets(top: 0, leading: -20, bottom: 0, trailing: 0))
                     }
                     .onMove { indices, newOffset in
                         // Update UI immediately with animation
@@ -269,7 +269,7 @@ struct WorkoutExerciseRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // Header with exercise name and delete
-            HStack {
+            HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(exercise?.name ?? "Unknown Exercise")
                         .font(.system(size: 17, weight: .regular))
@@ -313,7 +313,8 @@ struct WorkoutExerciseRowView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(12)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.secondaryBg)
