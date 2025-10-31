@@ -717,6 +717,17 @@ struct RoutineDetailView: View {
                     .onAppear {
                         cachedExercises = routine.exercises.sorted { $0.order < $1.order }
                     }
+                    .onChange(of: routine.exercises) { _, newExercises in
+                        // Update cache when exercises are added/removed (but preserve reordering)
+                        if !hasUncommittedChanges {
+                            let newIds = Set(newExercises.map { $0.id })
+                            let cachedIds = Set(cachedExercises.map { $0.id })
+                            // Only update if the IDs actually changed (added/removed exercises)
+                            if newIds != cachedIds {
+                                cachedExercises = newExercises.sorted { $0.order < $1.order }
+                            }
+                        }
+                    }
                     .onDisappear {
                         if hasUncommittedChanges {
                             commitReorder()
