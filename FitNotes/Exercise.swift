@@ -10,6 +10,8 @@ public final class Exercise {
     public var equipment: String // e.g., "Machine", "Free Weight", "Body"
     public var notes: String?
     public var unit: String
+    public var restTimerDuration: Int = 60
+    public var autoStartRestTimer: Bool = true
     public var isCustom: Bool // Whether this is a user-created exercise
     public var createdAt: Date
     public var updatedAt: Date
@@ -22,6 +24,8 @@ public final class Exercise {
         equipment: String = "Free Weight",
         notes: String? = nil,
         unit: String = "kg",
+        restTimerDuration: Int = 60,
+        autoStartRestTimer: Bool = true,
         isCustom: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -33,6 +37,8 @@ public final class Exercise {
         self.equipment = equipment
         self.notes = notes
         self.unit = unit
+        self.restTimerDuration = restTimerDuration
+        self.autoStartRestTimer = autoStartRestTimer
         self.isCustom = isCustom
         self.createdAt = createdAt
         self.updatedAt = updatedAt

@@ -33,4 +33,24 @@ final class FitNotesTests: XCTestCase {
         }
     }
 
+    func testExerciseDefaultRestTimerSettings() throws {
+        let exercise = Exercise(
+            name: "Bench Press",
+            primaryCategory: "Chest"
+        )
+        XCTAssertEqual(exercise.restTimerDuration, 60)
+        XCTAssertTrue(exercise.autoStartRestTimer)
+    }
+
+    func testExerciseCustomRestTimerSettings() throws {
+        let exercise = Exercise(
+            name: "Squat",
+            primaryCategory: "Legs",
+            restTimerDuration: 90,
+            autoStartRestTimer: false
+        )
+        XCTAssertEqual(exercise.restTimerDuration, 90)
+        XCTAssertFalse(exercise.autoStartRestTimer)
+    }
+
 }
