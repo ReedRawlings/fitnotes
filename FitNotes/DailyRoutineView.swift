@@ -276,9 +276,9 @@ struct WorkoutExerciseRowView: View {
                         .lineLimit(1)
                         .onAppear {
                             if exercise == nil {
-                                print("⚠️ Exercise not found for ID: \(workoutExercise.exerciseId)")
+                                print("\u{26A0}\u{FE0F} Exercise not found for ID: \(workoutExercise.exerciseId)")
                             }
-                            print("📊 Exercise: \(exercise?.name ?? "nil") | Sets count: \(sortedSets.count)")
+                            print("\u{1F4CA} Exercise: \(exercise?.name ?? "nil") | Sets count: \(sortedSets.count)")
                         }
                     
                     // Set history - grid layout (2 columns)
@@ -288,9 +288,14 @@ struct WorkoutExerciseRowView: View {
                             GridItem(.flexible(), alignment: .leading)
                         ], spacing: 8) {
                             ForEach(sortedSets, id: \.id) { set in
-                                Text("\(set.reps)×\(Int(set.weight)) \(appState.weightUnit)")
-                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.textSecondary)
+                                HStack(spacing: 6) {
+                                    if set.isCompleted {
+                                        SetCompletionBadge()
+                                    }
+                                    Text("\(set.reps)\u{00D7}\(formattedWeight(for: set.weight)) \(appState.weightUnit)")
+                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textSecondary)
+                                }
                             }
                         }
                     } else {
@@ -332,6 +337,14 @@ struct WorkoutExerciseRowView: View {
         }
     }
     
+    private func formattedWeight(for weight: Double) -> String {
+        if weight.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(weight))"
+        } else {
+            return String(format: "%.1f", weight)
+        }
+    }
+    
     private func deleteExercise() {
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -346,6 +359,20 @@ struct WorkoutExerciseRowView: View {
             )
         }
         print("Delete operation completed")
+    }
+}
+
+private struct SetCompletionBadge: View {
+    var body: some View {
+        Circle()
+            .fill(Color.accentSuccess)
+            .frame(width: 16, height: 16)
+            .overlay(
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white)
+            )
+            .accessibilityHidden(true)
     }
 }
 
