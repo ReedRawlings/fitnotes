@@ -2,13 +2,18 @@ import SwiftUI
 import SwiftData
 
 struct TrackTabView: View {
-    let exercise: Exercise
+    @Bindable var exercise: Exercise
     @Environment(\.modelContext) private var modelContext
     var onSaveSuccess: (() -> Void)? = nil
     
     @State private var sets: [(id: UUID, weight: Double, reps: Int, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
+    @State private var restTimerRemaining = 0
+    @State private var restTimerTotal = 0
+    @State private var isRestTimerVisible = false
+    @State private var isRestTimerPaused = false
+    @State private var restTimer: Timer?
     // Inline numeric inputs replaced the old wheel picker
     
     enum InputFocus: Hashable {
@@ -26,6 +31,20 @@ struct TrackTabView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
+                        if !isRestTimerVisible {
+                            RestTimerControlCard(
+                                duration: exercise.restTimerDuration,
+                                autoStartEnabled: exercise.autoStartRestTimer,
+                                onStart: { startRestTimer(isManualTrigger: true) }
+                            )
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                            .padding(.bottom, 16)
+                        } else {
+                            Color.clear
+                                .frame(height: 16)
+                        }
+                        
                         // Current Sets
                         if !sets.isEmpty {
                             VStack(spacing: 10) {  // Reduced from 12
@@ -50,6 +69,9 @@ struct TrackTabView: View {
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
+                                            if sets[index].isChecked, exercise.autoStartRestTimer {
+                                                startRestTimer(isManualTrigger: false)
+                                            }
                                         },
                                         onDelete: {
                                             deleteSet(at: index)
@@ -71,6 +93,23 @@ struct TrackTabView: View {
                     }
                 }
                 
+                if isRestTimerVisible {
+                    RestTimerBanner(
+                        remainingSeconds: restTimerRemaining,
+                        totalSeconds: restTimerTotal,
+                        isPaused: isRestTimerPaused,
+                        onTogglePause: toggleRestTimerPause,
+                        onRestart: restartRestTimer,
+                        onSkip: {
+                            stopRestTimer(triggerFeedback: true)
+                        }
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                
                 // Fixed Save Button
                 SaveButton(
                     isEnabled: !sets.isEmpty,
@@ -85,6 +124,9 @@ struct TrackTabView: View {
         }
         .onAppear {
             loadSets()
+        }
+        .onDisappear {
+            stopRestTimer(triggerFeedback: false)
         }
         // Overlay removed; using inline numeric inputs
     }
@@ -179,6 +221,90 @@ struct TrackTabView: View {
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.error)
             isSaving = false
+        }
+    }
+    
+    private func startRestTimer(isManualTrigger: Bool) {
+        let duration = exercise.restTimerDuration
+        guard duration > 0 else {
+            if isManualTrigger {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.warning)
+            }
+            return
+        }
+        let feedbackStyle: UIImpactFeedbackGenerator.Style = isManualTrigger ? .light : .medium
+        beginRestTimer(duration: duration, feedbackStyle: feedbackStyle)
+    }
+    
+    private func beginRestTimer(duration: Int, feedbackStyle: UIImpactFeedbackGenerator.Style = .medium) {
+        restTimer?.invalidate()
+        restTimerRemaining = duration
+        restTimerTotal = duration
+        isRestTimerPaused = false
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isRestTimerVisible = true
+        }
+        let impactFeedback = UIImpactFeedbackGenerator(style: feedbackStyle)
+        impactFeedback.impactOccurred()
+        let timer = Timer(timeInterval: 1, repeats: true) { _ in
+            guard !isRestTimerPaused else { return }
+            if restTimerRemaining > 0 {
+                restTimerRemaining -= 1
+                if restTimerRemaining <= 0 {
+                    finalizeRestTimer()
+                }
+            } else {
+                finalizeRestTimer()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        restTimer = timer
+    }
+    
+    private func toggleRestTimerPause() {
+        guard isRestTimerVisible, restTimer != nil else { return }
+        isRestTimerPaused.toggle()
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+    }
+    
+    private func restartRestTimer() {
+        guard restTimerTotal > 0 else {
+            startRestTimer(isManualTrigger: true)
+            return
+        }
+        beginRestTimer(duration: restTimerTotal, feedbackStyle: .medium)
+    }
+    
+    private func stopRestTimer(triggerFeedback: Bool) {
+        if triggerFeedback {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+        }
+        restTimer?.invalidate()
+        restTimer = nil
+        restTimerRemaining = 0
+        restTimerTotal = 0
+        isRestTimerPaused = false
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isRestTimerVisible = false
+        }
+    }
+    
+    private func finalizeRestTimer() {
+        guard restTimer != nil else { return }
+        restTimer?.invalidate()
+        restTimer = nil
+        restTimerRemaining = 0
+        isRestTimerPaused = false
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(.success)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isRestTimerVisible = false
+            }
+            restTimerTotal = 0
         }
     }
     
@@ -402,6 +528,215 @@ struct SaveButton: View {
         .disabled(!isEnabled || isSaving || isSaved)
         .scaleEffect(1.0)
         .animation(.buttonPress, value: isSaved)
+    }
+}
+
+// MARK: - Rest Timer Control Card
+struct RestTimerControlCard: View {
+    let duration: Int
+    let autoStartEnabled: Bool
+    let onStart: () -> Void
+    
+    private var isStartDisabled: Bool { duration <= 0 }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("REST TIMER")
+                        .font(.sectionHeader)
+                        .foregroundColor(.textTertiary)
+                        .kerning(0.3)
+                    Text(formattedDuration(duration))
+                        .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .foregroundColor(.textPrimary)
+                    Text("Default rest for this exercise")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                }
+                Spacer()
+                Button(action: onStart) {
+                    Label("Start", systemImage: "play.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(isStartDisabled ? .textSecondary : .textInverse)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 18)
+                        .background(
+                            isStartDisabled ? Color.disabledOverlay : LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(12)
+                }
+                .disabled(isStartDisabled)
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            HStack(spacing: 10) {
+                Image(systemName: autoStartEnabled ? "checkmark.circle.fill" : "pause.circle")
+                    .font(.system(size: 18))
+                    .foregroundColor(autoStartEnabled ? .accentSuccess : .textSecondary)
+                Text(autoStartEnabled ? "Auto-start is enabled" : "Auto-start is disabled")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+    
+    private func formattedDuration(_ seconds: Int) -> String {
+        guard seconds > 0 else { return "Off" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        if minutes == 0 {
+            return "\(remainder)s"
+        } else if remainder == 0 {
+            return "\(minutes)m"
+        } else {
+            return "\(minutes)m \(remainder)s"
+        }
+    }
+}
+
+// MARK: - Rest Timer Banner
+struct RestTimerBanner: View {
+    let remainingSeconds: Int
+    let totalSeconds: Int
+    let isPaused: Bool
+    let onTogglePause: () -> Void
+    let onRestart: () -> Void
+    let onSkip: () -> Void
+    
+    private var progress: Double {
+        guard totalSeconds > 0 else { return remainingSeconds == 0 ? 1 : 0 }
+        let clampedRemaining = max(min(remainingSeconds, totalSeconds), 0)
+        let completed = Double(totalSeconds - clampedRemaining)
+        return min(max(completed / Double(totalSeconds), 0), 1)
+    }
+    
+    private var statusText: String {
+        if isPaused {
+            return "Paused"
+        }
+        if remainingSeconds <= 0 {
+            return "Complete"
+        }
+        return "Total \(formattedTotal)"
+    }
+    
+    private var formattedTotal: String {
+        formatDuration(totalSeconds)
+    }
+    
+    private var formattedRemaining: String {
+        formatCountdown(remainingSeconds)
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("REST TIMER")
+                        .font(.sectionHeader)
+                        .foregroundColor(.textTertiary)
+                        .kerning(0.3)
+                    Text(statusText)
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                }
+                Spacer()
+                Text(formattedRemaining)
+                    .font(.system(size: 34, weight: .bold, design: .monospaced))
+                    .foregroundColor(.textPrimary)
+            }
+            
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.tertiaryBg)
+                ProgressView(value: progress)
+                    .progressViewStyle(.linear)
+                    .tint(.accentPrimary)
+            }
+            .frame(height: 6)
+            
+            HStack(spacing: 12) {
+                Button(action: onTogglePause) {
+                    Label(isPaused ? "Resume" : "Pause", systemImage: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.textInverse)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: onRestart) {
+                    Label("Restart", systemImage: "gobackward")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.tertiaryBg)
+                        .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: onSkip) {
+                    Label("Skip", systemImage: "forward.end.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.errorRed)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.errorRed.opacity(0.15))
+                        .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(16)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 4)
+    }
+    
+    private func formatDuration(_ seconds: Int) -> String {
+        guard seconds > 0 else { return "Off" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        if minutes == 0 {
+            return "\(remainder)s"
+        } else if remainder == 0 {
+            return "\(minutes)m"
+        } else {
+            return "\(minutes)m \(remainder)s"
+        }
+    }
+    
+    private func formatCountdown(_ seconds: Int) -> String {
+        guard seconds > 0 else { return "00:00" }
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        return String(format: "%02d:%02d", minutes, remainder)
     }
 }
 
