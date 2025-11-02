@@ -37,6 +37,8 @@ extension UIColor {
 
 // MARK: - App State Management
 public class AppState: ObservableObject {
+    @Published var selectedExercise: Exercise?
+    @Published var showWorkoutFinishedBanner: Bool = false
     private var _activeWorkout: ActiveWorkoutState?
     @Published var selectedTab: Int = 0
     @Published var weightUnit: String = "kg" // Global unit preference for set history display
@@ -1115,6 +1117,7 @@ struct InsightsView: View {
 struct ContentView: View {
     @StateObject private var appState = AppState()
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     
     var body: some View {
         TabView(selection: $appState.selectedTab) {
@@ -1153,6 +1156,12 @@ struct ContentView: View {
         }
         .accentColor(.accentPrimary)
         .environmentObject(appState)
+        .sheet(item: $appState.selectedExercise) { exercise in
+            let todaysWorkout = workouts.first { Calendar.current.isDateInToday($0.date) }
+            let workoutExercise = todaysWorkout?.exercises.first { $0.exerciseId == exercise.id }
+
+            ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise)
+        }
         .onAppear {
             // Sync active workout state from SwiftData on app launch
             appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
