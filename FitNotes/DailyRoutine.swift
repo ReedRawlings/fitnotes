@@ -106,8 +106,8 @@ public final class WorkoutSet {
     @Attribute(.unique) public var id: UUID
     public var exerciseId: UUID       // Which exercise
     public var order: Int             // Set number (1, 2, 3...)
-    public var reps: Int
-    public var weight: Double
+    public var reps: Int?
+    public var weight: Double?
     public var duration: Int?         // For cardio/timed
     public var distance: Double?      // For distance-based
     public var notes: String?
@@ -121,8 +121,8 @@ public final class WorkoutSet {
         id: UUID = UUID(),
         exerciseId: UUID,
         order: Int,
-        reps: Int,
-        weight: Double = 0,
+        reps: Int?,
+        weight: Double?,
         duration: Int? = nil,
         distance: Double? = nil,
         notes: String? = nil,
