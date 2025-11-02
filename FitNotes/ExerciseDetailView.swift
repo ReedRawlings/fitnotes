@@ -8,6 +8,7 @@ struct ExerciseDetailView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var selectedTab = 0
+    @State private var isShowingSettings = false
     
     var body: some View {
         ZStack {
@@ -29,7 +30,7 @@ struct ExerciseDetailView: View {
                     
                     // Settings Button (inline with title)
                     Button(action: {
-                        // TODO: Present exercise settings modal
+                        isShowingSettings = true
                     }) {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 20))
@@ -56,6 +57,10 @@ struct ExerciseDetailView: View {
                     HistoryTabView(exercise: exercise)
                 }
             }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            ExerciseSettingsView(exercise: exercise)
+                .presentationDetents([.medium, .large])
         }
     }
 }
