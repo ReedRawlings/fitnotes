@@ -124,8 +124,30 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        let previousWeight = sets.last?.weight ?? 0
-        sets.append((id: UUID(), weight: previousWeight, reps: 0, isChecked: false))
+        // Get weight and reps from the last displayed set, or from history if no sets are displayed
+        let previousWeight: Double
+        let previousReps: Int
+        
+        if let lastSet = sets.last {
+            // Use the last displayed set
+            previousWeight = lastSet.weight
+            previousReps = lastSet.reps
+        } else {
+            // Fall back to last session history
+            let lastSession = ExerciseService.shared.getLastSessionForExercise(
+                exerciseId: exercise.id,
+                modelContext: modelContext
+            )
+            if let lastSessionSet = lastSession?.last {
+                previousWeight = lastSessionSet.weight
+                previousReps = lastSessionSet.reps
+            } else {
+                previousWeight = 0
+                previousReps = 0
+            }
+        }
+        
+        sets.append((id: UUID(), weight: previousWeight, reps: previousReps, isChecked: false))
         persistCurrentSets()
     }
     
@@ -307,26 +329,26 @@ struct SetRowView: View {
             // Checkbox Button
             Button(action: onToggleCheck) {
                 ZStack {
-                    Circle()
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(set.isChecked ? Color.accentSuccess : Color.white.opacity(0.06))
-                        .frame(width: 52, height: 52)
+                        .frame(width: 40, height: 40)
                         .overlay(
-                            Circle()
+                            RoundedRectangle(cornerRadius: 8)
                                 .stroke(set.isChecked ? Color.clear : Color.white.opacity(0.12), lineWidth: 1.5)
                         )
                         .shadow(
                             color: set.isChecked ? Color.accentSuccess.opacity(0.35) : .clear,
-                            radius: 10,
+                            radius: 6,
                             x: 0,
-                            y: 4
+                            y: 2
                         )
                     Image(systemName: "checkmark")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                         .opacity(set.isChecked ? 1 : 0)
                 }
-                .frame(width: 56, height: 56)
-                .contentShape(Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
                 .animation(.easeInOut(duration: 0.15), value: set.isChecked)
             }
             .buttonStyle(PlainButtonStyle())
