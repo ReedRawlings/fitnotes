@@ -124,7 +124,9 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
+        let previousWeight = sets.last?.weight ?? 0
+        sets.append((id: UUID(), weight: previousWeight, reps: 0, isChecked: false))
+        persistCurrentSets()
     }
     
     private func deleteSet(at index: Int) {
@@ -205,7 +207,7 @@ struct SetRowView: View {
     let onDelete: () -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 20) {
             // Weight Column
             VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
                 HStack(spacing: 4) {
@@ -304,12 +306,32 @@ struct SetRowView: View {
             
             // Checkbox Button
             Button(action: onToggleCheck) {
-                Image(systemName: set.isChecked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundColor(set.isChecked ? .accentSuccess : .textSecondary)
-                    .frame(width: 44, height: 44)
+                ZStack {
+                    Circle()
+                        .fill(set.isChecked ? Color.accentSuccess : Color.white.opacity(0.06))
+                        .frame(width: 52, height: 52)
+                        .overlay(
+                            Circle()
+                                .stroke(set.isChecked ? Color.clear : Color.white.opacity(0.12), lineWidth: 1.5)
+                        )
+                        .shadow(
+                            color: set.isChecked ? Color.accentSuccess.opacity(0.35) : .clear,
+                            radius: 10,
+                            x: 0,
+                            y: 4
+                        )
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .opacity(set.isChecked ? 1 : 0)
+                }
+                .frame(width: 56, height: 56)
+                .contentShape(Circle())
+                .animation(.easeInOut(duration: 0.15), value: set.isChecked)
             }
+            .buttonStyle(PlainButtonStyle())
             .accessibilityLabel(set.isChecked ? "Uncheck set" : "Check set")
+            .accessibilityHint("Marks this set as complete")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
