@@ -124,7 +124,9 @@ struct TrackTabView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        sets.append((id: UUID(), weight: 0, reps: 0, isChecked: false))
+        let previousWeight = sets.last?.weight ?? 0
+        sets.append((id: UUID(), weight: previousWeight, reps: 0, isChecked: false))
+        persistCurrentSets()
     }
     
     private func deleteSet(at index: Int) {
