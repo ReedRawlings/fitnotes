@@ -6,7 +6,7 @@ struct TrackTabView: View {
     @Environment(\.modelContext) private var modelContext
     var onSaveSuccess: (() -> Void)? = nil
     
-    @State private var sets: [(id: UUID, weight: Double, reps: Int, isChecked: Bool)] = []
+    @State private var sets: [(id: UUID, weight: Double?, reps: Int?, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
     // Inline numeric inputs replaced the old wheel picker
@@ -32,14 +32,14 @@ struct TrackTabView: View {
                                 ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                                     SetRowView(
                                         set: set,
-                                        weight: Binding<Double>(
+                                        weight: Binding<Double?>(
                                             get: { sets[index].weight },
                                             set: { newVal in
                                                 sets[index].weight = newVal
                                                 persistCurrentSets()
                                             }
                                         ),
-                                        reps: Binding<Int>(
+                                        reps: Binding<Int?>(
                                             get: { sets[index].reps },
                                             set: { newVal in
                                                 sets[index].reps = newVal
@@ -111,11 +111,11 @@ struct TrackTabView: View {
         if let lastSession = lastSession, !lastSession.isEmpty {
             // Pre-populate with last session data
             sets = lastSession.map { set in
-                (id: set.id, weight: set.weight, reps: set.reps, isChecked: false)
+                (id: UUID(), weight: set.weight, reps: set.reps, isChecked: false)
             }
         } else {
             // No history, start with one empty set
-            sets = [(id: UUID(), weight: 0, reps: 0, isChecked: false)]
+            sets = [(id: UUID(), weight: nil, reps: nil, isChecked: false)]
         }
     }
     
@@ -125,8 +125,8 @@ struct TrackTabView: View {
         impactFeedback.impactOccurred()
         
         // Get weight and reps from the last displayed set, or from history if no sets are displayed
-        let previousWeight: Double
-        let previousReps: Int
+        let previousWeight: Double?
+        let previousReps: Int?
         
         if let lastSet = sets.last {
             // Use the last displayed set
@@ -142,8 +142,8 @@ struct TrackTabView: View {
                 previousWeight = lastSessionSet.weight
                 previousReps = lastSessionSet.reps
             } else {
-                previousWeight = 0
-                previousReps = 0
+                previousWeight = nil
+                previousReps = nil
             }
         }
         
@@ -221,9 +221,9 @@ struct TrackTabView: View {
 
 // MARK: - Set Row View
 struct SetRowView: View {
-    let set: (id: UUID, weight: Double, reps: Int, isChecked: Bool)
-    @Binding var weight: Double
-    @Binding var reps: Int
+    let set: (id: UUID, weight: Double?, reps: Int?, isChecked: Bool)
+    @Binding var weight: Double?
+    @Binding var reps: Int?
     var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
@@ -249,10 +249,10 @@ struct SetRowView: View {
                         get: { formatWeight(weight) },
                         set: { newText in
                             let cleaned = newText.replacingOccurrences(of: ",", with: ".")
-                            if let val = Double(cleaned) {
+                            if cleaned.isEmpty {
+                                weight = nil
+                            } else if let val = Double(cleaned) {
                                 weight = val
-                            } else if cleaned.isEmpty {
-                                weight = 0
                             }
                         }
                     )
@@ -291,13 +291,13 @@ struct SetRowView: View {
                 TextField(
                     "0",
                     text: Binding<String>(
-                        get: { String(reps) },
+                        get: { reps.map(String.init) ?? "" },
                         set: { newText in
                             let filtered = newText.filter { $0.isNumber }
-                            if let val = Int(filtered) {
+                            if filtered.isEmpty {
+                                reps = nil
+                            } else if let val = Int(filtered) {
                                 reps = val
-                            } else if filtered.isEmpty {
-                                reps = 0
                             }
                         }
                     )
@@ -363,7 +363,8 @@ struct SetRowView: View {
         // Removed background and corner radius
     }
     
-    private func formatWeight(_ weight: Double) -> String {
+    private func formatWeight(_ weight: Double?) -> String {
+        guard let weight = weight else { return "" }
         if weight.truncatingRemainder(dividingBy: 1) == 0 {
             return "\(Int(weight))"
         } else {

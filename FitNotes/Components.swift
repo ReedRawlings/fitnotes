@@ -30,6 +30,31 @@ struct CardListView<Item: Identifiable, Content: View>: View {
     }
 }
 
+// MARK: - TrophyView
+public struct TrophyView: View {
+    public let frame: CGFloat
+    public let primaryColor: Color
+    public let secondaryColor: Color
+    public let tertiaryColor: Color
+
+    public init(frame: CGFloat, primaryColor: Color, secondaryColor: Color, tertiaryColor: Color) {
+        self.frame = frame
+        self.primaryColor = primaryColor
+        self.secondaryColor = secondaryColor
+        self.tertiaryColor = tertiaryColor
+    }
+
+    public var body: some View {
+        ZStack {
+            Image(systemName: "trophy.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: frame, height: frame)
+                .foregroundColor(primaryColor)
+        }
+    }
+}
+
 // MARK: - EmptyStateView
  struct EmptyStateView: View {
     let icon: String

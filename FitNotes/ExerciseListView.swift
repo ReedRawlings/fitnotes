@@ -15,6 +15,7 @@ struct ExerciseListView: View {
     let context: ExerciseListContext
     // Optional multi-select mode: when provided, tapping toggles selection instead of immediate callback
     var selectedIds: Binding<Set<UUID>>? = nil
+    @State private var showingAddExercise = false
     
     private var filteredExercises: [Exercise] {
         ExerciseSearchService.shared.searchExercises(
@@ -29,10 +30,12 @@ struct ExerciseListView: View {
         if filteredExercises.isEmpty {
             EmptyStateView(
                 icon: "dumbbell",
-                title: "No exercises found",
-                subtitle: "Try adjusting your search",
-                actionTitle: nil,
-                onAction: nil
+                title: "No Exercises Found",
+                subtitle: "Would you like to create a new one?",
+                actionTitle: "Add New Exercise",
+                onAction: {
+                    showingAddExercise = true
+                }
             )
         } else {
             ScrollView {
@@ -63,6 +66,9 @@ struct ExerciseListView: View {
                 .padding(.bottom, 76) // ensure content is not obscured by floating button
             }
             .scrollContentBackground(.hidden)
+        }
+        .sheet(isPresented: $showingAddExercise) {
+            AddExerciseView(name: searchText)
         }
     }
 }

@@ -110,7 +110,7 @@ public final class ExerciseService {
         
         // Group by weight to create summary like "225kg × 5/5/3"
         let weight = sets.first?.weight ?? 0
-        let reps = sets.map { "\($0.reps)" }.joined(separator: "/")
+        let reps = sets.compactMap { $0.reps }.map { "\($0)" }.joined(separator: "/")
         
         if weight > 0 {
             return "\(Int(weight))kg × \(reps)"
@@ -171,7 +171,7 @@ public final class ExerciseService {
     public func saveSets(
         exerciseId: UUID,
         date: Date,
-        sets: [(weight: Double, reps: Int, isCompleted: Bool)],
+        sets: [(weight: Double?, reps: Int?, isCompleted: Bool)],
         modelContext: ModelContext
     ) -> Bool {
         do {
@@ -210,8 +210,8 @@ public final class ExerciseService {
     /// Updates a specific set's weight and reps
     public func updateSet(
         setId: UUID,
-        weight: Double,
-        reps: Int,
+        weight: Double?,
+        reps: Int?,
         modelContext: ModelContext
     ) -> Bool {
         let descriptor = FetchDescriptor<WorkoutSet>(
