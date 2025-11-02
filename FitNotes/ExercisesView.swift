@@ -144,11 +144,15 @@ struct AddExerciseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
-    @State private var name = ""
+    @State private var name: String
     @State private var selectedCategory = "Chest"
     @State private var selectedEquipment = "Free Weight"
     @State private var notes = ""
     
+    init(name: String = "") {
+        _name = State(initialValue: name)
+    }
+
     var body: some View {
         ZStack {
             Color.primaryBg
