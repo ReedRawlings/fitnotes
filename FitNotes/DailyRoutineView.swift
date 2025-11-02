@@ -290,7 +290,11 @@ struct WorkoutExerciseRowView: View {
                             ForEach(sortedSets, id: \.id) { set in
                                 HStack(spacing: 6) {
                                     if set.isCompleted {
-                                        SetCompletionBadge()
+                                        if isPR(set: set) {
+                                            PRBadge()
+                                        } else {
+                                            SetCompletionBadge()
+                                        }
                                     }
                                     Text("\(set.reps)\u{00D7}\(formattedWeight(for: set.weight)) \(appState.weightUnit)")
                                         .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -360,6 +364,35 @@ struct WorkoutExerciseRowView: View {
         }
         print("Delete operation completed")
     }
+
+    private func isPR(set: WorkoutSet) -> Bool {
+        // Fetch all completed sets for this exercise, excluding the current set
+        let otherSets = allSets.filter {
+            $0.exerciseId == set.exerciseId && $0.id != set.id && $0.isCompleted
+        }
+
+        // If there are no other completed sets, it's the first one, so it can't be a PR.
+        guard !otherSets.isEmpty else {
+            return false
+        }
+
+        // Find the best set among the other completed sets
+        let bestSet = otherSets.max { a, b in
+            if a.weight != b.weight {
+                return a.weight < b.weight
+            } else {
+                return a.reps < b.reps
+            }
+        }
+
+        // If there is no best set, this is the first completed set.
+        guard let best = bestSet else {
+            return false
+        }
+
+        // A PR is only achieved if the current set is strictly better than the best previous set.
+        return set.weight > best.weight || (set.weight == best.weight && set.reps > best.reps)
+    }
 }
 
 private struct SetCompletionBadge: View {
@@ -373,6 +406,18 @@ private struct SetCompletionBadge: View {
                     .foregroundColor(.white)
             )
             .accessibilityHidden(true)
+    }
+}
+
+private struct PRBadge: View {
+    var body: some View {
+        TrophyView(
+            frame: 16,
+            primaryColor: .accentPr,
+            secondaryColor: .accentPr,
+            tertiaryColor: .accentPr
+        )
+        .accessibilityHidden(true)
     }
 }
 
