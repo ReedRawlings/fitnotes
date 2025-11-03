@@ -34,6 +34,14 @@ struct WorkoutView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    if appState.showWorkoutFinishedBanner {
+                        WorkoutFinishedBannerView()
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                    appState.showWorkoutFinishedBanner = false
+                                }
+                            }
+                    }
                     // Date header
                     HStack {
                         if Calendar.current.isDateInToday(displayDate) {
@@ -246,8 +254,6 @@ struct WorkoutExerciseRowView: View {
     @Query private var exercises: [Exercise]
     @Query private var allSets: [WorkoutSet]
     
-    @State private var showingExerciseDetail = false
-    
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
     }
@@ -332,11 +338,8 @@ struct WorkoutExerciseRowView: View {
                 )
         )
         .onTapGesture {
-            showingExerciseDetail = true
-        }
-        .sheet(isPresented: $showingExerciseDetail) {
             if let exercise = exercise {
-                ExerciseDetailView(exercise: exercise, shouldDismissOnSave: true)
+                appState.selectedExercise = exercise
             }
         }
     }
@@ -793,4 +796,17 @@ struct RoutineTemplateCardView: View {
 #Preview {
     WorkoutView()
         .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, WorkoutSet.self, RoutineExercise.self, Routine.self], inMemory: true)
+}
+
+struct WorkoutFinishedBannerView: View {
+    var body: some View {
+        Text("Workout Finished!")
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.green)
+            .cornerRadius(10)
+            .padding()
+    }
 }

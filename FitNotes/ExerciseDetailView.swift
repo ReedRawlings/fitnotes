@@ -3,6 +3,8 @@ import SwiftData
 
 struct ExerciseDetailView: View {
     let exercise: Exercise
+    var workout: Workout?
+    var workoutExercise: WorkoutExercise?
     var shouldDismissOnSave: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -49,7 +51,7 @@ struct ExerciseDetailView: View {
                 
                 // Tab Content
                 if selectedTab == 0 {
-                    TrackTabView(exercise: exercise, onSaveSuccess: shouldDismissOnSave ? {
+                    TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise, onSaveSuccess: shouldDismissOnSave ? {
                         dismiss()
                     } : nil)
                 } else {
