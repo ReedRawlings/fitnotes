@@ -27,9 +27,10 @@ struct ExerciseListView: View {
     }
     
     var body: some View {
-        if filteredExercises.isEmpty {
-            EmptyStateView(
-                icon: "dumbbell",
+        Group {
+            if filteredExercises.isEmpty {
+                EmptyStateView(
+                    icon: "dumbbell",
                 title: "No Exercises Found",
                 subtitle: "Would you like to create a new one?",
                 actionTitle: "Add New Exercise",
