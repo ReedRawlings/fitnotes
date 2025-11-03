@@ -97,7 +97,7 @@ struct SessionCardView: View {
                 .font(.bodyFont)
                 .foregroundColor(.textSecondary)
             
-            Text("\(formatWeight(set.weight))kg × \(set.reps) reps")
+            Text(formatSetDisplay())
                 .font(.historySetData)
                 .foregroundColor(.textPrimary)
             
@@ -106,6 +106,18 @@ struct SessionCardView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .cardStyle()
+    }
+    
+    private func formatSetDisplay() -> String {
+        if let weight = set.weight, let reps = set.reps {
+            return "\(formatWeight(weight))kg × \(reps) reps"
+        } else if let weight = set.weight {
+            return "\(formatWeight(weight))kg"
+        } else if let reps = set.reps {
+            return "\(reps) reps"
+        } else {
+            return "—"
+        }
     }
     
     private func formatWeight(_ weight: Double) -> String {
