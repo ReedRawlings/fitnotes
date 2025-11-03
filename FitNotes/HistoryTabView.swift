@@ -97,7 +97,7 @@ struct SessionCardView: View {
                 .font(.bodyFont)
                 .foregroundColor(.textSecondary)
             
-            Text("\(formatWeight(set.weight))kg × \(set.reps) reps")
+            Text("\(formatWeight(set.weight ?? 0))kg × \(set.reps ?? 0) reps")
                 .font(.historySetData)
                 .foregroundColor(.textPrimary)
             
