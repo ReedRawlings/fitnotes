@@ -302,7 +302,7 @@ struct WorkoutExerciseRowView: View {
                                             SetCompletionBadge()
                                         }
                                     }
-                                    Text("\(set.reps)\u{00D7}\(formattedWeight(for: set.weight)) \(appState.weightUnit)")
+                                    Text(formatSetDisplay(set: set))
                                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                                         .foregroundColor(.textSecondary)
                                 }
@@ -344,6 +344,18 @@ struct WorkoutExerciseRowView: View {
         }
     }
     
+    private func formatSetDisplay(set: WorkoutSet) -> String {
+        if let weight = set.weight, let reps = set.reps {
+            return "\(reps)\u{00D7}\(formattedWeight(for: weight)) \(appState.weightUnit)"
+        } else if let weight = set.weight {
+            return "\(formattedWeight(for: weight)) \(appState.weightUnit)"
+        } else if let reps = set.reps {
+            return "\(reps) reps"
+        } else {
+            return "—"
+        }
+    }
+    
     private func formattedWeight(for weight: Double) -> String {
         if weight.truncatingRemainder(dividingBy: 1) == 0 {
             return "\(Int(weight))"
@@ -369,9 +381,18 @@ struct WorkoutExerciseRowView: View {
     }
 
     private func isPR(set: WorkoutSet) -> Bool {
-        // Fetch all completed sets for this exercise, excluding the current set
+        // Only compare sets that have both weight and reps
+        guard let currentWeight = set.weight, let currentReps = set.reps else {
+            return false
+        }
+        
+        // Fetch all completed sets for this exercise with both weight and reps, excluding the current set
         let otherSets = allSets.filter {
-            $0.exerciseId == set.exerciseId && $0.id != set.id && $0.isCompleted
+            $0.exerciseId == set.exerciseId &&
+            $0.id != set.id &&
+            $0.isCompleted &&
+            $0.weight != nil &&
+            $0.reps != nil
         }
 
         // If there are no other completed sets, it's the first one, so it can't be a PR.
@@ -381,20 +402,26 @@ struct WorkoutExerciseRowView: View {
 
         // Find the best set among the other completed sets
         let bestSet = otherSets.max { a, b in
-            if a.weight != b.weight {
-                return a.weight < b.weight
+            guard let aWeight = a.weight, let aReps = a.reps,
+                  let bWeight = b.weight, let bReps = b.reps else {
+                return false
+            }
+            if aWeight != bWeight {
+                return aWeight < bWeight
             } else {
-                return a.reps < b.reps
+                return aReps < bReps
             }
         }
 
         // If there is no best set, this is the first completed set.
-        guard let best = bestSet else {
+        guard let best = bestSet,
+              let bestWeight = best.weight,
+              let bestReps = best.reps else {
             return false
         }
 
         // A PR is only achieved if the current set is strictly better than the best previous set.
-        return set.weight > best.weight || (set.weight == best.weight && set.reps > best.reps)
+        return currentWeight > bestWeight || (currentWeight == bestWeight && currentReps > bestReps)
     }
 }
 
@@ -416,9 +443,9 @@ private struct PRBadge: View {
     var body: some View {
         TrophyView(
             frame: 16,
-            primaryColor: .accentPr,
-            secondaryColor: .accentPr,
-            tertiaryColor: .accentPr
+            primaryColor: .accentSecondary,
+            secondaryColor: .accentSecondary,
+            tertiaryColor: .accentSecondary
         )
         .accessibilityHidden(true)
     }
