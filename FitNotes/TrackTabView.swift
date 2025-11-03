@@ -4,6 +4,9 @@ import SwiftData
 struct TrackTabView: View {
     let exercise: Exercise
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
+    var workout: Workout?
+    var workoutExercise: WorkoutExercise?
     var onSaveSuccess: (() -> Void)? = nil
     
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, isChecked: Bool)] = []
@@ -50,6 +53,7 @@ struct TrackTabView: View {
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
+                                            handleSetCompletion()
                                         },
                                         onDelete: {
                                             deleteSet(at: index)
@@ -215,6 +219,53 @@ struct TrackTabView: View {
             sets: setData,
             modelContext: modelContext
         )
+    }
+
+    private func handleSetCompletion() {
+        guard let workout = workout, let currentExercise = workoutExercise else { return }
+
+        let allSetsCompleted = sets.allSatisfy { $0.isChecked }
+        if !allSetsCompleted {
+            return
+        }
+
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+
+        guard let currentIndex = sortedExercises.firstIndex(where: { $0.id == currentExercise.id }) else {
+            return
+        }
+
+        let nextWorkoutExercise = sortedExercises
+            .suffix(from: currentIndex + 1)
+            .first { nextExercise in
+                let sets = ExerciseService.shared.getSetsByDate(
+                    exerciseId: nextExercise.exerciseId,
+                    date: workout.date,
+                    modelContext: modelContext
+                )
+                return sets.isEmpty || !sets.allSatisfy { $0.isCompleted }
+            }
+
+        if let nextWorkoutExercise = nextWorkoutExercise {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                let allExercises: [Exercise]
+                do {
+                    allExercises = try modelContext.fetch(FetchDescriptor<Exercise>())
+                } catch {
+                    allExercises = []
+                }
+                if let nextExercise = allExercises.first(where: { $0.id == nextWorkoutExercise.exerciseId }) {
+                    appState.selectedExercise = nextExercise
+                }
+            }
+        } else {
+            // No more exercises, workout is finished
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                appState.selectedExercise = nil // Dismiss the sheet
+                appState.showWorkoutFinishedBanner = true
+                appState.selectedTab = 2 // Switch to workout tab
+            }
+        }
     }
 }
 
