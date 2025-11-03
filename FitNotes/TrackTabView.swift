@@ -320,12 +320,6 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
                 .contentShape(Rectangle())
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") { focusedInput.wrappedValue = nil }
-                    }
-                }
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -365,12 +359,6 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
                 .contentShape(Rectangle())
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") { focusedInput.wrappedValue = nil }
-                    }
-                }
             }
             .contentShape(Rectangle())
             .onTapGesture {

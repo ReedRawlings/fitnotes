@@ -738,14 +738,6 @@ struct RoutineDetailView: View {
             }
             .navigationTitle("Routine Details")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.accentPrimary)
-                }
-            }
             .overlay(
                 // Fixed bottom button - overlay on top
                 VStack {
