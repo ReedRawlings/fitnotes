@@ -68,6 +68,8 @@ struct ExerciseListView: View {
             }
             .scrollContentBackground(.hidden)
         }
+        
+        }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseView(name: searchText)
         }
