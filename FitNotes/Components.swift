@@ -2,6 +2,7 @@
 // Central export file for FitNotes Components
 
 import SwiftUI
+import UIKit
 
 // MARK: - CardListView
 struct CardListView<Item: Identifiable, Content: View>: View {
@@ -453,5 +454,128 @@ struct FixedModalCTAButton: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
+    }
+}
+
+// MARK: - TimePickerModal
+struct TimePickerModal: View {
+    @Binding var selectedSeconds: Int
+    @Binding var isPresented: Bool
+    
+    @State private var selectedMinutes: Int = 0
+    @State private var selectedSecondsValue: Int = 30
+    @State private var lastHapticTime: Date = Date()
+    
+    let minuteOptions = Array(0...10)
+    let secondOptions = [0, 15, 30, 45]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button("Cancel") {
+                    isPresented = false
+                }
+                .foregroundColor(.textSecondary)
+                
+                Spacer()
+                
+                Text("Select Rest Time")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.textPrimary)
+                
+                Spacer()
+                
+                Button("Done") {
+                    selectedSeconds = selectedMinutes * 60 + selectedSecondsValue
+                    isPresented = false
+                }
+                .foregroundColor(.accentPrimary)
+                .fontWeight(.semibold)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            Divider()
+                .background(Color.white.opacity(0.1))
+            
+            // Picker
+            HStack(spacing: 0) {
+                // Minutes Picker
+                Picker("Minutes", selection: $selectedMinutes) {
+                    ForEach(minuteOptions, id: \.self) { minute in
+                        Text("\(minute)").tag(minute)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(maxWidth: .infinity)
+                .onChange(of: selectedMinutes) { _ in
+                    triggerHapticFeedback()
+                }
+                
+                Text("min")
+                    .font(.bodyFont)
+                    .foregroundColor(.textSecondary)
+                    .padding(.horizontal, 8)
+                
+                // Seconds Picker
+                Picker("Seconds", selection: $selectedSecondsValue) {
+                    ForEach(secondOptions, id: \.self) { second in
+                        Text(String(format: "%02d", second)).tag(second)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(maxWidth: .infinity)
+                .onChange(of: selectedSecondsValue) { _ in
+                    triggerHapticFeedback()
+                }
+                
+                Text("sec")
+                    .font(.bodyFont)
+                    .foregroundColor(.textSecondary)
+                    .padding(.horizontal, 8)
+            }
+            .frame(height: 200)
+        }
+        .background(Color.secondaryBg)
+        .cornerRadius(20, corners: [.topLeft, .topRight])
+        .onAppear {
+            // Initialize picker values from selectedSeconds
+            selectedMinutes = selectedSeconds / 60
+            let remainingSeconds = selectedSeconds % 60
+            // Round to nearest option
+            selectedSecondsValue = secondOptions.min(by: { abs($0 - remainingSeconds) < abs($1 - remainingSeconds) }) ?? 30
+        }
+    }
+    
+    private func triggerHapticFeedback() {
+        let now = Date()
+        // Throttle haptics to avoid overwhelming
+        if now.timeIntervalSince(lastHapticTime) > 0.1 {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            lastHapticTime = now
+        }
+    }
+}
+
+// MARK: - View Extension for Corner Radius
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }

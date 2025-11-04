@@ -67,8 +67,15 @@ struct TrackTabView: View {
                                         ),
                                         focusedInput: $focusedInput,
                                         onToggleCheck: {
+                                            let wasChecked = sets[index].isChecked
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
+                                            
+                                            // Trigger rest timer when set is checked (not unchecked)
+                                            if !wasChecked && sets[index].isChecked {
+                                                triggerRestTimer(forSet: index + 1)
+                                            }
+                                            
                                             handleSetCompletion()
                                         },
                                         onDelete: {
@@ -281,6 +288,37 @@ struct TrackTabView: View {
                 appState.selectedTab = 2 // Switch to workout tab
             }
         }
+    }
+    
+    private func triggerRestTimer(forSet setNumber: Int) {
+        // Check if rest timer is enabled for this exercise
+        guard exercise.useRestTimer else { return }
+        
+        // Determine rest duration
+        let restSeconds: Int
+        if exercise.useAdvancedRest {
+            // Advanced mode: check custom rest time for this set, or use default
+            if let customSeconds = exercise.customRestSeconds[setNumber] {
+                restSeconds = customSeconds
+            } else {
+                restSeconds = exercise.defaultRestSeconds
+            }
+        } else {
+            // Standard mode: use default for all sets
+            restSeconds = exercise.defaultRestSeconds
+        }
+        
+        // Start the timer
+        let restDuration = TimeInterval(restSeconds)
+        appState.startRestTimer(
+            exerciseId: exercise.id,
+            setNumber: setNumber,
+            duration: restDuration
+        )
+        
+        // Medium haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
     }
 }
 

@@ -42,6 +42,7 @@ public class AppState: ObservableObject {
     private var _activeWorkout: ActiveWorkoutState?
     @Published var selectedTab: Int = 0
     @Published var weightUnit: String = "kg" // Global unit preference for set history display
+    @Published var activeRestTimer: RestTimer?
     
     var activeWorkout: ActiveWorkoutState? {
         get {
@@ -120,6 +121,29 @@ public class AppState: ObservableObject {
             print("Error syncing active workout from SwiftData: \(error)")
         }
     }
+    
+    // MARK: - Rest Timer Management
+    func startRestTimer(exerciseId: UUID, setNumber: Int, duration: TimeInterval) {
+        // Cancel existing timer if any
+        cancelRestTimer()
+        
+        // Start new timer
+        activeRestTimer = RestTimer(
+            exerciseId: exerciseId,
+            setNumber: setNumber,
+            startTime: Date(),
+            duration: duration
+        )
+    }
+    
+    func cancelRestTimer() {
+        activeRestTimer = nil
+    }
+    
+    func getTimeRemaining() -> TimeInterval? {
+        guard let timer = activeRestTimer else { return nil }
+        return timer.timeRemaining
+    }
 }
 
 // MARK: - Active Workout State
@@ -132,6 +156,38 @@ public struct ActiveWorkoutState: Codable {
     
     var progressText: String {
         "\(completedExercisesCount)/\(totalExercisesCount) exercises"
+    }
+}
+
+// MARK: - Rest Timer State
+public struct RestTimer: Identifiable {
+    public let id: UUID
+    public let exerciseId: UUID
+    public let setNumber: Int
+    public let startTime: Date
+    public let duration: TimeInterval
+    
+    public init(exerciseId: UUID, setNumber: Int, startTime: Date, duration: TimeInterval) {
+        self.id = UUID()
+        self.exerciseId = exerciseId
+        self.setNumber = setNumber
+        self.startTime = startTime
+        self.duration = duration
+    }
+    
+    public var timeRemaining: TimeInterval {
+        let elapsed = Date().timeIntervalSince(startTime)
+        return max(0, duration - elapsed)
+    }
+    
+    public var progress: Double {
+        guard duration > 0 else { return 0 }
+        let elapsed = Date().timeIntervalSince(startTime)
+        return min(1.0, max(0.0, elapsed / duration))
+    }
+    
+    public var isCompleted: Bool {
+        timeRemaining <= 0
     }
 }
 
