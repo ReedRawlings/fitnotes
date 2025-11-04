@@ -555,63 +555,7 @@ struct SaveButton: View {
     }
 }
 
-// MARK: - RPE/RIR Picker View
-struct RPERIRPickerView: View {
-    @Binding var value: Int
-    let type: TrackTabView.RPEType
-    let onDone: () -> Void
-    let onClear: () -> Void
-    
-    private let values = Array(0...10)
-    
-    var body: some View {
-        ZStack {
-            Color.primaryBg
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button(action: onClear) {
-                        Text("Clear")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundColor(.accentPrimary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text(type == .rpe ? "RPE" : "RIR")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.textPrimary)
-                    
-                    Spacer()
-                    
-                    Button(action: onDone) {
-                        Text("Done")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.accentPrimary)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
-                .background(Color.secondaryBg)
-                
-                // Picker
-                Picker("Value", selection: $value) {
-                    ForEach(values, id: \.self) { val in
-                        Text("\(val)")
-                            .tag(val)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 200)
-                .background(Color.primaryBg)
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-}
+ 
 
 #Preview {
     TrackTabView(exercise: Exercise(
