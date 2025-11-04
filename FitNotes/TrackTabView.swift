@@ -71,8 +71,8 @@ struct TrackTabView: View {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
                                             
-                                            // Trigger rest timer when set is checked (not unchecked)
-                                            if !wasChecked && sets[index].isChecked {
+                                            // Always trigger rest timer when checking a set (cancel any existing timer)
+                                            if sets[index].isChecked {
                                                 triggerRestTimer(forSet: index + 1)
                                             }
                                             
