@@ -12,15 +12,6 @@ struct TrackTabView: View {
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
-    @State private var showRPERIRPicker = false
-    @State private var pickerSetId: UUID?
-    @State private var pickerType: RPEType = .rpe
-    @State private var pickerValue: Int = 0
-    
-    enum RPEType {
-        case rpe
-        case rir
-    }
     
     enum InputFocus: Hashable {
         case weight(UUID)
@@ -75,18 +66,6 @@ struct TrackTabView: View {
                                             }
                                         ),
                                         focusedInput: $focusedInput,
-                                        onRPETap: {
-                                            pickerSetId = set.id
-                                            pickerType = .rpe
-                                            pickerValue = set.rpe ?? 0
-                                            showRPERIRPicker = true
-                                        },
-                                        onRIRTap: {
-                                            pickerSetId = set.id
-                                            pickerType = .rir
-                                            pickerValue = set.rir ?? 0
-                                            showRPERIRPicker = true
-                                        },
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
@@ -126,36 +105,6 @@ struct TrackTabView: View {
         }
         .onAppear {
             loadSets()
-        }
-        .sheet(isPresented: $showRPERIRPicker) {
-            RPERIRPickerView(
-                value: $pickerValue,
-                type: pickerType,
-                onDone: {
-                    if let setId = pickerSetId, let index = sets.firstIndex(where: { $0.id == setId }) {
-                        if pickerType == .rpe {
-                            sets[index].rpe = pickerValue
-                        } else {
-                            sets[index].rir = pickerValue
-                        }
-                        persistCurrentSets()
-                    }
-                    showRPERIRPicker = false
-                },
-                onClear: {
-                    if let setId = pickerSetId, let index = sets.firstIndex(where: { $0.id == setId }) {
-                        if pickerType == .rpe {
-                            sets[index].rpe = nil
-                        } else {
-                            sets[index].rir = nil
-                        }
-                        persistCurrentSets()
-                    }
-                    showRPERIRPicker = false
-                }
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
         }
     }
     
@@ -345,8 +294,6 @@ struct SetRowView: View {
     @Binding var rpe: Int?
     @Binding var rir: Int?
     var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
-    let onRPETap: () -> Void
-    let onRIRTap: () -> Void
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
     
@@ -444,26 +391,44 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
                     
-                    Button(action: {
-                        if exercise.rpeEnabled {
-                            onRPETap()
-                        } else {
-                            onRIRTap()
-                        }
-                    }) {
-                        Text(exercise.rpeEnabled ? (rpe.map(String.init) ?? "—") : (rir.map(String.init) ?? "—"))
-                            .font(.dataFont)
-                            .foregroundColor((exercise.rpeEnabled ? rpe : rir) != nil ? .textPrimary : .textTertiary.opacity(0.5))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color.white.opacity(0.04))
-                            .cornerRadius(10)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    TextField(
+                        "0",
+                        text: Binding<String>(
+                            get: {
+                                if exercise.rpeEnabled { return rpe.map(String.init) ?? "" }
+                                else { return rir.map(String.init) ?? "" }
+                            },
+                            set: { newText in
+                                let filtered = newText.filter { $0.isNumber }
+                                if filtered.isEmpty {
+                                    if exercise.rpeEnabled { rpe = nil } else { rir = nil }
+                                } else if let val = Int(filtered) {
+                                    let clamped = max(0, min(10, val))
+                                    if exercise.rpeEnabled { rpe = clamped } else { rir = clamped }
+                                }
+                            }
+                        )
+                    )
+                    .keyboardType(.numberPad)
+                    .submitLabel(.done)
+                    .font(.dataFont)
+                    .foregroundColor(.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(10)
+                    .focused(
+                        focusedInput,
+                        equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                    )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
+                    .contentShape(Rectangle())
                 }
                 .contentShape(Rectangle())
+                .onTapGesture {
+                    focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                }
             }
             
             // Checkbox Button
