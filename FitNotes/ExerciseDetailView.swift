@@ -129,4 +129,5 @@ struct TabButton: View {
         equipment: "Machine"
     ))
     .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, WorkoutExercise.self], inMemory: true)
+    .environmentObject(AppState())
 }

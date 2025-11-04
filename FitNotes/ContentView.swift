@@ -1153,6 +1153,7 @@ struct ContentView: View {
             let workoutExercise = todaysWorkout?.exercises.first { $0.exerciseId == exercise.id }
 
             ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise)
+                .environmentObject(appState)
         }
         .onAppear {
             // Sync active workout state from SwiftData on app launch
