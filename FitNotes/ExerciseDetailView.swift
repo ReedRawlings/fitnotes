@@ -10,6 +10,7 @@ struct ExerciseDetailView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var selectedTab = 0
+    @State private var showSettings = false
     
     var body: some View {
         ZStack {
@@ -31,7 +32,7 @@ struct ExerciseDetailView: View {
                     
                     // Settings Button (inline with title)
                     Button(action: {
-                        // TODO: Present exercise settings modal
+                        showSettings = true
                     }) {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 20))
@@ -39,6 +40,11 @@ struct ExerciseDetailView: View {
                             .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Exercise settings")
+                    .sheet(isPresented: $showSettings) {
+                        NavigationStack {
+                            ExerciseSettingsView(exercise: exercise)
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)

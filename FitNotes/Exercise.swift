@@ -11,6 +11,8 @@ public final class Exercise {
     public var notes: String?
     public var unit: String
     public var isCustom: Bool // Whether this is a user-created exercise
+    public var rpeEnabled: Bool // Rate of Perceived Exertion tracking enabled
+    public var rirEnabled: Bool // Reps in Reserve tracking enabled
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -23,6 +25,8 @@ public final class Exercise {
         notes: String? = nil,
         unit: String = "kg",
         isCustom: Bool = false,
+        rpeEnabled: Bool = false,
+        rirEnabled: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -34,7 +38,36 @@ public final class Exercise {
         self.notes = notes
         self.unit = unit
         self.isCustom = isCustom
+        // Ensure mutual exclusivity: only one can be true at a time
+        if rpeEnabled && rirEnabled {
+            self.rpeEnabled = true
+            self.rirEnabled = false
+        } else {
+            self.rpeEnabled = rpeEnabled
+            self.rirEnabled = rirEnabled
+        }
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+    
+    // Helper method to set RPE/RIR mode with mutual exclusivity
+    public func setRPEMode(enabled: Bool) {
+        if enabled {
+            self.rpeEnabled = true
+            self.rirEnabled = false
+        } else {
+            self.rpeEnabled = false
+        }
+        self.updatedAt = Date()
+    }
+    
+    public func setRIRMode(enabled: Bool) {
+        if enabled {
+            self.rirEnabled = true
+            self.rpeEnabled = false
+        } else {
+            self.rirEnabled = false
+        }
+        self.updatedAt = Date()
     }
 }

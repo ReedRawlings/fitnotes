@@ -114,6 +114,8 @@ public final class WorkoutSet {
     public var isCompleted: Bool
     public var completedAt: Date?
     public var date: Date             // When this was logged (used for grouping by day)
+    public var rpe: Int?               // Rate of Perceived Exertion (0-10)
+    public var rir: Int?               // Reps in Reserve (0-10)
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -129,6 +131,8 @@ public final class WorkoutSet {
         isCompleted: Bool = false,
         completedAt: Date? = nil,
         date: Date = Date(),
+        rpe: Int? = nil,
+        rir: Int? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -143,6 +147,17 @@ public final class WorkoutSet {
         self.isCompleted = isCompleted
         self.completedAt = completedAt
         self.date = date
+        // Validate RPE/RIR range (0-10)
+        if let rpeValue = rpe, (rpeValue < 0 || rpeValue > 10) {
+            self.rpe = nil
+        } else {
+            self.rpe = rpe
+        }
+        if let rirValue = rir, (rirValue < 0 || rirValue > 10) {
+            self.rir = nil
+        } else {
+            self.rir = rir
+        }
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
