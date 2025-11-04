@@ -13,6 +13,10 @@ public final class Exercise {
     public var isCustom: Bool // Whether this is a user-created exercise
     public var rpeEnabled: Bool // Rate of Perceived Exertion tracking enabled
     public var rirEnabled: Bool // Reps in Reserve tracking enabled
+    public var useRestTimer: Bool = false
+    public var defaultRestSeconds: Int = 90  // Standard mode default
+    public var useAdvancedRest: Bool = false
+    public var customRestSeconds: [Int: Int] = [:]  // Dictionary: setNumber -> seconds
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -27,6 +31,10 @@ public final class Exercise {
         isCustom: Bool = false,
         rpeEnabled: Bool = false,
         rirEnabled: Bool = false,
+        useRestTimer: Bool = false,
+        defaultRestSeconds: Int = 90,
+        useAdvancedRest: Bool = false,
+        customRestSeconds: [Int: Int] = [:],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -46,6 +54,10 @@ public final class Exercise {
             self.rpeEnabled = rpeEnabled
             self.rirEnabled = rirEnabled
         }
+        self.useRestTimer = useRestTimer
+        self.defaultRestSeconds = defaultRestSeconds
+        self.useAdvancedRest = useAdvancedRest
+        self.customRestSeconds = customRestSeconds
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
