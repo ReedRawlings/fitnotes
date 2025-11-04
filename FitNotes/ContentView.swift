@@ -360,26 +360,35 @@ struct DayCell: View {
     }
 
     var body: some View {
-        ZStack {
-            // Background color if workout exists
-            if let color = color {
-                Circle()
-                    .fill(color.opacity(0.8))
-            } else {
-                Circle()
-                    .fill(Color.tertiaryBg.opacity(isCurrentMonth ? 0.3 : 0.1))
+        VStack(spacing: 2) {
+            ZStack {
+                // Background color if workout exists
+                if let color = color {
+                    Circle()
+                        .fill(color.opacity(0.8))
+                } else {
+                    Circle()
+                        .fill(Color.tertiaryBg.opacity(isCurrentMonth ? 0.3 : 0.1))
+                }
+
+                // Day number
+                Text("\(dayNumber)")
+                    .font(.system(size: 13, weight: color != nil ? .bold : .medium, design: .rounded))
+                    .foregroundColor(isToday ? .blue : (isCurrentMonth ? (color != nil ? .textInverse : .textPrimary) : .textTertiary))
             }
 
-            // Today indicator ring
+            // Today indicator underline
             if isToday {
-                Circle()
-                    .strokeBorder(Color.accentPrimary, lineWidth: 2)
+                Rectangle()
+                    .fill(Color.blue)
+                    .frame(height: 2)
+                    .frame(width: 16)
+            } else {
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 2)
+                    .frame(width: 16)
             }
-
-            // Day number
-            Text("\(dayNumber)")
-                .font(.system(size: 13, weight: color != nil ? .bold : .medium, design: .rounded))
-                .foregroundColor(isCurrentMonth ? (color != nil ? .textInverse : .textPrimary) : .textTertiary)
         }
         .frame(height: 36)
         .aspectRatio(1, contentMode: .fit)
