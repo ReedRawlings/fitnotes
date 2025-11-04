@@ -37,7 +37,7 @@ struct HistoryTabView: View {
                                 // Session Cards
                                 VStack(spacing: 8) {
                                     ForEach(sets.sorted { $0.order < $1.order }) { set in
-                                        SessionCardView(set: set)
+                                        SessionCardView(exercise: exercise, set: set)
                                     }
                                 }
                                 .padding(.horizontal, 12)
@@ -89,6 +89,7 @@ struct DateHeaderView: View {
 
 // MARK: - Session Card View
 struct SessionCardView: View {
+    let exercise: Exercise
     let set: WorkoutSet
     
     var body: some View {
@@ -109,15 +110,25 @@ struct SessionCardView: View {
     }
     
     private func formatSetDisplay() -> String {
+        var parts: [String] = []
+        
+        // Weight and reps
         if let weight = set.weight, let reps = set.reps {
-            return "\(formatWeight(weight))kg × \(reps) reps"
+            parts.append("\(formatWeight(weight))kg × \(reps) reps")
         } else if let weight = set.weight {
-            return "\(formatWeight(weight))kg"
+            parts.append("\(formatWeight(weight))kg")
         } else if let reps = set.reps {
-            return "\(reps) reps"
-        } else {
-            return "—"
+            parts.append("\(reps) reps")
         }
+        
+        // RPE/RIR
+        if let rpe = set.rpe {
+            parts.append("RPE \(rpe)")
+        } else if let rir = set.rir {
+            parts.append("RIR \(rir)")
+        }
+        
+        return parts.isEmpty ? "—" : parts.joined(separator: " • ")
     }
     
     private func formatWeight(_ weight: Double) -> String {

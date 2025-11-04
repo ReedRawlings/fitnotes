@@ -552,8 +552,8 @@ public final class RoutineService {
         if baseWeight == nil { baseWeight = 0 }
 
         // Build sets array (all not completed initially)
-        let setsData: [(weight: Double, reps: Int, isCompleted: Bool)] = (0..<setCount).map { _ in
-            (weight: baseWeight ?? 0, reps: baseReps ?? 0, isCompleted: false)
+        let setsData: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)] = (0..<setCount).map { _ in
+            (weight: baseWeight, reps: baseReps, rpe: nil, rir: nil, isCompleted: false)
         }
 
         _ = ExerciseService.shared.saveSets(

@@ -9,14 +9,24 @@ struct TrackTabView: View {
     var workoutExercise: WorkoutExercise?
     var onSaveSuccess: (() -> Void)? = nil
     
-    @State private var sets: [(id: UUID, weight: Double?, reps: Int?, isChecked: Bool)] = []
+    @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
-    // Inline numeric inputs replaced the old wheel picker
+    @State private var showRPERIRPicker = false
+    @State private var pickerSetId: UUID?
+    @State private var pickerType: RPEType = .rpe
+    @State private var pickerValue: Int = 0
+    
+    enum RPEType {
+        case rpe
+        case rir
+    }
     
     enum InputFocus: Hashable {
         case weight(UUID)
         case reps(UUID)
+        case rpe(UUID)
+        case rir(UUID)
     }
     @FocusState private var focusedInput: InputFocus?
     
@@ -34,6 +44,7 @@ struct TrackTabView: View {
                             VStack(spacing: 10) {  // Reduced from 12
                                 ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                                     SetRowView(
+                                        exercise: exercise,
                                         set: set,
                                         weight: Binding<Double?>(
                                             get: { sets[index].weight },
@@ -49,7 +60,33 @@ struct TrackTabView: View {
                                                 persistCurrentSets()
                                             }
                                         ),
+                                        rpe: Binding<Int?>(
+                                            get: { sets[index].rpe },
+                                            set: { newVal in
+                                                sets[index].rpe = newVal
+                                                persistCurrentSets()
+                                            }
+                                        ),
+                                        rir: Binding<Int?>(
+                                            get: { sets[index].rir },
+                                            set: { newVal in
+                                                sets[index].rir = newVal
+                                                persistCurrentSets()
+                                            }
+                                        ),
                                         focusedInput: $focusedInput,
+                                        onRPETap: {
+                                            pickerSetId = set.id
+                                            pickerType = .rpe
+                                            pickerValue = set.rpe ?? 0
+                                            showRPERIRPicker = true
+                                        },
+                                        onRIRTap: {
+                                            pickerSetId = set.id
+                                            pickerType = .rir
+                                            pickerValue = set.rir ?? 0
+                                            showRPERIRPicker = true
+                                        },
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
@@ -90,7 +127,36 @@ struct TrackTabView: View {
         .onAppear {
             loadSets()
         }
-        // Overlay removed; using inline numeric inputs
+        .sheet(isPresented: $showRPERIRPicker) {
+            RPERIRPickerView(
+                value: $pickerValue,
+                type: pickerType,
+                onDone: {
+                    if let setId = pickerSetId, let index = sets.firstIndex(where: { $0.id == setId }) {
+                        if pickerType == .rpe {
+                            sets[index].rpe = pickerValue
+                        } else {
+                            sets[index].rir = pickerValue
+                        }
+                        persistCurrentSets()
+                    }
+                    showRPERIRPicker = false
+                },
+                onClear: {
+                    if let setId = pickerSetId, let index = sets.firstIndex(where: { $0.id == setId }) {
+                        if pickerType == .rpe {
+                            sets[index].rpe = nil
+                        } else {
+                            sets[index].rir = nil
+                        }
+                        persistCurrentSets()
+                    }
+                    showRPERIRPicker = false
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
     
     private func loadSets() {
@@ -102,7 +168,7 @@ struct TrackTabView: View {
         )
         if !todaysSets.isEmpty {
             sets = todaysSets.sorted { $0.order < $1.order }.map { s in
-                (id: s.id, weight: s.weight, reps: s.reps, isChecked: s.isCompleted)
+                (id: s.id, weight: s.weight, reps: s.reps, rpe: s.rpe, rir: s.rir, isChecked: s.isCompleted)
             }
             return
         }
@@ -115,11 +181,11 @@ struct TrackTabView: View {
         if let lastSession = lastSession, !lastSession.isEmpty {
             // Pre-populate with last session data
             sets = lastSession.map { set in
-                (id: UUID(), weight: set.weight, reps: set.reps, isChecked: false)
+                (id: UUID(), weight: set.weight, reps: set.reps, rpe: nil, rir: nil, isChecked: false)
             }
         } else {
             // No history, start with one empty set
-            sets = [(id: UUID(), weight: nil, reps: nil, isChecked: false)]
+            sets = [(id: UUID(), weight: nil, reps: nil, rpe: nil, rir: nil, isChecked: false)]
         }
     }
     
@@ -151,7 +217,7 @@ struct TrackTabView: View {
             }
         }
         
-        sets.append((id: UUID(), weight: previousWeight, reps: previousReps, isChecked: false))
+        sets.append((id: UUID(), weight: previousWeight, reps: previousReps, rpe: nil, rir: nil, isChecked: false))
         persistCurrentSets()
     }
     
@@ -167,7 +233,7 @@ struct TrackTabView: View {
     private func saveSets() {
         isSaving = true
         let today = Date()
-        let setData = sets.map { (weight: $0.weight, reps: $0.reps, isCompleted: $0.isChecked) }
+        let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
         
         let success = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
@@ -212,7 +278,7 @@ struct TrackTabView: View {
     
     private func persistCurrentSets() {
         let today = Date()
-        let setData = sets.map { (weight: $0.weight, reps: $0.reps, isCompleted: $0.isChecked) }
+        let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
         _ = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
             date: today,
@@ -272,10 +338,15 @@ struct TrackTabView: View {
 
 // MARK: - Set Row View
 struct SetRowView: View {
-    let set: (id: UUID, weight: Double?, reps: Int?, isChecked: Bool)
+    let exercise: Exercise
+    let set: (id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)
     @Binding var weight: Double?
     @Binding var reps: Int?
+    @Binding var rpe: Int?
+    @Binding var rir: Int?
     var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
+    let onRPETap: () -> Void
+    let onRIRTap: () -> Void
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
     
@@ -363,6 +434,36 @@ struct SetRowView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
+            }
+            
+            // RPE/RIR Column (conditional)
+            if exercise.rpeEnabled || exercise.rirEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.rpeEnabled ? "RPE" : "RIR")
+                        .font(.sectionHeader)
+                        .foregroundColor(.textTertiary)
+                        .kerning(0.3)
+                    
+                    Button(action: {
+                        if exercise.rpeEnabled {
+                            onRPETap()
+                        } else {
+                            onRIRTap()
+                        }
+                    }) {
+                        Text(exercise.rpeEnabled ? (rpe.map(String.init) ?? "—") : (rir.map(String.init) ?? "—"))
+                            .font(.dataFont)
+                            .foregroundColor((exercise.rpeEnabled ? rpe : rir) != nil ? .textPrimary : .textTertiary.opacity(0.5))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.04))
+                            .cornerRadius(10)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
+                }
+                .contentShape(Rectangle())
             }
             
             // Checkbox Button
@@ -486,6 +587,64 @@ struct SaveButton: View {
         .disabled(!isEnabled || isSaving || isSaved)
         .scaleEffect(1.0)
         .animation(.buttonPress, value: isSaved)
+    }
+}
+
+// MARK: - RPE/RIR Picker View
+struct RPERIRPickerView: View {
+    @Binding var value: Int
+    let type: TrackTabView.RPEType
+    let onDone: () -> Void
+    let onClear: () -> Void
+    
+    private let values = Array(0...10)
+    
+    var body: some View {
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button(action: onClear) {
+                        Text("Clear")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.accentPrimary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(type == .rpe ? "RPE" : "RIR")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: onDone) {
+                        Text("Done")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.accentPrimary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color.secondaryBg)
+                
+                // Picker
+                Picker("Value", selection: $value) {
+                    ForEach(values, id: \.self) { val in
+                        Text("\(val)")
+                            .tag(val)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 200)
+                .background(Color.primaryBg)
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 

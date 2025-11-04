@@ -171,7 +171,7 @@ public final class ExerciseService {
     public func saveSets(
         exerciseId: UUID,
         date: Date,
-        sets: [(weight: Double?, reps: Int?, isCompleted: Bool)],
+        sets: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)],
         modelContext: ModelContext
     ) -> Bool {
         do {
@@ -192,7 +192,9 @@ public final class ExerciseService {
                     notes: nil,
                     isCompleted: setData.isCompleted,
                     completedAt: completedAt,
-                    date: date
+                    date: date,
+                    rpe: setData.rpe,
+                    rir: setData.rir
                 )
                 modelContext.insert(newSet)
             }
