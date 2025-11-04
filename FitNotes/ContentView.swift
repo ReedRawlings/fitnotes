@@ -135,12 +135,263 @@ public struct ActiveWorkoutState: Codable {
     }
 }
 
+// MARK: - Monthly Calendar View
+struct MonthlyCalendarView: View {
+    @Query private var workouts: [Workout]
+    @Query private var exercises: [Exercise]
+    @Query private var routines: [Routine]
+
+    @State private var colorMode: CalendarColorMode = .routine
+    @State private var currentDate = Date()
+
+    enum CalendarColorMode {
+        case routine
+        case category
+    }
+
+    private var calendar: Calendar {
+        Calendar.current
+    }
+
+    private var monthDateRange: (start: Date, end: Date) {
+        let components = calendar.dateComponents([.year, .month], from: currentDate)
+        let start = calendar.date(from: components)!
+        let end = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start)!
+        return (start, end)
+    }
+
+    private var daysInMonth: [Date] {
+        let range = monthDateRange
+        let startOfMonth = range.start
+        let endOfMonth = range.end
+
+        var dates: [Date] = []
+        var date = startOfMonth
+
+        while date <= endOfMonth {
+            dates.append(date)
+            date = calendar.date(byAdding: .day, value: 1, to: date)!
+        }
+
+        // Add padding days for grid alignment
+        let firstWeekday = calendar.component(.weekday, from: startOfMonth)
+        let paddingDaysBefore = (firstWeekday - calendar.firstWeekday + 7) % 7
+
+        for i in (1...paddingDaysBefore).reversed() {
+            if let date = calendar.date(byAdding: .day, value: -i, to: startOfMonth) {
+                dates.insert(date, at: 0)
+            }
+        }
+
+        // Pad end to complete the last week
+        while dates.count % 7 != 0 {
+            if let lastDate = dates.last,
+               let nextDate = calendar.date(byAdding: .day, value: 1, to: lastDate) {
+                dates.append(nextDate)
+            } else {
+                break
+            }
+        }
+
+        return dates
+    }
+
+    private var monthYearText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: currentDate)
+    }
+
+    private func workout(for date: Date) -> Workout? {
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        return workouts.first { workout in
+            workout.date >= startOfDay && workout.date < endOfDay
+        }
+    }
+
+    private func colorForDay(_ date: Date) -> Color? {
+        guard let workout = workout(for: date) else { return nil }
+
+        switch colorMode {
+        case .routine:
+            // Color by routine name
+            if let routineId = workout.routineTemplateId {
+                return colorForRoutine(routineId)
+            }
+            return .accentPrimary
+
+        case .category:
+            // Color by primary muscle group
+            let exerciseIds = workout.exercises.map { $0.exerciseId }
+            let workoutExercises = exercises.filter { exerciseIds.contains($0.id) }
+
+            if let primaryExercise = workoutExercises.first {
+                return colorForCategory(primaryExercise.primaryCategory)
+            }
+            return .accentPrimary
+        }
+    }
+
+    private func colorForRoutine(_ routineId: UUID) -> Color {
+        // Generate consistent color based on routine ID
+        let routineIndex = routines.firstIndex { $0.id == routineId } ?? 0
+        let colors: [Color] = [.accentPrimary, .accentSecondary, .accentSuccess, .blue, .purple, .pink, .orange]
+        return colors[routineIndex % colors.count]
+    }
+
+    private func colorForCategory(_ category: String) -> Color {
+        // Map muscle groups to colors
+        switch category.lowercased() {
+        case "chest":
+            return Color(hex: "#FF6B35") // Coral
+        case "back":
+            return Color(hex: "#00D9A3") // Teal
+        case "legs", "quads", "hamstrings", "glutes":
+            return Color(hex: "#F7931E") // Amber
+        case "shoulders":
+            return Color(hex: "#5B9FFF") // Blue
+        case "arms", "biceps", "triceps":
+            return Color(hex: "#BA68C8") // Purple
+        case "core", "abs":
+            return Color(hex: "#FF7597") // Pink
+        case "cardio":
+            return Color(hex: "#FF9800") // Orange
+        default:
+            return .accentPrimary
+        }
+    }
+
+    private func isCurrentMonth(_ date: Date) -> Bool {
+        calendar.isDate(date, equalTo: currentDate, toGranularity: .month)
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Header with month/year and color mode toggle
+            VStack(spacing: 12) {
+                Text(monthYearText)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.textPrimary)
+
+                // Toggle between Routine and Category
+                HStack(spacing: 0) {
+                    Button(action: {
+                        withAnimation(.quickFeedback) {
+                            colorMode = .routine
+                        }
+                    }) {
+                        Text("Routine")
+                            .font(.system(size: 13, weight: colorMode == .routine ? .semibold : .medium))
+                            .foregroundColor(colorMode == .routine ? .textPrimary : .textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(colorMode == .routine ? Color.tertiaryBg : Color.clear)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: {
+                        withAnimation(.quickFeedback) {
+                            colorMode = .category
+                        }
+                    }) {
+                        Text("Category")
+                            .font(.system(size: 13, weight: colorMode == .category ? .semibold : .medium))
+                            .foregroundColor(colorMode == .category ? .textPrimary : .textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(colorMode == .category ? Color.tertiaryBg : Color.clear)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(4)
+                .background(Color.secondaryBg)
+                .cornerRadius(10)
+            }
+
+            // Weekday headers
+            HStack(spacing: 4) {
+                ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                    Text(day)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.textSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Calendar grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                ForEach(daysInMonth, id: \.self) { date in
+                    DayCell(
+                        date: date,
+                        isCurrentMonth: isCurrentMonth(date),
+                        isToday: calendar.isDateInToday(date),
+                        color: colorForDay(date)
+                    )
+                }
+            }
+        }
+        .padding(16)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Day Cell Component
+struct DayCell: View {
+    let date: Date
+    let isCurrentMonth: Bool
+    let isToday: Bool
+    let color: Color?
+
+    private var dayNumber: Int {
+        Calendar.current.component(.day, from: date)
+    }
+
+    var body: some View {
+        ZStack {
+            // Background color if workout exists
+            if let color = color {
+                Circle()
+                    .fill(color.opacity(0.8))
+            } else {
+                Circle()
+                    .fill(Color.tertiaryBg.opacity(isCurrentMonth ? 0.3 : 0.1))
+            }
+
+            // Today indicator ring
+            if isToday {
+                Circle()
+                    .strokeBorder(Color.accentPrimary, lineWidth: 2)
+            }
+
+            // Day number
+            Text("\(dayNumber)")
+                .font(.system(size: 13, weight: color != nil ? .bold : .medium, design: .rounded))
+                .foregroundColor(isCurrentMonth ? (color != nil ? .textInverse : .textPrimary) : .textTertiary)
+        }
+        .frame(height: 36)
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
 // MARK: - Stats Header Component
 struct StatsHeaderView: View {
     let weeksActive: Int
     let totalVolume: String
     let daysSinceLastLift: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Weeks Active
@@ -153,11 +404,11 @@ struct StatsHeaderView: View {
                     .foregroundColor(.textSecondary)
             }
             .frame(maxWidth: .infinity)
-            
+
             Divider()
                 .frame(height: 40)
                 .overlay(Color.white.opacity(0.1))
-            
+
             // Total Volume
             VStack(alignment: .leading, spacing: 4) {
                 Text(totalVolume)
@@ -168,11 +419,11 @@ struct StatsHeaderView: View {
                     .foregroundColor(.textSecondary)
             }
             .frame(maxWidth: .infinity)
-            
+
             Divider()
                 .frame(height: 40)
                 .overlay(Color.white.opacity(0.1))
-            
+
             // Days Since Last Lift
             VStack(alignment: .leading, spacing: 4) {
                 Text(daysSinceLastLift)
@@ -227,6 +478,11 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 12) {
+                        // Monthly Calendar
+                        MonthlyCalendarView()
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+
                         // Stats header
                         StatsHeaderView(
                             weeksActive: weeksActive,
@@ -234,7 +490,6 @@ struct HomeView: View {
                             daysSinceLastLift: daysSinceLastLiftText
                         )
                         .padding(.horizontal, 20)
-                        .padding(.top, 12)
                         
                         // Routine cards
                         LazyVStack(spacing: 0) {
