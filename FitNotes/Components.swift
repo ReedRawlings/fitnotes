@@ -504,12 +504,15 @@ struct TimePickerModal: View {
                 // Minutes Picker
                 Picker("Minutes", selection: $selectedMinutes) {
                     ForEach(minuteOptions, id: \.self) { minute in
-                        Text("\(minute)").tag(minute)
+                        Text("\(minute)")
+                            .tag(minute)
+                            .foregroundColor(.textPrimary)
                     }
                 }
                 .pickerStyle(.wheel)
+                .foregroundColor(.textPrimary)
                 .frame(maxWidth: .infinity)
-                .onChange(of: selectedMinutes) { _ in
+                .onChange(of: selectedMinutes) {
                     triggerHapticFeedback()
                 }
                 
@@ -521,12 +524,15 @@ struct TimePickerModal: View {
                 // Seconds Picker
                 Picker("Seconds", selection: $selectedSecondsValue) {
                     ForEach(secondOptions, id: \.self) { second in
-                        Text(String(format: "%02d", second)).tag(second)
+                        Text(String(format: "%02d", second))
+                            .tag(second)
+                            .foregroundColor(.textPrimary)
                     }
                 }
                 .pickerStyle(.wheel)
+                .foregroundColor(.textPrimary)
                 .frame(maxWidth: .infinity)
-                .onChange(of: selectedSecondsValue) { _ in
+                .onChange(of: selectedSecondsValue) {
                     triggerHapticFeedback()
                 }
                 

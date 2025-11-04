@@ -134,9 +134,13 @@ struct WorkoutView: View {
 struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
     @State private var showingRoutineTemplates = false
     @State private var cachedExercises: [WorkoutExercise] = []
     @State private var hasUncommittedChanges = false
+    @State private var showCompletionState = false
+    @State private var celebrationScale: CGFloat = 1.0
+    @State private var timerUpdateTimer: Timer?
     
     init(workout: Workout) {
         self.workout = workout
@@ -145,8 +149,36 @@ struct WorkoutDetailView: View {
     }
     
     var body: some View {
-        Group {
-            if workout.exercises.isEmpty {
+        VStack(spacing: 0) {
+            // Timer banner
+            if let timer = appState.activeRestTimer {
+                RestTimerBannerView(
+                    timer: timer,
+                    showCompletionState: $showCompletionState,
+                    celebrationScale: $celebrationScale,
+                    onSkip: {
+                        appState.cancelRestTimer()
+                        showCompletionState = false
+                        celebrationScale = 1.0
+                    }
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+                .onAppear {
+                    startTimerUpdates()
+                }
+                .onDisappear {
+                    stopTimerUpdates()
+                }
+                .onChange(of: timer.isCompleted) { _, isCompleted in
+                    if isCompleted && !showCompletionState {
+                        handleTimerCompletion()
+                    }
+                }
+            }
+            
+            Group {
+                if workout.exercises.isEmpty {
                 VStack(spacing: 24) {
                     EmptyStateView(
                         icon: "dumbbell",
@@ -222,9 +254,51 @@ struct WorkoutDetailView: View {
                     }
                 }
             }
+            }
         }
         .sheet(isPresented: $showingRoutineTemplates) {
             RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
+        }
+    }
+    
+    private func startTimerUpdates() {
+        timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            // Force view update by checking timer state
+            if let timer = appState.activeRestTimer {
+                if timer.isCompleted && !showCompletionState {
+                    handleTimerCompletion()
+                }
+            }
+        }
+    }
+    
+    private func stopTimerUpdates() {
+        timerUpdateTimer?.invalidate()
+        timerUpdateTimer = nil
+    }
+    
+    private func handleTimerCompletion() {
+        showCompletionState = true
+        
+        // Success haptic
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(.success)
+        
+        // Celebration animation: scale 1.0 -> 1.05 -> 1.0
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+            celebrationScale = 1.05
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                celebrationScale = 1.0
+            }
+        }
+        
+        // Auto-dismiss after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            appState.cancelRestTimer()
+            showCompletionState = false
+            celebrationScale = 1.0
         }
     }
     
