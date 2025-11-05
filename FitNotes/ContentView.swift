@@ -374,7 +374,7 @@ struct MonthlyCalendarView: View {
 
             // Weekday headers
             HStack(spacing: 4) {
-                ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { index, day in
                     Text(day)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.textSecondary)

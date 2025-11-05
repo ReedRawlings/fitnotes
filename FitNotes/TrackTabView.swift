@@ -67,7 +67,6 @@ struct TrackTabView: View {
                                         ),
                                         focusedInput: $focusedInput,
                                         onToggleCheck: {
-                                            let wasChecked = sets[index].isChecked
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
                                             
