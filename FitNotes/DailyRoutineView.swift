@@ -78,7 +78,7 @@ struct WorkoutView: View {
                     
                     // Always use the same view for workouts
                     if let workout = getWorkoutForDate(displayDate) {
-                        WorkoutDetailView(workout: workout)
+                        WorkoutDetailView(workout: workout, appState: appState)
                             .id(workout.id) // Force refresh when workout changes
                     } else {
                         EmptyWorkoutView(selectedDate: displayDate)
@@ -138,14 +138,13 @@ struct WorkoutDetailView: View {
     @State private var showingRoutineTemplates = false
     @State private var cachedExercises: [WorkoutExercise] = []
     @State private var hasUncommittedChanges = false
-    @State private var showCompletionState = false
-    @State private var celebrationScale: CGFloat = 1.0
-    @State private var timerUpdateTimer: Timer?
-    
-    init(workout: Workout) {
+    @StateObject private var timerManager: RestTimerManager
+
+    init(workout: Workout, appState: AppState) {
         self.workout = workout
         // Initialize cached exercises immediately from workout
         _cachedExercises = State(initialValue: workout.exercises.sorted { $0.order < $1.order })
+        _timerManager = StateObject(wrappedValue: RestTimerManager(appState: appState))
     }
     
     var body: some View {
@@ -154,25 +153,23 @@ struct WorkoutDetailView: View {
             if let timer = appState.activeRestTimer {
                 RestTimerBannerView(
                     timer: timer,
-                    showCompletionState: $showCompletionState,
-                    celebrationScale: $celebrationScale,
+                    showCompletionState: $timerManager.showCompletionState,
+                    celebrationScale: $timerManager.celebrationScale,
                     onSkip: {
-                        appState.cancelRestTimer()
-                        showCompletionState = false
-                        celebrationScale = 1.0
+                        timerManager.skipTimer()
                     }
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
                 .onAppear {
-                    startTimerUpdates()
+                    timerManager.startTimerUpdates()
                 }
                 .onDisappear {
-                    stopTimerUpdates()
+                    timerManager.stopTimerUpdates()
                 }
                 .onChange(of: timer.isCompleted) { _, isCompleted in
-                    if isCompleted && !showCompletionState {
-                        handleTimerCompletion()
+                    if isCompleted && !timerManager.showCompletionState {
+                        timerManager.handleTimerCompletion()
                     }
                 }
             }
@@ -260,48 +257,7 @@ struct WorkoutDetailView: View {
             RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
         }
     }
-    
-    private func startTimerUpdates() {
-        timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            // Force view update by checking timer state
-            if let timer = appState.activeRestTimer {
-                if timer.isCompleted && !showCompletionState {
-                    handleTimerCompletion()
-                }
-            }
-        }
-    }
-    
-    private func stopTimerUpdates() {
-        timerUpdateTimer?.invalidate()
-        timerUpdateTimer = nil
-    }
-    
-    private func handleTimerCompletion() {
-        showCompletionState = true
-        
-        // Success haptic
-        let notificationFeedback = UINotificationFeedbackGenerator()
-        notificationFeedback.notificationOccurred(.success)
-        
-        // Celebration animation: scale 1.0 -> 1.05 -> 1.0
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-            celebrationScale = 1.05
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-                celebrationScale = 1.0
-            }
-        }
-        
-        // Auto-dismiss after 2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            appState.cancelRestTimer()
-            showCompletionState = false
-            celebrationScale = 1.0
-        }
-    }
-    
+
     private func commitReorder() {
         // Update order values in the actual workout.exercises array
         for (index, cachedExercise) in cachedExercises.enumerated() {
