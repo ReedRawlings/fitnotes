@@ -283,6 +283,18 @@ struct WorkoutExerciseRowView: View {
     @EnvironmentObject private var appState: AppState
     @Query private var exercises: [Exercise]
     @Query private var allSets: [WorkoutSet]
+
+    // Custom initializer to filter sets by exercise ID at the database level
+    init(workoutExercise: WorkoutExercise, workout: Workout) {
+        self.workoutExercise = workoutExercise
+        self.workout = workout
+
+        // Filter sets by exercise ID at the database level instead of fetching all sets
+        let exerciseId = workoutExercise.exerciseId
+        _allSets = Query(filter: #Predicate<WorkoutSet> { set in
+            set.exerciseId == exerciseId
+        })
+    }
     
     private var exercise: Exercise? {
         exercises.first { $0.id == workoutExercise.exerciseId }
@@ -293,8 +305,8 @@ struct WorkoutExerciseRowView: View {
         let workoutStart = calendar.startOfDay(for: workout.date)
         let workoutEnd = calendar.date(byAdding: .day, value: 1, to: workoutStart)!
 
+        // Exercise ID already filtered at database level
         let exerciseSets = allSets.filter { set in
-            set.exerciseId == workoutExercise.exerciseId &&
             set.date >= workoutStart &&
             set.date < workoutEnd
         }
@@ -307,8 +319,8 @@ struct WorkoutExerciseRowView: View {
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: workout.date)
 
+        // Exercise ID already filtered at database level
         let historicalSets = allSets.filter {
-            $0.exerciseId == workoutExercise.exerciseId &&
             $0.isCompleted &&
             $0.date < todayStart &&  // Only sets BEFORE today
             $0.weight != nil &&
