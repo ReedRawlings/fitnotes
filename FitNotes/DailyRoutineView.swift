@@ -336,7 +336,7 @@ struct WorkoutExerciseRowView: View {
         let calendar = Calendar.current
         let workoutStart = calendar.startOfDay(for: workout.date)
         let workoutEnd = calendar.date(byAdding: .day, value: 1, to: workoutStart)!
-        
+
         let exerciseSets = allSets.filter { set in
             set.exerciseId == workoutExercise.exerciseId &&
             set.date >= workoutStart &&
@@ -344,7 +344,45 @@ struct WorkoutExerciseRowView: View {
         }
         return exerciseSets.sorted { $0.order < $1.order }
     }
-    
+
+    // ✅ Calculate ONCE per exercise, not per set
+    private var bestPreviousSet: (weight: Double, reps: Int)? {
+        // Get all completed historical sets for this exercise (excluding today's)
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: workout.date)
+
+        let historicalSets = allSets.filter {
+            $0.exerciseId == workoutExercise.exerciseId &&
+            $0.isCompleted &&
+            $0.date < todayStart &&  // Only sets BEFORE today
+            $0.weight != nil &&
+            $0.reps != nil
+        }
+
+        guard !historicalSets.isEmpty else { return nil }
+
+        // Find the best historical set
+        let best = historicalSets.max { a, b in
+            guard let aWeight = a.weight, let aReps = a.reps,
+                  let bWeight = b.weight, let bReps = b.reps else {
+                return false
+            }
+            if aWeight != bWeight {
+                return aWeight < bWeight
+            } else {
+                return aReps < bReps
+            }
+        }
+
+        guard let best = best,
+              let weight = best.weight,
+              let reps = best.reps else {
+            return nil
+        }
+
+        return (weight: weight, reps: reps)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // Header with exercise name and delete
@@ -370,7 +408,8 @@ struct WorkoutExerciseRowView: View {
                             ForEach(sortedSets, id: \.id) { set in
                                 HStack(spacing: 6) {
                                     if set.isCompleted {
-                                        if isPR(set: set) {
+                                        // ✅ OPTIMIZED: Just compare against cached value
+                                        if isPR(set: set, bestPrevious: bestPreviousSet) {
                                             PRBadge()
                                         } else {
                                             SetCompletionBadge()
@@ -454,48 +493,17 @@ struct WorkoutExerciseRowView: View {
         print("Delete operation completed")
     }
 
-    private func isPR(set: WorkoutSet) -> Bool {
-        // Only compare sets that have both weight and reps
-        guard let currentWeight = set.weight, let currentReps = set.reps else {
-            return false
-        }
-        
-        // Fetch all completed sets for this exercise with both weight and reps, excluding the current set
-        let otherSets = allSets.filter {
-            $0.exerciseId == set.exerciseId &&
-            $0.id != set.id &&
-            $0.isCompleted &&
-            $0.weight != nil &&
-            $0.reps != nil
-        }
-
-        // If there are no other completed sets, it's the first one, so it can't be a PR.
-        guard !otherSets.isEmpty else {
+    // ✅ OPTIMIZED: Simple comparison, no database queries
+    private func isPR(set: WorkoutSet, bestPrevious: (weight: Double, reps: Int)?) -> Bool {
+        guard let currentWeight = set.weight,
+              let currentReps = set.reps,
+              let best = bestPrevious else {
             return false
         }
 
-        // Find the best set among the other completed sets
-        let bestSet = otherSets.max { a, b in
-            guard let aWeight = a.weight, let aReps = a.reps,
-                  let bWeight = b.weight, let bReps = b.reps else {
-                return false
-            }
-            if aWeight != bWeight {
-                return aWeight < bWeight
-            } else {
-                return aReps < bReps
-            }
-        }
-
-        // If there is no best set, this is the first completed set.
-        guard let best = bestSet,
-              let bestWeight = best.weight,
-              let bestReps = best.reps else {
-            return false
-        }
-
-        // A PR is only achieved if the current set is strictly better than the best previous set.
-        return currentWeight > bestWeight || (currentWeight == bestWeight && currentReps > bestReps)
+        // A PR is achieved if current set is strictly better than best previous
+        return currentWeight > best.weight ||
+               (currentWeight == best.weight && currentReps > best.reps)
     }
 }
 
