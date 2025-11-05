@@ -113,56 +113,6 @@ public final class WorkoutService {
         
         return workoutExercise
     }
-    
-    public func addSetToExercise(
-        workoutExercise: WorkoutExercise,
-        reps: Int,
-        weight: Double = 0,
-        duration: Int? = nil,
-        distance: Double? = nil,
-        notes: String? = nil,
-        modelContext: ModelContext
-    ) -> WorkoutSet {
-        // Note: This method is deprecated. Use ExerciseService.saveSets instead.
-        // Keeping for backward compatibility but sets should be managed via ExerciseService
-        let workoutSet = WorkoutSet(
-            exerciseId: workoutExercise.exerciseId,
-            order: 1,
-            reps: reps,
-            weight: weight,
-            duration: duration,
-            distance: distance,
-            notes: notes,
-            date: workoutExercise.workout?.date ?? Date()
-        )
-        
-        modelContext.insert(workoutSet)
-        
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error saving workout set: \(error)")
-        }
-        
-        return workoutSet
-    }
-    
-    public func removeSetFromExercise(
-        workoutSet: WorkoutSet,
-        workoutExercise: WorkoutExercise,
-        modelContext: ModelContext
-    ) {
-        // Note: This method is deprecated. Use ExerciseService.deleteSet instead.
-        // Keeping for backward compatibility but sets should be managed via ExerciseService
-        modelContext.delete(workoutSet)
-        
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error removing workout set: \(error)")
-        }
-    }
-    
     public func removeExerciseFromWorkout(
         workoutExercise: WorkoutExercise,
         modelContext: ModelContext

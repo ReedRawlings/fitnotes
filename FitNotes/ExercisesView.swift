@@ -3,6 +3,7 @@ import SwiftData
 
 struct ExercisesView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
     @State private var selectedMuscleGroup: String = ""
     @State private var selectedEquipment: String = ""
@@ -128,7 +129,8 @@ struct ExercisesView: View {
             AddExerciseView()
         }
         .sheet(item: $selectedExercise) { exercise in
-            ExerciseDetailView(exercise: exercise)
+            ExerciseDetailView(exercise: exercise, appState: appState)
+                .environmentObject(appState)
         }
         .onAppear {
             // Initialize default exercises if none exist

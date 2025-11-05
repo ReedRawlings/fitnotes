@@ -1463,7 +1463,7 @@ struct ContentView: View {
             let todaysWorkout = workouts.first { Calendar.current.isDateInToday($0.date) }
             let workoutExercise = todaysWorkout?.exercises.first { $0.exerciseId == exercise.id }
 
-            ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise, shouldDismissOnSave: true)
+            ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
                 .environmentObject(appState)
         }
         .onAppear {

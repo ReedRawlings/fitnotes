@@ -12,9 +12,15 @@ struct ExerciseDetailView: View {
     
     @State private var selectedTab = 0
     @State private var showSettings = false
-    @State private var timerUpdateTimer: Timer?
-    @State private var showCompletionState = false
-    @State private var celebrationScale: CGFloat = 1.0
+    @StateObject private var timerManager: RestTimerManager
+
+    init(exercise: Exercise, workout: Workout? = nil, workoutExercise: WorkoutExercise? = nil, shouldDismissOnSave: Bool = false, appState: AppState) {
+        self.exercise = exercise
+        self.workout = workout
+        self.workoutExercise = workoutExercise
+        self.shouldDismissOnSave = shouldDismissOnSave
+        _timerManager = StateObject(wrappedValue: RestTimerManager(appState: appState, filterExerciseId: exercise.id))
+    }
     
     var body: some View {
         ZStack {
@@ -58,24 +64,22 @@ struct ExerciseDetailView: View {
                 if let timer = appState.activeRestTimer, timer.exerciseId == exercise.id {
                     RestTimerBannerView(
                         timer: timer,
-                        showCompletionState: $showCompletionState,
-                        celebrationScale: $celebrationScale,
+                        showCompletionState: $timerManager.showCompletionState,
+                        celebrationScale: $timerManager.celebrationScale,
                         onSkip: {
-                            appState.cancelRestTimer()
-                            showCompletionState = false
-                            celebrationScale = 1.0
+                            timerManager.skipTimer()
                         }
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .onAppear {
-                        startTimerUpdates()
+                        timerManager.startTimerUpdates()
                     }
                     .onDisappear {
-                        stopTimerUpdates()
+                        timerManager.stopTimerUpdates()
                     }
                     .onChange(of: timer.isCompleted) { _, isCompleted in
-                        if isCompleted && !showCompletionState {
-                            handleTimerCompletion()
+                        if isCompleted && !timerManager.showCompletionState {
+                            timerManager.handleTimerCompletion()
                         }
                     }
                 }
@@ -94,47 +98,6 @@ struct ExerciseDetailView: View {
                     HistoryTabView(exercise: exercise)
                 }
             }
-        }
-    }
-    
-    private func startTimerUpdates() {
-        timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            // Force view update by checking timer state
-            if let timer = appState.activeRestTimer, timer.exerciseId == exercise.id {
-                if timer.isCompleted && !showCompletionState {
-                    handleTimerCompletion()
-                }
-            }
-        }
-    }
-    
-    private func stopTimerUpdates() {
-        timerUpdateTimer?.invalidate()
-        timerUpdateTimer = nil
-    }
-    
-    private func handleTimerCompletion() {
-        showCompletionState = true
-        
-        // Success haptic
-        let notificationFeedback = UINotificationFeedbackGenerator()
-        notificationFeedback.notificationOccurred(.success)
-        
-        // Celebration animation: scale 1.0 -> 1.05 -> 1.0
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-            celebrationScale = 1.05
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-                celebrationScale = 1.0
-            }
-        }
-        
-        // Auto-dismiss after 2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            appState.cancelRestTimer()
-            showCompletionState = false
-            celebrationScale = 1.0
         }
     }
 }
@@ -298,12 +261,16 @@ struct TabButton: View {
 }
 
 #Preview {
-    ExerciseDetailView(exercise: Exercise(
-        name: "Bench Press",
-        primaryCategory: "Chest",
-        secondaryCategories: ["Triceps", "Shoulders"],
-        equipment: "Machine"
-    ))
+    let appState = AppState()
+    return ExerciseDetailView(
+        exercise: Exercise(
+            name: "Bench Press",
+            primaryCategory: "Chest",
+            secondaryCategories: ["Triceps", "Shoulders"],
+            equipment: "Machine"
+        ),
+        appState: appState
+    )
     .modelContainer(for: [Exercise.self, Workout.self, WorkoutSet.self, WorkoutExercise.self], inMemory: true)
-    .environmentObject(AppState())
+    .environmentObject(appState)
 }
