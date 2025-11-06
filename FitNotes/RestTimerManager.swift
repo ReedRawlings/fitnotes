@@ -21,20 +21,18 @@ class RestTimerManager: ObservableObject {
         timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self else { return }
 
-            // Check if we should filter by exercise ID
-            if let filterExerciseId = self.filterExerciseId {
-                if let timer = self.appState.activeRestTimer,
-                   timer.exerciseId == filterExerciseId,
-                   timer.isCompleted && !self.showCompletionState {
-                    Task { @MainActor in
+            Task { @MainActor in
+                // Check if we should filter by exercise ID
+                if let filterExerciseId = self.filterExerciseId {
+                    if let timer = self.appState.activeRestTimer,
+                       timer.exerciseId == filterExerciseId,
+                       timer.isCompleted && !self.showCompletionState {
                         self.handleTimerCompletion()
                     }
-                }
-            } else {
-                // No filter - check any timer
-                if let timer = self.appState.activeRestTimer,
-                   timer.isCompleted && !self.showCompletionState {
-                    Task { @MainActor in
+                } else {
+                    // No filter - check any timer
+                    if let timer = self.appState.activeRestTimer,
+                       timer.isCompleted && !self.showCompletionState {
                         self.handleTimerCompletion()
                     }
                 }
@@ -81,7 +79,7 @@ class RestTimerManager: ObservableObject {
         celebrationScale = 1.0
     }
 
-    deinit {
-        stopTimerUpdates()
+    nonisolated deinit {
+        timerUpdateTimer?.invalidate()
     }
 }
