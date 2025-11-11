@@ -585,3 +585,143 @@ struct RoundedCorner: Shape {
         return Path(path.cgPath)
     }
 }
+
+// MARK: - Insights Components
+
+// MARK: - InsightsPeriodSelector
+/// Segmented control for selecting time period in Insights tab
+struct InsightsPeriodSelector: View {
+    @Binding var selectedPeriod: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Week Tab
+            Button(action: {
+                withAnimation(.standardSpring) {
+                    selectedPeriod = 0
+                }
+            }) {
+                Text("Week")
+                    .font(selectedPeriod == 0 ? .system(size: 15, weight: .semibold) : .tabFont)
+                    .foregroundColor(selectedPeriod == 0 ? .textPrimary : .textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(selectedPeriod == 0 ? Color.tertiaryBg : Color.clear)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            // Month Tab
+            Button(action: {
+                withAnimation(.standardSpring) {
+                    selectedPeriod = 1
+                }
+            }) {
+                Text("Month")
+                    .font(selectedPeriod == 1 ? .system(size: 15, weight: .semibold) : .tabFont)
+                    .foregroundColor(selectedPeriod == 1 ? .textPrimary : .textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(selectedPeriod == 1 ? Color.tertiaryBg : Color.clear)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            // 3 Months Tab
+            Button(action: {
+                withAnimation(.standardSpring) {
+                    selectedPeriod = 2
+                }
+            }) {
+                Text("3 Months")
+                    .font(selectedPeriod == 2 ? .system(size: 15, weight: .semibold) : .tabFont)
+                    .foregroundColor(selectedPeriod == 2 ? .textPrimary : .textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(selectedPeriod == 2 ? Color.tertiaryBg : Color.clear)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(4)
+        .background(Color.secondaryBg)
+        .cornerRadius(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - StatCardsGridView
+/// 2x2 grid of stat cards for Insights dashboard
+struct StatCardsGridView: View {
+    let workouts: Int
+    let sets: Int
+    let totalVolume: String
+    let prCount: Int
+
+    var body: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 12),
+            GridItem(.flexible(), spacing: 12)
+        ], spacing: 12) {
+            // Workouts Card
+            StatCardView(
+                value: "\(workouts)",
+                label: "Workouts"
+            )
+
+            // Sets Card
+            StatCardView(
+                value: "\(sets)",
+                label: "Sets"
+            )
+
+            // Total Volume Card
+            StatCardView(
+                value: totalVolume,
+                label: "Total Volume"
+            )
+
+            // PR Count Card
+            StatCardView(
+                value: "\(prCount)",
+                label: "PRs"
+            )
+        }
+    }
+}
+
+// MARK: - StatCardView
+struct StatCardView: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(value)
+                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .foregroundColor(.accentPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(label)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 100)
+        .padding(16)
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
