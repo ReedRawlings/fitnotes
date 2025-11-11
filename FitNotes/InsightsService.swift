@@ -63,8 +63,8 @@ public final class InsightsService {
     /// - Parameters:
     ///   - weeks: Number of weeks to fetch
     ///   - modelContext: SwiftData model context
-    /// - Returns: Array of (weekStart, volume) tuples sorted by week ascending
-    public func getWeeklyVolumeTrendForPeriod(weeks: Int, modelContext: ModelContext) -> [(weekStart: Date, volume: Double)] {
+    /// - Returns: Array of (date, volume) tuples sorted by week ascending
+    public func getWeeklyVolumeTrendForPeriod(weeks: Int, modelContext: ModelContext) -> [(date: Date, volume: Double)] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let startDate = calendar.date(byAdding: .weekOfYear, value: -weeks, to: today)!
@@ -94,13 +94,13 @@ public final class InsightsService {
             }
 
             // Create array with all weeks in range
-            var result: [(weekStart: Date, volume: Double)] = []
+            var result: [(date: Date, volume: Double)] = []
             var currentDate = startDate
 
             while currentDate < tomorrow {
                 if let weekStart = calendar.dateInterval(of: .weekOfYear, for: currentDate)?.start {
                     let volume = weeklyVolumes[weekStart] ?? 0
-                    result.append((weekStart: weekStart, volume: volume))
+                    result.append((date: weekStart, volume: volume))
 
                     // Move to next week
                     if let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: weekStart) {
