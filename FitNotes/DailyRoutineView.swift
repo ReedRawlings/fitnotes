@@ -351,8 +351,29 @@ struct WorkoutExerciseRowView: View {
         return (weight: weight, reps: reps)
     }
 
+    // MARK: - Volume Comparison Computed Properties
+
+    private var currentSessionVolume: Double {
+        ExerciseService.shared.calculateVolumeFromSets(sortedSets)
+    }
+
+    private var lastSessionVolume: Double? {
+        guard let lastSession = ExerciseService.shared.getLastSessionForExerciseExcludingDate(
+            exerciseId: workoutExercise.exerciseId,
+            excludeDate: workout.date,
+            modelContext: modelContext
+        ) else { return nil }
+
+        return ExerciseService.shared.calculateVolumeFromSets(lastSession)
+    }
+
+    private var volumeChangePercent: Double? {
+        guard let lastVol = lastSessionVolume, lastVol > 0 else { return nil }
+        return ((currentSessionVolume - lastVol) / lastVol) * 100
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             // Header with exercise name and delete
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -366,39 +387,10 @@ struct WorkoutExerciseRowView: View {
                             }
                             print("\u{1F4CA} Exercise: \(exercise?.name ?? "nil") | Sets count: \(sortedSets.count)")
                         }
-                    
-                    // Set history - grid layout (2 columns)
-                    if !sortedSets.isEmpty {
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), alignment: .leading),
-                            GridItem(.flexible(), alignment: .leading)
-                        ], spacing: 8) {
-                            ForEach(sortedSets, id: \.id) { set in
-                                HStack(spacing: 6) {
-                                    if set.isCompleted {
-                                        // ✅ OPTIMIZED: Just compare against cached value
-                                        if isPR(set: set, bestPrevious: bestPreviousSet) {
-                                            PRBadge()
-                                        } else {
-                                            SetCompletionBadge()
-                                        }
-                                    }
-                                    Text(formatSetDisplay(set: set))
-                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.textSecondary)
-                                }
-                            }
-                        }
-                    } else {
-                        Text("Tap to add sets")
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(.textTertiary)
-                            .padding(.top, 2)
-                    }
                 }
-                    
+
                 Spacer()
-                
+
                 Button(action: { deleteExercise() }) {
                     Image(systemName: "trash.fill")
                         .font(.system(size: 18))
@@ -406,6 +398,44 @@ struct WorkoutExerciseRowView: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(PlainButtonStyle())
+            }
+
+            // Volume Comparison Indicator
+            if let lastVol = lastSessionVolume, let percentChange = volumeChangePercent {
+                VolumeComparisonIndicatorView(
+                    lastVolume: lastVol,
+                    currentVolume: currentSessionVolume,
+                    percentChange: percentChange
+                )
+            }
+
+            // Set history - grid layout (2 columns)
+            if !sortedSets.isEmpty {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), alignment: .leading),
+                    GridItem(.flexible(), alignment: .leading)
+                ], spacing: 8) {
+                    ForEach(sortedSets, id: \.id) { set in
+                        HStack(spacing: 6) {
+                            if set.isCompleted {
+                                // ✅ OPTIMIZED: Just compare against cached value
+                                if isPR(set: set, bestPrevious: bestPreviousSet) {
+                                    PRBadge()
+                                } else {
+                                    SetCompletionBadge()
+                                }
+                            }
+                            Text(formatSetDisplay(set: set))
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.textSecondary)
+                        }
+                    }
+                }
+            } else {
+                Text("Tap to add sets")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundColor(.textTertiary)
+                    .padding(.top, 2)
             }
         }
         .padding(.vertical, 12)

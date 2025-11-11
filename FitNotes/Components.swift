@@ -725,3 +725,114 @@ struct StatCardView: View {
         )
     }
 }
+
+// MARK: - Progressive Overload Nudges
+/// Component for displaying real-time volume comparison feedback during workouts
+struct VolumeComparisonIndicatorView: View {
+    let lastVolume: Double?
+    let currentVolume: Double
+    let percentChange: Double
+
+    // MARK: - Computed Properties
+
+    private var color: Color {
+        if percentChange > 0.5 {
+            return .accentSuccess // Green
+        } else if percentChange < -0.5 {
+            return .errorRed // Red
+        } else {
+            return .textSecondary.opacity(0.5) // Gray (neutral)
+        }
+    }
+
+    private var displayPercent: String {
+        String(format: "%+.1f%%", percentChange)
+    }
+
+    private var icon: String {
+        if percentChange > 0.5 {
+            return "↑"
+        } else if percentChange < -0.5 {
+            return "↓"
+        } else {
+            return "="
+        }
+    }
+
+    private var barWidth: CGFloat {
+        guard let lastVol = lastVolume, lastVol > 0 else { return 0 }
+        let ratio = currentVolume / lastVol
+        return min(ratio, 1.5) // Cap at 150% for extreme overshoot
+    }
+
+    private var lastVolumeFormatted: String {
+        String(format: "%.0f", lastVolume ?? 0)
+    }
+
+    private var currentVolumeFormatted: String {
+        String(format: "%.0f", currentVolume)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Row 1: Volume Labels
+            HStack(spacing: 0) {
+                // Last volume
+                HStack(spacing: 4) {
+                    Text("Last:")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                    Text(lastVolumeFormatted + " kg")
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundColor(.textSecondary)
+                }
+
+                Spacer()
+
+                // Today volume
+                HStack(spacing: 4) {
+                    Text("Today:")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                    Text(currentVolumeFormatted + " kg")
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundColor(.textPrimary)
+                }
+            }
+
+            // Row 2: Progress Bar + Percentage Badge
+            HStack(spacing: 12) {
+                // Progress bar
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        // Background
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.tertiaryBg)
+
+                        // Fill
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(color)
+                            .frame(width: geometry.size.width * barWidth)
+                    }
+                }
+                .frame(height: 8)
+
+                // Percentage badge
+                HStack(spacing: 4) {
+                    Text(icon)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(color)
+
+                    Text(displayPercent)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(color)
+                }
+                .frame(minWidth: 55)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.tertiaryBg)
+        .cornerRadius(10)
+    }
+}
