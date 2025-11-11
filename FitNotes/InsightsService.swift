@@ -113,7 +113,7 @@ public final class InsightsService {
                 }
             }
 
-            return result.sorted { $0.weekStart < $1.weekStart }
+            return result.sorted { $0.date < $1.date }
         } catch {
             print("Error fetching weekly volume trend: \(error)")
             return []
