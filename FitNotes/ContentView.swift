@@ -1411,10 +1411,127 @@ struct SettingsView: View {
     }
 }
 
-struct InsightsView: View { 
-    var body: some View { 
-        Text("Insights") 
-    } 
+// MARK: - InsightsView
+struct InsightsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
+    @Query private var workouts: [Workout]
+    @Query private var exercises: [Exercise]
+
+    @State private var selectedPeriod: Int = 0 // 0=week, 1=month, 2=3months
+
+    private var periodDays: Int {
+        switch selectedPeriod {
+        case 0: return 7
+        case 1: return 30
+        case 2: return 90
+        default: return 7
+        }
+    }
+
+    private var periodWeeks: Int {
+        switch selectedPeriod {
+        case 0: return 1
+        case 1: return 4
+        case 2: return 12
+        default: return 1
+        }
+    }
+
+    private var chartPeriodType: VolumeChartView.PeriodType {
+        switch selectedPeriod {
+        case 0: return .week
+        case 1: return .month
+        case 2: return .threeMonths
+        default: return .week
+        }
+    }
+
+    private var volumeData: [(date: Date, volume: Double)] {
+        if selectedPeriod == 0 {
+            // Week view: daily data
+            return InsightsService.shared.getVolumeTrendForPeriod(days: periodDays, modelContext: modelContext)
+        } else {
+            // Month/3-month view: weekly aggregates
+            return InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, modelContext: modelContext)
+        }
+    }
+
+    private var workoutCount: Int {
+        InsightsService.shared.getWorkoutCount(days: periodDays, modelContext: modelContext)
+    }
+
+    private var setCount: Int {
+        InsightsService.shared.getSetCount(days: periodDays, modelContext: modelContext)
+    }
+
+    private var totalVolume: String {
+        let volume = InsightsService.shared.getTotalVolume(days: periodDays, modelContext: modelContext)
+        return StatsService.shared.formatVolume(volume)
+    }
+
+    private var prCount: Int {
+        InsightsService.shared.getPRCount(days: periodDays, modelContext: modelContext)
+    }
+
+    private var muscleBreakdown: [(category: String, volume: Double, percentage: Double)] {
+        InsightsService.shared.getMuscleGroupBreakdown(days: periodDays, modelContext: modelContext)
+    }
+
+    private var recentPRs: [(exerciseName: String, weight: Double, reps: Int, date: Date, oneRM: Double)] {
+        InsightsService.shared.getRecentPRs(limit: 10, modelContext: modelContext)
+    }
+
+    var body: some View {
+        ZStack {
+            // Dark theme background
+            Color.primaryBg
+                .ignoresSafeArea()
+
+            if workouts.isEmpty {
+                // Empty state
+                EmptyStateView(
+                    icon: "chart.line.uptrend.xyaxis",
+                    title: "No workouts yet",
+                    subtitle: "Complete your first workout to see insights",
+                    actionTitle: nil,
+                    onAction: nil
+                )
+            } else {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // Period Selector
+                        InsightsPeriodSelector(selectedPeriod: $selectedPeriod)
+                            .padding(.top, 8)
+
+                        // Volume Chart
+                        VolumeChartView(data: volumeData, periodType: chartPeriodType)
+                            .padding(.horizontal, 20)
+
+                        // Stat Cards Grid
+                        StatCardsGridView(
+                            workouts: workoutCount,
+                            sets: setCount,
+                            totalVolume: totalVolume,
+                            prCount: prCount
+                        )
+                        .padding(.horizontal, 20)
+
+                        // Muscle Group Breakdown
+                        MuscleGroupBreakdownView(breakdown: muscleBreakdown)
+                            .padding(.horizontal, 20)
+
+                        // Recent PRs
+                        RecentPRsListView(prs: recentPRs, unit: appState.weightUnit)
+                            .padding(.horizontal, 20)
+
+                        Spacer(minLength: 100) // Space for tab bar
+                    }
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+    }
 }
 
 struct ContentView: View {
