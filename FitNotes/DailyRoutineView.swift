@@ -235,14 +235,14 @@ struct WorkoutDetailView: View {
                     }
                 }
                 .onChange(of: workout.exercises) { _, newExercises in
-                    // Update cache when exercises are added/removed (but preserve reordering)
-                    if !hasUncommittedChanges {
-                        let newIds = Set(newExercises.map { $0.id })
-                        let cachedIds = Set(cachedExercises.map { $0.id })
-                        // Only update if the IDs actually changed (added/removed exercises)
-                        if newIds != cachedIds {
-                            cachedExercises = newExercises.sorted { $0.order < $1.order }
-                        }
+                    let newIds = Set(newExercises.map { $0.id })
+                    let cachedIds = Set(cachedExercises.map { $0.id })
+
+                    // Always sync when exercise IDs change (add/delete)
+                    // This works independently of reorder state
+                    if newIds != cachedIds {
+                        cachedExercises = newExercises.sorted { $0.order < $1.order }
+                        hasUncommittedChanges = false  // Reset after any structural change
                     }
                 }
                 .onDisappear {
