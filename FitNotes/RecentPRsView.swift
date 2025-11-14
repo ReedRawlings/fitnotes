@@ -3,8 +3,9 @@ import SwiftUI
 // MARK: - RecentPRsListView
 /// Scrollable list of recent personal records
 struct RecentPRsListView: View {
-    let prs: [(exerciseName: String, weight: Double, reps: Int, date: Date, oneRM: Double)]
+    let prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)]
     let unit: String // "kg" or "lbs"
+    @EnvironmentObject var appState: AppState
 
     private func formatDateAgo(_ date: Date) -> String {
         let calendar = Calendar.current
@@ -54,13 +55,14 @@ struct RecentPRsListView: View {
                     ForEach(prs.indices, id: \.self) { index in
                         let pr = prs[index]
                         PRRowView(
-                            exerciseName: pr.exerciseName,
+                            exercise: pr.exercise,
                             weight: pr.weight,
                             reps: pr.reps,
                             date: pr.date,
                             oneRM: pr.oneRM,
                             unit: unit,
-                            dateAgo: formatDateAgo(pr.date)
+                            dateAgo: formatDateAgo(pr.date),
+                            appState: appState
                         )
                     }
                 }
@@ -78,13 +80,14 @@ struct RecentPRsListView: View {
 
 // MARK: - PRRowView
 struct PRRowView: View {
-    let exerciseName: String
+    let exercise: Exercise
     let weight: Double
     let reps: Int
     let date: Date
     let oneRM: Double
     let unit: String
     let dateAgo: String
+    let appState: AppState
 
     private func formatWeight(_ value: Double) -> String {
         if value.truncatingRemainder(dividingBy: 1) == 0 {
@@ -105,7 +108,7 @@ struct PRRowView: View {
 
             // Exercise info
             VStack(alignment: .leading, spacing: 4) {
-                Text(exerciseName)
+                Text(exercise.name)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.textPrimary)
                     .lineLimit(1)
@@ -132,16 +135,26 @@ struct PRRowView: View {
         .padding(12)
         .background(Color.tertiaryBg)
         .cornerRadius(12)
+        .onTapGesture {
+            appState.selectedExercise = exercise
+        }
     }
 }
 
 // MARK: - Preview
 #Preview {
+    let sampleExercises = [
+        Exercise(name: "Bench Press", primaryCategory: "Chest"),
+        Exercise(name: "Squat", primaryCategory: "Legs"),
+        Exercise(name: "Deadlift", primaryCategory: "Back"),
+        Exercise(name: "Overhead Press", primaryCategory: "Shoulders")
+    ]
+
     let samplePRs = [
-        (exerciseName: "Bench Press", weight: 100.0, reps: 5, date: Date().addingTimeInterval(-2 * 24 * 3600), oneRM: 116.7),
-        (exerciseName: "Squat", weight: 140.0, reps: 8, date: Date().addingTimeInterval(-5 * 24 * 3600), oneRM: 177.3),
-        (exerciseName: "Deadlift", weight: 180.0, reps: 3, date: Date().addingTimeInterval(-7 * 24 * 3600), oneRM: 198.0),
-        (exerciseName: "Overhead Press", weight: 60.0, reps: 10, date: Date().addingTimeInterval(-14 * 24 * 3600), oneRM: 80.0)
+        (exercise: sampleExercises[0], weight: 100.0, reps: 5, date: Date().addingTimeInterval(-2 * 24 * 3600), oneRM: 116.7),
+        (exercise: sampleExercises[1], weight: 140.0, reps: 8, date: Date().addingTimeInterval(-5 * 24 * 3600), oneRM: 177.3),
+        (exercise: sampleExercises[2], weight: 180.0, reps: 3, date: Date().addingTimeInterval(-7 * 24 * 3600), oneRM: 198.0),
+        (exercise: sampleExercises[3], weight: 60.0, reps: 10, date: Date().addingTimeInterval(-14 * 24 * 3600), oneRM: 80.0)
     ]
 
     return ZStack {
@@ -151,6 +164,7 @@ struct PRRowView: View {
         ScrollView {
             RecentPRsListView(prs: samplePRs, unit: "kg")
                 .padding()
+                .environmentObject(AppState())
         }
     }
 }

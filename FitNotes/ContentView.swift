@@ -1478,7 +1478,7 @@ struct InsightsView: View {
         InsightsService.shared.getMuscleGroupBreakdown(days: periodDays, modelContext: modelContext)
     }
 
-    private var recentPRs: [(exerciseName: String, weight: Double, reps: Int, date: Date, oneRM: Double)] {
+    private var recentPRs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
         InsightsService.shared.getRecentPRs(limit: 10, modelContext: modelContext)
     }
 

@@ -331,7 +331,7 @@ public final class InsightsService {
     // MARK: - Personal Records
 
     /// Get recent personal records
-    public func getRecentPRs(limit: Int = 10, modelContext: ModelContext) -> [(exerciseName: String, weight: Double, reps: Int, date: Date, oneRM: Double)] {
+    public func getRecentPRs(limit: Int = 10, modelContext: ModelContext) -> [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
         // Fetch all completed sets
         let setsDescriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate { set in
@@ -365,7 +365,7 @@ public final class InsightsService {
             }
 
             // Find PRs for each exercise
-            var prs: [(exerciseName: String, weight: Double, reps: Int, date: Date, oneRM: Double)] = []
+            var prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] = []
 
             for (exerciseId, records) in exerciseRecords {
                 guard let exercise = exerciseById[exerciseId] else { continue }
@@ -379,7 +379,7 @@ public final class InsightsService {
                         // This is a PR
                         let oneRM = calculateOneRM(weight: record.weight, reps: record.reps)
                         prs.append((
-                            exerciseName: exercise.name,
+                            exercise: exercise,
                             weight: record.weight,
                             reps: record.reps,
                             date: record.date,
