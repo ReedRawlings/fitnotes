@@ -713,7 +713,7 @@ struct AddExerciseToWorkoutView: View {
                 modelContext: modelContext
             )
         }
-        
+
         // Add each selected exercise, skipping duplicates
         for exerciseId in selected {
             if WorkoutService.shared.exerciseExistsInWorkout(workout: targetWorkout, exerciseId: exerciseId) {
@@ -730,8 +730,22 @@ struct AddExerciseToWorkoutView: View {
                 notes: nil,
                 modelContext: modelContext
             )
+
+            // Auto-persist last session's sets to today so volume comparison shows immediately
+            if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+                exerciseId: exerciseId,
+                modelContext: modelContext
+            ), !lastSession.isEmpty {
+                let setData = lastSession.map { (weight: $0.weight, reps: $0.reps, rpe: Int?(nil), rir: Int?(nil), isCompleted: false) }
+                _ = ExerciseService.shared.saveSets(
+                    exerciseId: exerciseId,
+                    date: selectedDate,
+                    sets: setData,
+                    modelContext: modelContext
+                )
+            }
         }
-        
+
         dismiss()
     }
 }
