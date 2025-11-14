@@ -372,6 +372,29 @@ struct WorkoutExerciseRowView: View {
         return ((currentSessionVolume - lastVol) / lastVol) * 100
     }
 
+    // MARK: - E1RM Comparison Computed Properties
+
+    private var currentSessionE1RM: Double? {
+        E1RMCalculator.fromSession(sortedSets)
+    }
+
+    private var lastSessionE1RM: Double? {
+        guard let lastSession = ExerciseService.shared.getLastSessionForExerciseExcludingDate(
+            exerciseId: workoutExercise.exerciseId,
+            excludeDate: workout.date,
+            modelContext: modelContext
+        ) else { return nil }
+
+        return E1RMCalculator.fromSession(lastSession)
+    }
+
+    private var e1rmChangePercent: Double? {
+        guard let currentE1RM = currentSessionE1RM,
+              let lastE1RM = lastSessionE1RM,
+              lastE1RM > 0 else { return nil }
+        return ((currentE1RM - lastE1RM) / lastE1RM) * 100
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header with exercise name and delete
@@ -405,6 +428,17 @@ struct WorkoutExerciseRowView: View {
                 VolumeComparisonIndicatorView(
                     lastVolume: lastVol,
                     currentVolume: currentSessionVolume,
+                    percentChange: percentChange
+                )
+            }
+
+            // E1RM Comparison Indicator
+            if let currentE1RM = currentSessionE1RM,
+               let lastE1RM = lastSessionE1RM,
+               let percentChange = e1rmChangePercent {
+                E1RMComparisonIndicatorView(
+                    lastE1RM: lastE1RM,
+                    currentE1RM: currentE1RM,
                     percentChange: percentChange
                 )
             }
