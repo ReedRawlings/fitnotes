@@ -30,8 +30,19 @@ public final class Exercise {
     public var lastProgressionDate: Date? = nil  // When weight was last increased
 
     // Stats display preferences
-    public var statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState
+    // Persistent storage - uses String for reliable SwiftData serialization
+    @Attribute public var statsDisplayPreferenceRaw: String = "rememberLastState"
     public var statsIsExpanded: Bool = false
+
+    // Computed property - provides type-safe enum access
+    public var statsDisplayPreference: StatsDisplayPreference {
+        get {
+            StatsDisplayPreference(rawValue: statsDisplayPreferenceRaw) ?? .rememberLastState
+        }
+        set {
+            statsDisplayPreferenceRaw = newValue.rawValue
+        }
+    }
 
     public var createdAt: Date
     public var updatedAt: Date
@@ -82,7 +93,7 @@ public final class Exercise {
         self.targetRepMin = targetRepMin
         self.targetRepMax = targetRepMax
         self.lastProgressionDate = lastProgressionDate
-        self.statsDisplayPreference = statsDisplayPreference
+        self.statsDisplayPreferenceRaw = statsDisplayPreference.rawValue
         self.statsIsExpanded = statsIsExpanded
         self.createdAt = createdAt
         self.updatedAt = updatedAt
