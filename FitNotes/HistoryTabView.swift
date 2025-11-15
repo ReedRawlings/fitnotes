@@ -142,12 +142,12 @@ struct SessionSummaryView: View {
 
                 Text("~\(formatWeight(e1rm)) kg 1RM")
                     .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.accent)
+                    .foregroundColor(.accentPrimary)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color.cardBg.opacity(0.5))
+        .background(Color.secondaryBg.opacity(0.5))
         .cornerRadius(8)
     }
 
