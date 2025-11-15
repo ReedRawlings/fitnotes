@@ -314,41 +314,30 @@ struct WorkoutExerciseRowView: View {
     }
 
     // ✅ Calculate ONCE per exercise, not per set
-    private var bestPreviousSet: (weight: Double, reps: Int)? {
-        // Get all completed historical sets for this exercise (excluding today's)
+    private var bestPreviousSetByVolume: Double? {
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: workout.date)
 
-        // Exercise ID already filtered at database level
         let historicalSets = allSets.filter {
             $0.isCompleted &&
-            $0.date < todayStart &&  // Only sets BEFORE today
+            $0.date < todayStart &&
             $0.weight != nil &&
             $0.reps != nil
         }
 
-        guard !historicalSets.isEmpty else { return nil }
+        return historicalSets
+            .map { ($0.weight ?? 0) * Double($0.reps ?? 0) }
+            .max()
+    }
 
-        // Find the best historical set
-        let best = historicalSets.max { a, b in
-            guard let aWeight = a.weight, let aReps = a.reps,
-                  let bWeight = b.weight, let bReps = b.reps else {
-                return false
+    private var todaysBestSetByVolume: WorkoutSet? {
+        return sortedSets
+            .filter { $0.isCompleted }
+            .max { set1, set2 in
+                let vol1 = (set1.weight ?? 0) * Double(set1.reps ?? 0)
+                let vol2 = (set2.weight ?? 0) * Double(set2.reps ?? 0)
+                return vol1 < vol2
             }
-            if aWeight != bWeight {
-                return aWeight < bWeight
-            } else {
-                return aReps < bReps
-            }
-        }
-
-        guard let best = best,
-              let weight = best.weight,
-              let reps = best.reps else {
-            return nil
-        }
-
-        return (weight: weight, reps: reps)
     }
 
     // MARK: - Volume Comparison Computed Properties
@@ -453,7 +442,7 @@ struct WorkoutExerciseRowView: View {
                         HStack(spacing: 6) {
                             if set.isCompleted {
                                 // ✅ OPTIMIZED: Just compare against cached value
-                                if isPR(set: set, bestPrevious: bestPreviousSet) {
+                                if isPR(set: set) {
                                     PRBadge()
                                 } else {
                                     SetCompletionBadge()
@@ -526,16 +515,15 @@ struct WorkoutExerciseRowView: View {
     }
 
     // ✅ OPTIMIZED: Simple comparison, no database queries
-    private func isPR(set: WorkoutSet, bestPrevious: (weight: Double, reps: Int)?) -> Bool {
-        guard let currentWeight = set.weight,
-              let currentReps = set.reps,
-              let best = bestPrevious else {
+    private func isPR(set: WorkoutSet) -> Bool {
+        guard let bestToday = todaysBestSetByVolume,
+              bestToday.id == set.id,
+              let bestHistorical = bestPreviousSetByVolume else {
             return false
         }
 
-        // A PR is achieved if current set is strictly better than best previous
-        return currentWeight > best.weight ||
-               (currentWeight == best.weight && currentReps > best.reps)
+        let todayVolume = (set.weight ?? 0) * Double(set.reps ?? 0)
+        return todayVolume > bestHistorical
     }
 }
 
