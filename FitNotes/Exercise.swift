@@ -30,7 +30,7 @@ public final class Exercise {
     public var lastProgressionDate: Date? = nil  // When weight was last increased
 
     // Stats display preferences
-    public var statsDisplayPreference: StatsDisplayPreference = .rememberLastState
+    public var statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState
     public var statsIsExpanded: Bool = false
 
     public var createdAt: Date
@@ -54,7 +54,7 @@ public final class Exercise {
         targetRepMin: Int? = nil,
         targetRepMax: Int? = nil,
         lastProgressionDate: Date? = nil,
-        statsDisplayPreference: StatsDisplayPreference = .rememberLastState,
+        statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState,
         statsIsExpanded: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
