@@ -775,3 +775,65 @@ struct VolumeComparisonIndicatorView: View {
         .cornerRadius(6)
     }
 }
+
+// MARK: - E1RM Comparison Indicator
+
+struct E1RMComparisonIndicatorView: View {
+    let lastE1RM: Double
+    let currentE1RM: Double
+    let percentChange: Double
+
+    // MARK: - Computed Properties
+
+    private var color: Color {
+        if percentChange > 0.5 {
+            return .accentSuccess // Green
+        } else if percentChange < -0.5 {
+            return .errorRed // Red
+        } else {
+            return .textSecondary.opacity(0.5) // Gray (neutral)
+        }
+    }
+
+    private var displayPercent: String {
+        String(format: "%+.1f%%", percentChange)
+    }
+
+    private var icon: String {
+        if percentChange > 0.5 {
+            return "↑"
+        } else if percentChange < -0.5 {
+            return "↓"
+        } else {
+            return "="
+        }
+    }
+
+    private var formattedE1RM: String {
+        if currentE1RM.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(currentE1RM))"
+        } else {
+            return String(format: "%.1f", currentE1RM)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("E1RM: ~\(formattedE1RM) kg")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundColor(.textSecondary)
+
+            Text(icon)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(color)
+
+            Text(displayPercent)
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.tertiaryBg)
+        .cornerRadius(6)
+    }
+}

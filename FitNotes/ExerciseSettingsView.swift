@@ -86,6 +86,71 @@ struct ExerciseSettingsView: View {
                         }
                     }
                     
+                    // Progressive Overload Card
+                    FormSectionCard(title: "Progressive Overload (Optional)") {
+                        VStack(spacing: 12) {
+                            Text("Set a target rep range to get progression recommendations when you consistently hit targets.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Min Reps")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.textSecondary)
+
+                                    TextField("5", value: $exercise.targetRepMin, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .onChange(of: exercise.targetRepMin) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
+                                }
+
+                                Text("to")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.textSecondary)
+                                    .padding(.top, 20)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Max Reps")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.textSecondary)
+
+                                    TextField("8", value: $exercise.targetRepMax, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .onChange(of: exercise.targetRepMax) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
+                                }
+                            }
+
+                            if let minReps = exercise.targetRepMin, let maxReps = exercise.targetRepMax {
+                                if minReps >= maxReps {
+                                    Text("Max reps must be greater than min reps")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.errorRed)
+                                        .padding(.top, 4)
+                                }
+                            }
+                        }
+                    }
+
                     // Rest Timer Card
                     FormSectionCard(title: "Rest Timer") {
                         VStack(spacing: 12) {
@@ -346,6 +411,16 @@ struct ExerciseSettingsView: View {
     
     private func hasCustomRestForSet(_ setNumber: Int) -> Bool {
         return exercise.customRestSeconds[setNumber] != nil
+    }
+
+    private func validateRepRange() {
+        // Ensure max > min if both are set
+        if let minReps = exercise.targetRepMin,
+           let maxReps = exercise.targetRepMax,
+           minReps >= maxReps {
+            // Don't allow invalid state
+            // User will see error message but we don't force changes
+        }
     }
 }
 

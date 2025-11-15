@@ -83,7 +83,12 @@ struct ExerciseDetailView: View {
                         }
                     }
                 }
-                
+
+                // Progression Banner
+                ProgressionBannerView(exercise: exercise, modelContext: modelContext)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+
                 // Custom Tab Bar
                 CustomTabBar(selectedTab: $selectedTab)
                     .padding(.horizontal, 20)
@@ -98,6 +103,103 @@ struct ExerciseDetailView: View {
                     HistoryTabView(exercise: exercise)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Progression Banner View
+struct ProgressionBannerView: View {
+    let exercise: Exercise
+    let modelContext: ModelContext
+
+    private var progressionStatus: ProgressionStatus {
+        ProgressionService.analyzeProgressionStatus(exercise: exercise, modelContext: modelContext)
+    }
+
+    private var shouldShowBanner: Bool {
+        switch progressionStatus {
+        case .insufficientData, .maintainingBelowTarget:
+            return false
+        default:
+            return true
+        }
+    }
+
+    var body: some View {
+        if shouldShowBanner {
+            HStack(spacing: 10) {
+                // Icon
+                Image(systemName: iconName)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(bannerColor)
+
+                // Message
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(progressionStatus.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+
+                    Text(progressionStatus.message)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(backgroundColor)
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(bannerColor.opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
+
+    private var iconName: String {
+        switch progressionStatus {
+        case .readyToProgress:
+            return "arrow.up.circle.fill"
+        case .progressingTowardTarget:
+            return "chart.line.uptrend.xyaxis"
+        case .decliningPerformance:
+            return "exclamationmark.triangle.fill"
+        case .recentlyRegressed:
+            return "arrow.uturn.backward.circle.fill"
+        default:
+            return "info.circle.fill"
+        }
+    }
+
+    private var bannerColor: Color {
+        switch progressionStatus {
+        case .readyToProgress:
+            return .green
+        case .progressingTowardTarget:
+            return .blue
+        case .decliningPerformance:
+            return .orange
+        case .recentlyRegressed:
+            return .yellow
+        default:
+            return .gray
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch progressionStatus {
+        case .readyToProgress:
+            return Color.green.opacity(0.15)
+        case .progressingTowardTarget:
+            return Color.blue.opacity(0.10)
+        case .decliningPerformance:
+            return Color.orange.opacity(0.15)
+        case .recentlyRegressed:
+            return Color.yellow.opacity(0.15)
+        default:
+            return Color.gray.opacity(0.10)
         }
     }
 }

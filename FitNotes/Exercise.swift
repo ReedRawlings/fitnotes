@@ -17,6 +17,12 @@ public final class Exercise {
     public var defaultRestSeconds: Int = 90  // Standard mode default
     public var useAdvancedRest: Bool = false
     public var customRestSeconds: [Int: Int] = [:]  // Dictionary: setNumber -> seconds
+
+    // Progressive overload tracking
+    public var targetRepMin: Int? = nil  // Bottom of target range (e.g., 5 in "5-8 reps")
+    public var targetRepMax: Int? = nil  // Top of target range (e.g., 8 in "5-8 reps")
+    public var lastProgressionDate: Date? = nil  // When weight was last increased
+
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -35,6 +41,9 @@ public final class Exercise {
         defaultRestSeconds: Int = 90,
         useAdvancedRest: Bool = false,
         customRestSeconds: [Int: Int] = [:],
+        targetRepMin: Int? = nil,
+        targetRepMax: Int? = nil,
+        lastProgressionDate: Date? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -58,6 +67,9 @@ public final class Exercise {
         self.defaultRestSeconds = defaultRestSeconds
         self.useAdvancedRest = useAdvancedRest
         self.customRestSeconds = customRestSeconds
+        self.targetRepMin = targetRepMin
+        self.targetRepMax = targetRepMax
+        self.lastProgressionDate = lastProgressionDate
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
