@@ -21,7 +21,43 @@ struct ExerciseDetailView: View {
         self.shouldDismissOnSave = shouldDismissOnSave
         _timerManager = StateObject(wrappedValue: RestTimerManager(appState: appState, filterExerciseId: exercise.id))
     }
-    
+
+    // MARK: - Stats Computed Properties
+
+    private var todaySets: [WorkoutSet] {
+        ExerciseService.shared.getSetsByDate(
+            exerciseId: exercise.id,
+            date: Date(),
+            modelContext: modelContext
+        )
+    }
+
+    private var lastSession: [WorkoutSet]? {
+        ExerciseService.shared.getLastSessionForExerciseExcludingDate(
+            exerciseId: exercise.id,
+            excludeDate: Date(),
+            modelContext: modelContext
+        )
+    }
+
+    private var currentVolume: Double {
+        ExerciseService.shared.calculateVolumeFromSets(todaySets)
+    }
+
+    private var lastVolume: Double? {
+        guard let lastSession = lastSession else { return nil }
+        return ExerciseService.shared.calculateVolumeFromSets(lastSession)
+    }
+
+    private var currentE1RM: Double? {
+        E1RMCalculator.fromSession(todaySets)
+    }
+
+    private var lastE1RM: Double? {
+        guard let lastSession = lastSession else { return nil }
+        return E1RMCalculator.fromSession(lastSession)
+    }
+
     var body: some View {
         ZStack {
             // Dark charcoal background
@@ -93,7 +129,19 @@ struct ExerciseDetailView: View {
                 CustomTabBar(selectedTab: $selectedTab)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)  // Reduced from 16
-                
+
+                // Exercise Stats View
+                ExerciseStatsView(
+                    exercise: exercise,
+                    currentVolume: currentVolume,
+                    lastVolume: lastVolume,
+                    currentE1RM: currentE1RM,
+                    lastE1RM: lastE1RM,
+                    unit: exercise.unit
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+
                 // Tab Content
                 if selectedTab == 0 {
                     TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise, onSaveSuccess: shouldDismissOnSave ? {

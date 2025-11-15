@@ -298,7 +298,120 @@ struct ExerciseSettingsView: View {
                             }
                         }
                     }
-                    
+
+                    // Stats Display Card
+                    FormSectionCard(title: "Stats Display") {
+                        VStack(spacing: 12) {
+                            Text("Control how the volume and E1RM comparison stats are displayed in the exercise detail view.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            // Segmented Control for Stats Display Preference
+                            VStack(spacing: 8) {
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        exercise.statsDisplayPreference = .alwaysCollapsed
+                                        saveExercise()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Always Collapsed")
+                                                .font(.system(size: 15, weight: exercise.statsDisplayPreference == .alwaysCollapsed ? .semibold : .medium))
+                                                .foregroundColor(exercise.statsDisplayPreference == .alwaysCollapsed ? .textPrimary : .textSecondary)
+
+                                            Text("Stats shown in compact form only")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+
+                                        Spacer()
+
+                                        if exercise.statsDisplayPreference == .alwaysCollapsed {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(exercise.statsDisplayPreference == .alwaysCollapsed ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        exercise.statsDisplayPreference = .alwaysExpanded
+                                        saveExercise()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Always Expanded")
+                                                .font(.system(size: 15, weight: exercise.statsDisplayPreference == .alwaysExpanded ? .semibold : .medium))
+                                                .foregroundColor(exercise.statsDisplayPreference == .alwaysExpanded ? .textPrimary : .textSecondary)
+
+                                            Text("Stats shown in detailed form")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+
+                                        Spacer()
+
+                                        if exercise.statsDisplayPreference == .alwaysExpanded {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(exercise.statsDisplayPreference == .alwaysExpanded ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        exercise.statsDisplayPreference = .rememberLastState
+                                        saveExercise()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Remember State")
+                                                .font(.system(size: 15, weight: exercise.statsDisplayPreference == .rememberLastState ? .semibold : .medium))
+                                                .foregroundColor(exercise.statsDisplayPreference == .rememberLastState ? .textPrimary : .textSecondary)
+
+                                            Text("Tap to expand/collapse, state is saved")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+
+                                        Spacer()
+
+                                        if exercise.statsDisplayPreference == .rememberLastState {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(exercise.statsDisplayPreference == .rememberLastState ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+
                     Spacer(minLength: 100)
                 }
                 .padding(.horizontal, 20)

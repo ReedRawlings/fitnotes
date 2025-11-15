@@ -412,25 +412,11 @@ struct WorkoutExerciseRowView: View {
                 .buttonStyle(PlainButtonStyle())
             }
 
-            // Volume Comparison Indicator
-            if let lastVol = lastSessionVolume, let percentChange = volumeChangePercent {
-                VolumeComparisonIndicatorView(
-                    lastVolume: lastVol,
-                    currentVolume: currentSessionVolume,
-                    percentChange: percentChange
-                )
-            }
-
-            // E1RM Comparison Indicator
-            if let currentE1RM = currentSessionE1RM,
-               let lastE1RM = lastSessionE1RM,
-               let percentChange = e1rmChangePercent {
-                E1RMComparisonIndicatorView(
-                    lastE1RM: lastE1RM,
-                    currentE1RM: currentE1RM,
-                    percentChange: percentChange
-                )
-            }
+            // Stats indicator (shows volume and E1RM changes)
+            SimplifiedStatsIndicator(
+                volumeChange: volumeChangePercent,
+                e1rmChange: e1rmChangePercent
+            )
 
             // Set history - grid layout (2 columns)
             if !sortedSets.isEmpty {

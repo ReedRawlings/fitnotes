@@ -1,6 +1,12 @@
 import Foundation
 import SwiftData
 
+public enum StatsDisplayPreference: String, Codable {
+    case alwaysCollapsed
+    case alwaysExpanded
+    case rememberLastState
+}
+
 @Model
 public final class Exercise {
     @Attribute(.unique) public var id: UUID
@@ -23,6 +29,10 @@ public final class Exercise {
     public var targetRepMax: Int? = nil  // Top of target range (e.g., 8 in "5-8 reps")
     public var lastProgressionDate: Date? = nil  // When weight was last increased
 
+    // Stats display preferences
+    public var statsDisplayPreference: StatsDisplayPreference = .rememberLastState
+    public var statsIsExpanded: Bool = false
+
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -44,6 +54,8 @@ public final class Exercise {
         targetRepMin: Int? = nil,
         targetRepMax: Int? = nil,
         lastProgressionDate: Date? = nil,
+        statsDisplayPreference: StatsDisplayPreference = .rememberLastState,
+        statsIsExpanded: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -70,6 +82,8 @@ public final class Exercise {
         self.targetRepMin = targetRepMin
         self.targetRepMax = targetRepMax
         self.lastProgressionDate = lastProgressionDate
+        self.statsDisplayPreference = statsDisplayPreference
+        self.statsIsExpanded = statsIsExpanded
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
