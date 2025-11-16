@@ -12,7 +12,20 @@ public final class Exercise {
     @Attribute(.unique) public var id: UUID
     public var name: String
     public var primaryCategory: String // Primary muscle group
-    public var secondaryCategories: [String] // Secondary muscle groups
+
+    // Persistent storage - uses comma-separated String for reliable SwiftData serialization
+    @Attribute public var secondaryCategoriesRaw: String = ""
+
+    // Computed property - provides type-safe array access
+    public var secondaryCategories: [String] {
+        get {
+            secondaryCategoriesRaw.isEmpty ? [] : secondaryCategoriesRaw.split(separator: ",").map { String($0) }
+        }
+        set {
+            secondaryCategoriesRaw = newValue.joined(separator: ",")
+        }
+    }
+
     public var equipment: String // e.g., "Machine", "Free Weight", "Body"
     public var notes: String?
     public var unit: String
@@ -22,7 +35,26 @@ public final class Exercise {
     public var useRestTimer: Bool = false
     public var defaultRestSeconds: Int = 90  // Standard mode default
     public var useAdvancedRest: Bool = false
-    public var customRestSeconds: [Int: Int] = [:]  // Dictionary: setNumber -> seconds
+
+    // Persistent storage - uses JSON String for reliable SwiftData serialization
+    @Attribute public var customRestSecondsRaw: String = "{}"
+
+    // Computed property - provides type-safe dictionary access
+    public var customRestSeconds: [Int: Int] {
+        get {
+            guard let data = customRestSecondsRaw.data(using: .utf8),
+                  let dict = try? JSONDecoder().decode([Int: Int].self, from: data) else {
+                return [:]
+            }
+            return dict
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue),
+               let string = String(data: data, encoding: .utf8) {
+                customRestSecondsRaw = string
+            }
+        }
+    }
 
     // Progressive overload tracking
     public var targetRepMin: Int? = nil  // Bottom of target range (e.g., 5 in "5-8 reps")
@@ -73,7 +105,7 @@ public final class Exercise {
         self.id = id
         self.name = name
         self.primaryCategory = primaryCategory
-        self.secondaryCategories = secondaryCategories
+        self.secondaryCategoriesRaw = secondaryCategories.joined(separator: ",")
         self.equipment = equipment
         self.notes = notes
         self.unit = unit
@@ -89,7 +121,13 @@ public final class Exercise {
         self.useRestTimer = useRestTimer
         self.defaultRestSeconds = defaultRestSeconds
         self.useAdvancedRest = useAdvancedRest
-        self.customRestSeconds = customRestSeconds
+        // Encode customRestSeconds to JSON string
+        if let data = try? JSONEncoder().encode(customRestSeconds),
+           let string = String(data: data, encoding: .utf8) {
+            self.customRestSecondsRaw = string
+        } else {
+            self.customRestSecondsRaw = "{}"
+        }
         self.targetRepMin = targetRepMin
         self.targetRepMax = targetRepMax
         self.lastProgressionDate = lastProgressionDate
