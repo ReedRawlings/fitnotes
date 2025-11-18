@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import ActivityKit
 
 /// Manages rest timer updates and completion handling for views
 @MainActor
@@ -10,6 +11,7 @@ class RestTimerManager: ObservableObject {
     private var timerUpdateTimer: Timer?
     private var appState: AppState
     private var filterExerciseId: UUID?
+    private var currentActivity: Activity<RestTimerAttributes>?
 
     init(appState: AppState, filterExerciseId: UUID? = nil) {
         self.appState = appState
@@ -50,6 +52,9 @@ class RestTimerManager: ObservableObject {
     func handleTimerCompletion() {
         showCompletionState = true
 
+        // Update Live Activity to completed state
+        updateLiveActivityToCompleted()
+
         // Success haptic
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.success)
@@ -77,6 +82,74 @@ class RestTimerManager: ObservableObject {
         appState.cancelRestTimer()
         showCompletionState = false
         celebrationScale = 1.0
+        endLiveActivity()
+    }
+
+    // MARK: - Live Activity Management
+
+    /// Start a Live Activity for the rest timer
+    func startLiveActivity(exerciseName: String, setNumber: Int, duration: TimeInterval) {
+        // Check if Live Activities are supported
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("Live Activities are not enabled")
+            return
+        }
+
+        // End any existing activity first
+        endLiveActivity()
+
+        let attributes = RestTimerAttributes(exerciseName: exerciseName)
+        let initialState = RestTimerAttributes.ContentState(
+            setNumber: setNumber,
+            endTime: Date().addingTimeInterval(duration),
+            duration: duration,
+            isCompleted: false
+        )
+
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: initialState, staleDate: nil),
+                pushType: nil
+            )
+            currentActivity = activity
+            print("Live Activity started: \(activity.id)")
+        } catch {
+            print("Failed to start Live Activity: \(error)")
+        }
+    }
+
+    /// Update Live Activity when timer completes
+    func updateLiveActivityToCompleted() {
+        guard let activity = currentActivity else { return }
+
+        Task {
+            let completedState = RestTimerAttributes.ContentState(
+                setNumber: activity.content.state.setNumber,
+                endTime: activity.content.state.endTime,
+                duration: activity.content.state.duration,
+                isCompleted: true
+            )
+
+            await activity.update(.init(state: completedState, staleDate: nil))
+            print("Live Activity updated to completed")
+
+            // Auto-dismiss after 2 seconds
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            await activity.end(nil, dismissalPolicy: .immediate)
+            currentActivity = nil
+        }
+    }
+
+    /// End the Live Activity
+    func endLiveActivity() {
+        guard let activity = currentActivity else { return }
+
+        Task {
+            await activity.end(nil, dismissalPolicy: .immediate)
+            currentActivity = nil
+            print("Live Activity ended")
+        }
     }
 
     nonisolated deinit {

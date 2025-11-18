@@ -311,6 +311,7 @@ struct TrackTabView: View {
         let restDuration = TimeInterval(restSeconds)
         appState.startRestTimer(
             exerciseId: exercise.id,
+            exerciseName: exercise.name,
             setNumber: setNumber,
             duration: restDuration
         )
