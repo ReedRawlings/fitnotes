@@ -25,6 +25,7 @@ struct RestTimerLiveActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
                         .font(.title2.monospacedDigit().weight(.semibold))
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -51,6 +52,7 @@ struct RestTimerLiveActivityWidget: Widget {
                 // Compact trailing - just the timer
                 TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
                     .font(.caption2.monospacedDigit().weight(.medium))
+                    .foregroundColor(.white)
             } minimal: {
                 // Minimal view - just an icon
                 Image(systemName: "timer")
