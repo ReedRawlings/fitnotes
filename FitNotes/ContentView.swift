@@ -36,6 +36,7 @@ extension UIColor {
 }
 
 // MARK: - App State Management
+@MainActor
 public class AppState: ObservableObject {
     @Published var selectedExercise: Exercise?
     @Published var showWorkoutFinishedBanner: Bool = false
