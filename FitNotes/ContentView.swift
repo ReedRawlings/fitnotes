@@ -43,7 +43,12 @@ public class AppState: ObservableObject {
     @Published var selectedTab: Int = 0
     @Published var weightUnit: String = "kg" // Global unit preference for set history display
     @Published var activeRestTimer: RestTimer?
-    
+
+    // Rest timer manager for Live Activity support
+    lazy var restTimerManager: RestTimerManager = {
+        RestTimerManager(appState: self)
+    }()
+
     var activeWorkout: ActiveWorkoutState? {
         get {
             guard let workout = _activeWorkout,
@@ -123,10 +128,10 @@ public class AppState: ObservableObject {
     }
     
     // MARK: - Rest Timer Management
-    func startRestTimer(exerciseId: UUID, setNumber: Int, duration: TimeInterval) {
+    func startRestTimer(exerciseId: UUID, exerciseName: String, setNumber: Int, duration: TimeInterval) {
         // Cancel existing timer if any
         cancelRestTimer()
-        
+
         // Start new timer
         activeRestTimer = RestTimer(
             exerciseId: exerciseId,
@@ -134,10 +139,18 @@ public class AppState: ObservableObject {
             startTime: Date(),
             duration: duration
         )
+
+        // Start Live Activity
+        restTimerManager.startLiveActivity(
+            exerciseName: exerciseName,
+            setNumber: setNumber,
+            duration: duration
+        )
     }
-    
+
     func cancelRestTimer() {
         activeRestTimer = nil
+        restTimerManager.endLiveActivity()
     }
     
     func getTimeRemaining() -> TimeInterval? {
@@ -1586,6 +1599,15 @@ struct ContentView: View {
         .onAppear {
             // Sync active workout state from SwiftData on app launch
             appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
+        }
+        .onOpenURL { url in
+            // Handle URL schemes from Live Activity
+            if url.scheme == "fitnotes" {
+                if url.host == "skip-timer" {
+                    // Skip the active rest timer
+                    appState.restTimerManager.skipTimer()
+                }
+            }
         }
     }
 }
