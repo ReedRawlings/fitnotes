@@ -17,72 +17,30 @@ struct RestTimerLiveActivityWidget: Widget {
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded view
+                // Expanded view - stripped to bare minimum
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(context.attributes.exerciseName)
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(.white)
+                    Text(context.attributes.exerciseName)
+                }
 
-                        Text("Set \(context.state.setNumber)")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-                
                 DynamicIslandExpandedRegion(.trailing) {
-                    if context.state.isCompleted {
-                        Text("Done!")
-                            .font(.title2.weight(.semibold))
-                            .foregroundColor(.green)
-                    } else {
-                        Text(context.state.endTime, style: .timer)
-                            .font(.title2.monospacedDigit().weight(.semibold))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.trailing)
-                    }
+                    Text(context.state.endTime, style: .timer)
+                        .monospacedDigit()
                 }
-                
+
                 DynamicIslandExpandedRegion(.bottom) {
-                    if !context.state.isCompleted {
-                        Link(destination: URL(string: "fitnotes://skip-timer")!) {
-                            Text("Skip Rest")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color(red: 1.0, green: 0.42, blue: 0.21))
-                                .cornerRadius(12)
-                        }
-                    }
-                }
-                
-                DynamicIslandExpandedRegion(.center) {
-                    if !context.state.isCompleted {
-                        TimerProgressBar(endTime: context.state.endTime, duration: context.state.duration)
-                            .frame(height: 8)
-                    }
+                    Text("Set \(context.state.setNumber)")
                 }
                 
             } compactLeading: {
-                // Compact leading
+                // Compact leading - stripped to bare minimum
                 Image(systemName: "timer")
-                    .foregroundColor(Color(red: 1.0, green: 0.42, blue: 0.21))
             } compactTrailing: {
-                // Compact trailing - timer text
-                if context.state.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                        .font(.caption2)
-                } else {
-                    Text(context.state.endTime, style: .timer)
-                        .font(.caption2.monospacedDigit().weight(.semibold))
-                        .foregroundColor(.white)
-                }
+                // Compact trailing - stripped to bare minimum
+                Text(context.state.endTime, style: .timer)
+                    .monospacedDigit()
             } minimal: {
-                // Minimal view
-                Image(systemName: context.state.isCompleted ? "checkmark.circle.fill" : "timer")
-                    .foregroundColor(context.state.isCompleted ? .green : Color(red: 1.0, green: 0.42, blue: 0.21))
+                // Minimal view - stripped to bare minimum
+                Image(systemName: "timer")
             }
         }
     }
