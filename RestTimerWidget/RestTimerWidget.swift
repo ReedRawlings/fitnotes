@@ -19,24 +19,19 @@ struct RestTimerLiveActivityWidget: Widget {
             DynamicIsland {
                 // Expanded - just timer
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.endTime, style: .timer)
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
+                    Text("TEST")
+                        .font(.title2)
                 }
 
             } compactLeading: {
                 // Timer icon
-                Image(systemName: "timer")
-                    .foregroundStyle(.white)
+                Text("L")
             } compactTrailing: {
                 // Timer countdown
-                Text(context.state.endTime, style: .timer)
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
+                Text("R")
             } minimal: {
                 // Just icon
-                Image(systemName: "timer")
-                    .foregroundStyle(.white)
+                Text("M")
             }
         }
     }
