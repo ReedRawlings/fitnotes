@@ -130,13 +130,13 @@ class RestTimerManager: ObservableObject {
         )
 
         do {
-            currentActivity = try Activity.request(
+            self.currentActivity = try Activity.request(
                 attributes: attributes,
                 content: activityContent,
                 pushType: nil
             )
-            logger.info("✅ Live Activity successfully created with ID: \(currentActivity?.id ?? "unknown")")
-            logger.info("📱 Activity state: \(currentActivity?.activityState.rawValue ?? "unknown")")
+            logger.info("✅ Live Activity successfully created with ID: \(self.currentActivity?.id ?? "unknown")")
+            logger.info("📱 Activity state: \(String(describing: self.currentActivity?.activityState))")
         } catch {
             logger.error("❌ Failed to create Live Activity: \(error.localizedDescription)")
             logger.error("🔍 Error details: \(String(describing: error))")
