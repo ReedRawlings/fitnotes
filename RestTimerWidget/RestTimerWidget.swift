@@ -5,15 +5,87 @@ import SwiftUI
 @main
 struct RestTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
+        RestTimerStaticWidget()
         RestTimerLiveActivityWidget()
     }
 }
 
+// MARK: - Static Widget (Required for proper bundle registration)
+struct RestTimerStaticWidget: Widget {
+    let kind: String = "RestTimerWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: RestTimerProvider()) { entry in
+            RestTimerStaticView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Rest Timer")
+        .description("Shows your active rest timer")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct RestTimerEntry: TimelineEntry {
+    let date: Date
+    let timerEndTime: Date?
+    let exerciseName: String?
+}
+
+struct RestTimerProvider: TimelineProvider {
+    func placeholder(in context: Context) -> RestTimerEntry {
+        RestTimerEntry(date: Date(), timerEndTime: nil, exerciseName: nil)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (RestTimerEntry) -> ()) {
+        let entry = RestTimerEntry(date: Date(), timerEndTime: nil, exerciseName: nil)
+        completion(entry)
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<RestTimerEntry>) -> ()) {
+        let entry = RestTimerEntry(date: Date(), timerEndTime: nil, exerciseName: nil)
+        let timeline = Timeline(entries: [entry], policy: .never)
+        completion(timeline)
+    }
+}
+
+struct RestTimerStaticView: View {
+    let entry: RestTimerEntry
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "timer")
+                .font(.system(size: 32))
+                .foregroundColor(Color(red: 1.0, green: 0.42, blue: 0.21))
+
+            Text("FitNotes")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.white)
+
+            if let exerciseName = entry.exerciseName, let endTime = entry.timerEndTime {
+                Text(exerciseName)
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.7))
+
+                Text(endTime, style: .timer)
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(.white)
+            } else {
+                Text("No active timer")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.5))
+            }
+        }
+        .padding()
+    }
+}
+
+// MARK: - Live Activity Widget
 struct RestTimerLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
             // Lock screen UI
             RestTimerLockScreenView(context: context)
+                .activityBackgroundTint(Color(red: 0.1, green: 0.12, blue: 0.15))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
@@ -85,21 +157,24 @@ struct RestTimerLiveActivityWidget: Widget {
             } compactLeading: {
                 // Compact leading
                 Image(systemName: "timer")
+                    .font(.system(size: 14))
                     .foregroundColor(Color(red: 1.0, green: 0.42, blue: 0.21))
             } compactTrailing: {
                 // Compact trailing - timer text
                 if context.state.isCompleted {
                     Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12))
                         .foregroundColor(.green)
-                        .font(.caption2)
                 } else {
                     Text(context.state.endTime, style: .timer)
-                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
                         .foregroundColor(.white)
                 }
             } minimal: {
                 // Minimal view
                 Image(systemName: context.state.isCompleted ? "checkmark.circle.fill" : "timer")
+                    .font(.system(size: 12))
                     .foregroundColor(context.state.isCompleted ? .green : Color(red: 1.0, green: 0.42, blue: 0.21))
             }
         }
