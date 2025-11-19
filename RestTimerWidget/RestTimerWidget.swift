@@ -28,10 +28,6 @@ struct RestTimerLiveActivityWidget: Widget {
                             .font(.caption2)
                             .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.3))
-                    .cornerRadius(8)
                 }
                 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -39,38 +35,25 @@ struct RestTimerLiveActivityWidget: Widget {
                         Text("Done!")
                             .font(.title2.weight(.semibold))
                             .foregroundColor(.green)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.green.opacity(0.2))
-                            .cornerRadius(8)
                     } else {
                         Text(context.state.endTime, style: .timer)
                             .font(.title2.monospacedDigit().weight(.semibold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.trailing)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.black.opacity(0.3))
-                            .cornerRadius(8)
                     }
                 }
                 
                 DynamicIslandExpandedRegion(.bottom) {
                     if !context.state.isCompleted {
-                        HStack {
-                            Spacer()
-                            Link(destination: URL(string: "fitnotes://skip-timer")!) {
-                                Text("Skip Rest")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .background(Color(red: 1.0, green: 0.42, blue: 0.21)) // accentPrimary
-                                    .cornerRadius(12)
-                            }
-                            Spacer()
+                        Link(destination: URL(string: "fitnotes://skip-timer")!) {
+                            Text("Skip Rest")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color(red: 1.0, green: 0.42, blue: 0.21))
+                                .cornerRadius(12)
                         }
-                        .padding(.top, 8)
                     }
                 }
                 
@@ -78,7 +61,6 @@ struct RestTimerLiveActivityWidget: Widget {
                     if !context.state.isCompleted {
                         TimerProgressBar(endTime: context.state.endTime, duration: context.state.duration)
                             .frame(height: 8)
-                            .padding(.horizontal, 20)
                     }
                 }
                 
