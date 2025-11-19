@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import ActivityKit
+import os.log
 
 /// Manages rest timer updates and completion handling for views
 @MainActor
@@ -12,6 +13,9 @@ class RestTimerManager: ObservableObject {
     private var appState: AppState
     private var filterExerciseId: UUID?
     private var currentActivity: Activity<RestTimerAttributes>?
+
+    // Logger for Live Activity debugging
+    private let logger = Logger(subsystem: "com.fitnotes.app", category: "LiveActivity")
 
     init(appState: AppState, filterExerciseId: UUID? = nil) {
         self.appState = appState
@@ -89,9 +93,21 @@ class RestTimerManager: ObservableObject {
 
     /// Start a Live Activity for the rest timer
     func startLiveActivity(exerciseName: String, setNumber: Int, duration: TimeInterval) {
+        logger.info("🚀 Starting Live Activity for '\(exerciseName)', Set #\(setNumber), Duration: \(duration)s")
+
         // Check if Live Activities are supported
-        guard #available(iOS 16.2, *) else { return }
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard #available(iOS 16.2, *) else {
+            logger.warning("❌ Live Activities not supported on this iOS version (requires iOS 16.2+)")
+            return
+        }
+
+        let authInfo = ActivityAuthorizationInfo()
+        guard authInfo.areActivitiesEnabled else {
+            logger.warning("❌ Live Activities are disabled by user or system")
+            return
+        }
+
+        logger.info("✅ Live Activity authorization confirmed")
 
         // End any existing activity first
         endLiveActivity()
@@ -105,6 +121,8 @@ class RestTimerManager: ObservableObject {
             isCompleted: false
         )
 
+        logger.info("📊 Live Activity state - Set: \(setNumber), EndTime: \(endTime), Duration: \(duration), IsCompleted: false")
+
         // Set staleDate to 5 seconds after timer ends so system knows when activity is outdated
         let activityContent = ActivityContent(
             state: initialState,
@@ -117,14 +135,22 @@ class RestTimerManager: ObservableObject {
                 content: activityContent,
                 pushType: nil
             )
+            logger.info("✅ Live Activity successfully created with ID: \(currentActivity?.id ?? "unknown")")
+            logger.info("📱 Activity state: \(currentActivity?.activityState.rawValue ?? "unknown")")
         } catch {
-            // Silently fail - Live Activity is optional
+            logger.error("❌ Failed to create Live Activity: \(error.localizedDescription)")
+            logger.error("🔍 Error details: \(String(describing: error))")
         }
     }
 
     /// Update Live Activity when timer completes
     func updateLiveActivityToCompleted() {
-        guard let activity = currentActivity else { return }
+        guard let activity = currentActivity else {
+            logger.warning("⚠️ No active Live Activity to update to completed state")
+            return
+        }
+
+        logger.info("🔄 Updating Live Activity to completed state, ID: \(activity.id)")
 
         Task {
             let completedState = RestTimerAttributes.ContentState(
@@ -134,23 +160,50 @@ class RestTimerManager: ObservableObject {
                 isCompleted: true
             )
 
-            // Activity becomes stale immediately after completion
-            await activity.update(.init(state: completedState, staleDate: Date()))
+            logger.info("📊 Updated state - Set: \(completedState.setNumber), IsCompleted: \(completedState.isCompleted)")
+
+            do {
+                // Activity becomes stale immediately after completion
+                await activity.update(.init(state: completedState, staleDate: Date()))
+                logger.info("✅ Live Activity updated successfully to completed state")
+            } catch {
+                logger.error("❌ Failed to update Live Activity: \(error.localizedDescription)")
+            }
 
             // Auto-dismiss after 2 seconds
+            logger.info("⏱️ Waiting 2 seconds before dismissing Live Activity...")
             try? await Task.sleep(nanoseconds: 2_000_000_000)
-            await activity.end(nil, dismissalPolicy: .immediate)
+
+            do {
+                await activity.end(nil, dismissalPolicy: .immediate)
+                logger.info("✅ Live Activity ended successfully")
+            } catch {
+                logger.error("❌ Failed to end Live Activity: \(String(describing: error))")
+            }
+
             currentActivity = nil
+            logger.info("🗑️ Cleared current activity reference")
         }
     }
 
     /// End the Live Activity
     func endLiveActivity() {
-        guard let activity = currentActivity else { return }
+        guard let activity = currentActivity else {
+            logger.debug("ℹ️ No active Live Activity to end")
+            return
+        }
+
+        logger.info("🛑 Ending Live Activity, ID: \(activity.id)")
 
         Task {
-            await activity.end(nil, dismissalPolicy: .immediate)
+            do {
+                await activity.end(nil, dismissalPolicy: .immediate)
+                logger.info("✅ Live Activity ended successfully")
+            } catch {
+                logger.error("❌ Failed to end Live Activity: \(String(describing: error))")
+            }
             currentActivity = nil
+            logger.info("🗑️ Cleared current activity reference")
         }
     }
 

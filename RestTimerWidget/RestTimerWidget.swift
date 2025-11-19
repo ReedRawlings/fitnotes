@@ -1,6 +1,10 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import os.log
+
+// Logger for widget debugging
+private let widgetLogger = Logger(subsystem: "com.fitnotes.widget", category: "DynamicIsland")
 
 @main
 struct RestTimerWidgetBundle: WidgetBundle {
@@ -13,28 +17,39 @@ struct RestTimerLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
             // Lock screen UI
-            RestTimerLockScreenView(context: context)
+            widgetLogger.info("🔒 Rendering Lock Screen view - Exercise: '\(context.attributes.exerciseName)', Set: \(context.state.setNumber), EndTime: \(context.state.endTime)")
+            return RestTimerLockScreenView(context: context)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            DynamicIsland {
+            widgetLogger.info("🏝️ Rendering Dynamic Island - Exercise: '\(context.attributes.exerciseName)', Set: \(context.state.setNumber), EndTime: \(context.state.endTime), IsCompleted: \(context.state.isCompleted)")
+
+            return DynamicIsland {
                 // Expanded - just timer
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.endTime, style: .timer)
+                    widgetLogger.info("📱 Rendering expanded center region with timer: \(context.state.endTime)")
+                    return Text(context.state.endTime, style: .timer)
                         .monospacedDigit()
                         .foregroundColor(.white)
+                        .font(.title)
                 }
 
             } compactLeading: {
                 // Timer icon
-                Image(systemName: "timer")
+                widgetLogger.info("🔵 Rendering compact leading view with timer icon")
+                return Image(systemName: "timer")
+                    .foregroundColor(.white)
             } compactTrailing: {
                 // Timer countdown
-                Text(context.state.endTime, style: .timer)
+                widgetLogger.info("🟢 Rendering compact trailing view with timer text: \(context.state.endTime)")
+                return Text(context.state.endTime, style: .timer)
                     .monospacedDigit()
                     .foregroundColor(.white)
+                    .font(.caption)
             } minimal: {
                 // Just icon
-                Image(systemName: "timer")
+                widgetLogger.info("⚪ Rendering minimal view with timer icon")
+                return Image(systemName: "timer")
+                    .foregroundColor(.white)
             }
         }
     }
@@ -45,10 +60,12 @@ struct RestTimerLockScreenView: View {
     let context: ActivityViewContext<RestTimerAttributes>
 
     var body: some View {
-        HStack {
+        widgetLogger.info("🔓 Lock screen body rendering - Set: \(context.state.setNumber), Timer: \(context.state.endTime)")
+        return HStack {
             Image(systemName: "timer")
             Text(context.state.endTime, style: .timer)
                 .monospacedDigit()
+                .foregroundColor(.white)
         }
         .padding()
     }
