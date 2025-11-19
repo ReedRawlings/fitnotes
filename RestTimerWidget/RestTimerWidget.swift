@@ -22,16 +22,19 @@ struct RestTimerLiveActivityWidget: Widget {
                     Text(context.state.endTime, style: .timer)
                         .monospacedDigit()
                         .foregroundColor(.white)
+                        .font(.system(size: 20, weight: .semibold))
                 }
 
             } compactLeading: {
                 // Timer icon
                 Image(systemName: "timer")
+                    .foregroundColor(.white)
             } compactTrailing: {
                 // Timer countdown
                 Text(context.state.endTime, style: .timer)
                     .monospacedDigit()
                     .foregroundColor(.white)
+                    .font(.system(size: 14, weight: .medium))
             } minimal: {
                 // Just icon
                 Image(systemName: "timer")
