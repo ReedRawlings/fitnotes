@@ -17,19 +17,17 @@ struct RestTimerLiveActivityWidget: Widget {
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded - just timer
+                // Expanded - hardcoded test
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.endTime, style: .timer)
-                        .monospacedDigit()
+                    Text("90")
                 }
 
             } compactLeading: {
                 // Timer icon
                 Image(systemName: "timer")
             } compactTrailing: {
-                // Timer countdown
-                Text(context.state.endTime, style: .timer)
-                    .monospacedDigit()
+                // Hardcoded test text
+                Text("90")
             } minimal: {
                 // Just icon
                 Image(systemName: "timer")
