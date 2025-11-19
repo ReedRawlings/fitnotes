@@ -162,24 +162,16 @@ class RestTimerManager: ObservableObject {
 
             logger.info("📊 Updated state - Set: \(completedState.setNumber), IsCompleted: \(completedState.isCompleted)")
 
-            do {
-                // Activity becomes stale immediately after completion
-                await activity.update(.init(state: completedState, staleDate: Date()))
-                logger.info("✅ Live Activity updated successfully to completed state")
-            } catch {
-                logger.error("❌ Failed to update Live Activity: \(error.localizedDescription)")
-            }
+            // Activity becomes stale immediately after completion
+            await activity.update(.init(state: completedState, staleDate: Date()))
+            logger.info("✅ Live Activity updated successfully to completed state")
 
             // Auto-dismiss after 2 seconds
             logger.info("⏱️ Waiting 2 seconds before dismissing Live Activity...")
             try? await Task.sleep(nanoseconds: 2_000_000_000)
 
-            do {
-                await activity.end(nil, dismissalPolicy: .immediate)
-                logger.info("✅ Live Activity ended successfully")
-            } catch {
-                logger.error("❌ Failed to end Live Activity: \(String(describing: error))")
-            }
+            await activity.end(nil, dismissalPolicy: .immediate)
+            logger.info("✅ Live Activity ended successfully")
 
             currentActivity = nil
             logger.info("🗑️ Cleared current activity reference")
@@ -196,12 +188,8 @@ class RestTimerManager: ObservableObject {
         logger.info("🛑 Ending Live Activity, ID: \(activity.id)")
 
         Task {
-            do {
-                await activity.end(nil, dismissalPolicy: .immediate)
-                logger.info("✅ Live Activity ended successfully")
-            } catch {
-                logger.error("❌ Failed to end Live Activity: \(String(describing: error))")
-            }
+            await activity.end(nil, dismissalPolicy: .immediate)
+            logger.info("✅ Live Activity ended successfully")
             currentActivity = nil
             logger.info("🗑️ Cleared current activity reference")
         }
