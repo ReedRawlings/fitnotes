@@ -21,6 +21,7 @@ struct RestTimerLiveActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.state.endTime, style: .timer)
                         .monospacedDigit()
+                        .foregroundColor(.white)
                 }
 
             } compactLeading: {
@@ -30,6 +31,7 @@ struct RestTimerLiveActivityWidget: Widget {
                 // Timer countdown
                 Text(context.state.endTime, style: .timer)
                     .monospacedDigit()
+                    .foregroundColor(.white)
             } minimal: {
                 // Just icon
                 Image(systemName: "timer")
