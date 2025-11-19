@@ -17,21 +17,31 @@ struct RestTimerLiveActivityWidget: Widget {
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded - just timer
-                DynamicIslandExpandedRegion(.center) {
-                    Text("TEST")
+                // Expanded regions
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(systemName: "timer")
                         .font(.title2)
                 }
 
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.endTime, style: .timer)
+                        .font(.title2)
+                        .monospacedDigit()
+                }
+
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text("Set \(context.state.setNumber)")
+                        .font(.caption)
+                }
+
             } compactLeading: {
-                // Timer icon
-                Text("L")
+                Image(systemName: "timer")
             } compactTrailing: {
-                // Timer countdown
-                Text("R")
+                Text(context.state.endTime, style: .timer)
+                    .monospacedDigit()
+                    .font(.caption2)
             } minimal: {
-                // Just icon
-                Text("M")
+                Image(systemName: "timer")
             }
         }
     }
