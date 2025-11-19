@@ -23,11 +23,15 @@ struct RestTimerLiveActivityWidget: Widget {
                         Text(context.attributes.exerciseName)
                             .font(.caption.weight(.medium))
                             .foregroundColor(.white)
-                        
+
                         Text("Set \(context.state.setNumber)")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.7))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.3))
+                    .cornerRadius(8)
                 }
                 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -35,11 +39,19 @@ struct RestTimerLiveActivityWidget: Widget {
                         Text("Done!")
                             .font(.title2.weight(.semibold))
                             .foregroundColor(.green)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.green.opacity(0.2))
+                            .cornerRadius(8)
                     } else {
                         Text(context.state.endTime, style: .timer)
                             .font(.title2.monospacedDigit().weight(.semibold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.trailing)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.black.opacity(0.3))
+                            .cornerRadius(8)
                     }
                 }
                 
@@ -137,7 +149,21 @@ struct RestTimerLockScreenView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color(red: 0.04, green: 0.05, blue: 0.08)) // Dark background
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.12, green: 0.14, blue: 0.18),
+                    Color(red: 0.08, green: 0.10, blue: 0.13)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .cornerRadius(16)
     }
 }
 
