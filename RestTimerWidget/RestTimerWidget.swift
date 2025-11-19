@@ -50,7 +50,7 @@ struct RestTimerLiveActivityWidget: Widget {
                     .foregroundColor(.blue)
             } compactTrailing: {
                 // Compact trailing - just the timer
-                TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
+                Text("TEST")
                     .font(.caption2.monospacedDigit().weight(.medium))
                     .foregroundColor(.white)
             } minimal: {
@@ -71,16 +71,16 @@ struct RestTimerLockScreenView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Set \(context.state.setNumber)")
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
 
                 if context.state.isCompleted {
                     Text("Rest Complete!")
                         .font(.subheadline)
                         .foregroundColor(.green)
                 } else {
-                    TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
+                    Text("DEBUG LOCK")
                         .font(.title.monospacedDigit().weight(.bold))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.white)
                 }
             }
 
@@ -88,7 +88,8 @@ struct RestTimerLockScreenView: View {
 
             // Progress circle
             if !context.state.isCompleted {
-                TimerProgressCircle(endTime: context.state.endTime, duration: context.state.duration)
+                Circle()
+                    .fill(Color.red)
                     .frame(width: 60, height: 60)
             } else {
                 Image(systemName: "checkmark.circle.fill")
