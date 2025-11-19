@@ -110,17 +110,24 @@ class RestTimerManager: ObservableObject {
         endLiveActivity()
 
         let attributes = RestTimerAttributes(exerciseName: exerciseName)
+        let endTime = Date().addingTimeInterval(duration)
         let initialState = RestTimerAttributes.ContentState(
             setNumber: setNumber,
-            endTime: Date().addingTimeInterval(duration),
+            endTime: endTime,
             duration: duration,
             isCompleted: false
+        )
+
+        // Set staleDate to 5 seconds after timer ends so system knows when activity is outdated
+        let activityContent = ActivityContent(
+            state: initialState,
+            staleDate: endTime.addingTimeInterval(5)
         )
 
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: initialState, staleDate: nil),
+                content: activityContent,
                 pushType: nil
             )
             currentActivity = activity
@@ -148,7 +155,8 @@ class RestTimerManager: ObservableObject {
                 isCompleted: true
             )
 
-            await activity.update(.init(state: completedState, staleDate: nil))
+            // Activity becomes stale immediately after completion
+            await activity.update(.init(state: completedState, staleDate: Date()))
             print("Live Activity updated to completed")
 
             // Auto-dismiss after 2 seconds
