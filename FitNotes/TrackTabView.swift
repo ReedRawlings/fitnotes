@@ -293,28 +293,39 @@ struct TrackTabView: View {
         // Check if rest timer is enabled for this exercise
         guard exercise.useRestTimer else { return }
         
+        print("✅ Rest timer is enabled")
+        
         // Determine rest duration
         let restSeconds: Int
         if exercise.useAdvancedRest {
             // Advanced mode: check custom rest time for this set, or use default
             if let customSeconds = exercise.customRestSeconds[setNumber] {
                 restSeconds = customSeconds
+                print(" Using custom rest time: \(customSeconds)s for set \(setNumber)")
             } else {
                 restSeconds = exercise.defaultRestSeconds
+                print("✅ Using default rest time: \(restSeconds)s (no custom for set \(setNumber))")
+
             }
         } else {
             // Standard mode: use default for all sets
             restSeconds = exercise.defaultRestSeconds
+            print("✅ Using standard mode default: \(restSeconds)s")
         }
         
         // Start the timer
         let restDuration = TimeInterval(restSeconds)
+        print("🟢 About to call appState.startRestTimer with duration: \(restDuration)")
+
         appState.startRestTimer(
             exerciseId: exercise.id,
             exerciseName: exercise.name,
             setNumber: setNumber,
             duration: restDuration
         )
+        
+        print("🟢 appState.startRestTimer completed")
+
         
         // Medium haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)

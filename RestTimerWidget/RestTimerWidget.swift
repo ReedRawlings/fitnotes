@@ -14,49 +14,81 @@ struct RestTimerLiveActivityWidget: Widget {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
             // Lock screen UI
             RestTimerLockScreenView(context: context)
+                .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
                 // Expanded view
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Set \(context.state.setNumber)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
-                        .font(.title2.monospacedDigit().weight(.semibold))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.trailing)
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        Spacer()
-                        Link(destination: URL(string: "fitnotes://skip-timer")!) {
-                            Text("Skip")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                        }
-                        Spacer()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(context.attributes.exerciseName)
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(.white)
+                        
+                        Text("Set \(context.state.setNumber)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
-                    .padding(.top, 8)
                 }
+                
+                DynamicIslandExpandedRegion(.trailing) {
+                    if context.state.isCompleted {
+                        Text("Done!")
+                            .font(.title2.weight(.semibold))
+                            .foregroundColor(.green)
+                    } else {
+                        Text(context.state.endTime, style: .timer)
+                            .font(.title2.monospacedDigit().weight(.semibold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                
+                DynamicIslandExpandedRegion(.bottom) {
+                    if !context.state.isCompleted {
+                        HStack {
+                            Spacer()
+                            Link(destination: URL(string: "fitnotes://skip-timer")!) {
+                                Text("Skip Rest")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 10)
+                                    .background(Color(red: 1.0, green: 0.42, blue: 0.21)) // accentPrimary
+                                    .cornerRadius(12)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 8)
+                    }
+                }
+                
+                DynamicIslandExpandedRegion(.center) {
+                    if !context.state.isCompleted {
+                        TimerProgressBar(endTime: context.state.endTime, duration: context.state.duration)
+                            .frame(height: 8)
+                            .padding(.horizontal, 20)
+                    }
+                }
+                
             } compactLeading: {
-                // Compact leading (minimal state)
+                // Compact leading
                 Image(systemName: "timer")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color(red: 1.0, green: 0.42, blue: 0.21))
             } compactTrailing: {
-                // Compact trailing - just the timer
-                TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
-                    .font(.caption2.monospacedDigit().weight(.medium))
-                    .foregroundColor(.white)
+                // Compact trailing - timer text
+                if context.state.isCompleted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.caption2)
+                } else {
+                    Text(context.state.endTime, style: .timer)
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .foregroundColor(.white)
+                }
             } minimal: {
-                // Minimal view - just an icon
-                Image(systemName: "timer")
-                    .foregroundColor(.blue)
+                // Minimal view
+                Image(systemName: context.state.isCompleted ? "checkmark.circle.fill" : "timer")
+                    .foregroundColor(context.state.isCompleted ? .green : Color(red: 1.0, green: 0.42, blue: 0.21))
             }
         }
     }
@@ -68,19 +100,26 @@ struct RestTimerLockScreenView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(context.attributes.exerciseName)
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(.white)
+                
                 Text("Set \(context.state.setNumber)")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
 
                 if context.state.isCompleted {
-                    Text("Rest Complete!")
-                        .font(.subheadline)
+                    Text("Rest Complete! 🎉")
+                        .font(.title3.weight(.bold))
                         .foregroundColor(.green)
+                        .padding(.top, 4)
                 } else {
-                    TimerText(endTime: context.state.endTime, isCompleted: context.state.isCompleted)
-                        .font(.title.monospacedDigit().weight(.bold))
-                        .foregroundColor(.blue)
+                    Text(context.state.endTime, style: .timer)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(.white)
+                        .padding(.top, 2)
                 }
             }
 
@@ -96,21 +135,43 @@ struct RestTimerLockScreenView: View {
                     .foregroundColor(.green)
             }
         }
-        .padding()
-        .activityBackgroundTint(Color(white: 0.1))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(red: 0.04, green: 0.05, blue: 0.08)) // Dark background
     }
 }
 
-// MARK: - Timer Text Component
-struct TimerText: View {
+// MARK: - Timer Progress Bar (for Dynamic Island)
+struct TimerProgressBar: View {
     let endTime: Date
-    let isCompleted: Bool
+    let duration: TimeInterval
+
+    var progress: Double {
+        let elapsed = duration - max(0, endTime.timeIntervalSinceNow)
+        return min(1.0, max(0.0, elapsed / duration))
+    }
 
     var body: some View {
-        if isCompleted {
-            Text("0:00")
-        } else {
-            Text(timerInterval: Date()...endTime, countsDown: true)
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.2))
+                
+                // Progress fill
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.42, blue: 0.21),
+                                Color(red: 0.97, green: 0.58, blue: 0.12)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: geometry.size.width * progress)
+            }
         }
     }
 }
@@ -120,34 +181,33 @@ struct TimerProgressCircle: View {
     let endTime: Date
     let duration: TimeInterval
 
-    @State private var progress: Double = 0
-
-    private var timeRemaining: TimeInterval {
-        max(0, endTime.timeIntervalSinceNow)
+    var progress: Double {
+        let elapsed = duration - max(0, endTime.timeIntervalSinceNow)
+        return min(1.0, max(0.0, elapsed / duration))
     }
 
     var body: some View {
         ZStack {
+            // Background circle
             Circle()
-                .stroke(Color.gray.opacity(0.3), lineWidth: 6)
+                .stroke(Color.white.opacity(0.2), lineWidth: 6)
 
+            // Progress arc
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(Color.blue, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.42, blue: 0.21),
+                            Color(red: 0.97, green: 0.58, blue: 0.12)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                )
                 .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 0.5), value: progress)
         }
-        .onAppear {
-            updateProgress()
-        }
-        .onChange(of: endTime) { _, _ in
-            updateProgress()
-        }
-    }
-
-    private func updateProgress() {
-        let elapsed = duration - timeRemaining
-        progress = min(1.0, max(0.0, elapsed / duration))
     }
 }
 

@@ -43,7 +43,7 @@
 		741C987F2ECD0D9100753A52 /* ProgressionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98742ECD0D9100753A52 /* ProgressionService.swift */; };
 		741C98802ECD0D9100753A52 /* SimplifiedStatsIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98782ECD0D9100753A52 /* SimplifiedStatsIndicator.swift */; };
 		741C98812ECD0D9100753A52 /* ExerciseStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98702ECD0D9100753A52 /* ExerciseStatsView.swift */; };
-		741C98822ECD0D9800753A52 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98762ECD0D9100753A52 /* RestTimerLiveActivity.swift */; };
+		741C988F2ECE1E5200753A52 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98762ECD0D9100753A52 /* RestTimerLiveActivity.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -497,7 +497,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				741C98822ECD0D9800753A52 /* RestTimerLiveActivity.swift in Sources */,
+				741C988F2ECE1E5200753A52 /* RestTimerLiveActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

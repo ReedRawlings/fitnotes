@@ -21,6 +21,20 @@
                ReferencedContainer = "container:FitNotes.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "741C98522ECD0C6800753A52"
+               BuildableName = "RestTimerWidgetExtension.appex"
+               BlueprintName = "RestTimerWidgetExtension"
+               ReferencedContainer = "container:FitNotes.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

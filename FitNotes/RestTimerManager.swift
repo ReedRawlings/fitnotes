@@ -89,6 +89,16 @@ class RestTimerManager: ObservableObject {
 
     /// Start a Live Activity for the rest timer
     func startLiveActivity(exerciseName: String, setNumber: Int, duration: TimeInterval) {
+        print("🔵 RestTimerManager.startLiveActivity called")
+        print("🔵 Exercise: \(exerciseName), Set: \(setNumber), Duration: \(duration)s")
+        
+        // Check if Live Activities are supported
+        if #available(iOS 16.2, *) {
+            print("✅ iOS version supports Live Activities")
+        } else {
+            print("🔴 iOS version does NOT support Live Activities")
+            return
+        }
         // Check if Live Activities are supported
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             print("Live Activities are not enabled")
@@ -96,6 +106,7 @@ class RestTimerManager: ObservableObject {
         }
 
         // End any existing activity first
+        print("🔵 Ending any existing activity...")
         endLiveActivity()
 
         let attributes = RestTimerAttributes(exerciseName: exerciseName)
@@ -114,8 +125,14 @@ class RestTimerManager: ObservableObject {
             )
             currentActivity = activity
             print("Live Activity started: \(activity.id)")
+            print("✅ Live Activity started successfully: \(activity.id)")
+            print("✅ Activity state: \(activity.activityState)")
+            print("✅ Activity content state: \(activity.content.state)")
         } catch {
             print("Failed to start Live Activity: \(error)")
+            print("🔴 Failed to start Live Activity")
+            print("🔴 Error: \(error)")
+            print("🔴 Error localized: \(error.localizedDescription)")
         }
     }
 
