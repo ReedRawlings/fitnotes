@@ -110,7 +110,7 @@ struct TimerText: View {
         if isCompleted {
             Text("0:00")
         } else {
-            Text(timerInterval: Date()...endTime, countsDown: true)
+            Text(endTime, style: .timer)
         }
     }
 }
