@@ -22,11 +22,9 @@ struct RestTimerLiveActivityWidget: Widget {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(context.attributes.exerciseName)
                             .font(.caption.weight(.medium))
-                            .foregroundColor(.white)
 
                         Text("Set \(context.state.setNumber)")
                             .font(.caption2)
-                            .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 
@@ -34,11 +32,9 @@ struct RestTimerLiveActivityWidget: Widget {
                     if context.state.isCompleted {
                         Text("Done!")
                             .font(.title2.weight(.semibold))
-                            .foregroundColor(.green)
                     } else {
                         Text(context.state.endTime, style: .timer)
                             .font(.title2.monospacedDigit().weight(.semibold))
-                            .foregroundColor(.white)
                             .multilineTextAlignment(.trailing)
                     }
                 }
@@ -67,22 +63,17 @@ struct RestTimerLiveActivityWidget: Widget {
             } compactLeading: {
                 // Compact leading
                 Image(systemName: "timer")
-                    .foregroundColor(Color(red: 1.0, green: 0.42, blue: 0.21))
             } compactTrailing: {
                 // Compact trailing - timer text
                 if context.state.isCompleted {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                        .font(.caption2)
                 } else {
                     Text(context.state.endTime, style: .timer)
                         .font(.caption2.monospacedDigit().weight(.semibold))
-                        .foregroundColor(.white)
                 }
             } minimal: {
                 // Minimal view
                 Image(systemName: context.state.isCompleted ? "checkmark.circle.fill" : "timer")
-                    .foregroundColor(context.state.isCompleted ? .green : Color(red: 1.0, green: 0.42, blue: 0.21))
             }
         }
     }
