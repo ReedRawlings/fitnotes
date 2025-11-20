@@ -618,14 +618,6 @@ struct HomeView: View {
                     }
                 }
         }
-        .onTapGesture {
-            // Tap outside to collapse expanded card
-            if expandedRoutineId != nil {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    expandedRoutineId = nil
-                }
-            }
-        }
         .onAppear {
             // Fix for RTIInputSystemClient error - dismiss any active text input
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
