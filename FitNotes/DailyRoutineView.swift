@@ -1036,13 +1036,14 @@ struct SaveWorkoutAsRoutineView: View {
 
                             VStack(spacing: 8) {
                                 ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                                    let exerciseId = workoutExercise.exerciseId
                                     HStack {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.accentSuccess)
                                             .font(.system(size: 16))
 
                                         if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { exercise in
-                                            exercise.id == workoutExercise.exerciseId
+                                            exercise.id == exerciseId
                                         })).first {
                                             Text(exercise.name)
                                                 .font(.system(size: 14))
