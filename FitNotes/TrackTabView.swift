@@ -117,6 +117,7 @@ struct TrackTabView: View {
                 .background(Color.primaryBg) // Ensure background matches
             }
         }
+        .ignoresSafeArea(.keyboard)
         .onAppear {
             loadSets()
         }
