@@ -19,16 +19,7 @@ struct TrackTabView: View {
         case rpe(UUID)
         case rir(UUID)
     }
-    @FocusState private var focusedInput: InputFocus? {
-        didSet {
-            print("🔍 [KEYBOARD] Focus state changed from \(String(describing: oldValue)) to \(String(describing: focusedInput))")
-            if focusedInput != nil {
-                print("🔍 [KEYBOARD] Focus is now active on input field")
-            } else {
-                print("🔍 [KEYBOARD] Focus cleared - keyboard should dismiss")
-            }
-        }
-    }
+    @FocusState private var focusedInput: InputFocus?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -114,53 +105,7 @@ struct TrackTabView: View {
             .background(Color.primaryBg) // Ensure background matches
         }
         .onAppear {
-            print("🔍 [KEYBOARD] TrackTabView appeared")
             loadSets()
-
-            // Add keyboard notification observers
-            NotificationCenter.default.addObserver(
-                forName: UIResponder.keyboardWillShowNotification,
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                    print("🔍 [KEYBOARD] ✅ Keyboard WILL SHOW - Height: \(keyboardFrame.height)")
-                }
-            }
-
-            NotificationCenter.default.addObserver(
-                forName: UIResponder.keyboardDidShowNotification,
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                    print("🔍 [KEYBOARD] ✅ Keyboard DID SHOW - Height: \(keyboardFrame.height)")
-                }
-            }
-
-            NotificationCenter.default.addObserver(
-                forName: UIResponder.keyboardWillHideNotification,
-                object: nil,
-                queue: .main
-            ) { _ in
-                print("🔍 [KEYBOARD] ❌ Keyboard WILL HIDE")
-            }
-
-            NotificationCenter.default.addObserver(
-                forName: UIResponder.keyboardDidHideNotification,
-                object: nil,
-                queue: .main
-            ) { _ in
-                print("🔍 [KEYBOARD] ❌ Keyboard DID HIDE")
-            }
-        }
-        .onDisappear {
-            print("🔍 [KEYBOARD] TrackTabView disappeared")
-            // Remove observers
-            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
-            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidHideNotification, object: nil)
         }
     }
     
@@ -404,7 +349,6 @@ struct SetRowView: View {
                     text: Binding<String>(
                         get: { formatWeight(weight) },
                         set: { newText in
-                            print("🔍 [KEYBOARD] Weight TextField text changed: '\(newText)'")
                             let cleaned = newText.replacingOccurrences(of: ",", with: ".")
                             if cleaned.isEmpty {
                                 weight = nil
@@ -438,7 +382,6 @@ struct SetRowView: View {
                     text: Binding<String>(
                         get: { reps.map(String.init) ?? "" },
                         set: { newText in
-                            print("🔍 [KEYBOARD] Reps TextField text changed: '\(newText)'")
                             let filtered = newText.filter { $0.isNumber }
                             if filtered.isEmpty {
                                 reps = nil
@@ -476,7 +419,6 @@ struct SetRowView: View {
                                 else { return rir.map(String.init) ?? "" }
                             },
                             set: { newText in
-                                print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField text changed: '\(newText)'")
                                 let filtered = newText.filter { $0.isNumber }
                                 if filtered.isEmpty {
                                     if exercise.rpeEnabled { rpe = nil } else { rir = nil }

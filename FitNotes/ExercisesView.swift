@@ -196,12 +196,6 @@ struct AddExerciseView: View {
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color.white.opacity(0.06), lineWidth: 1)
                             )
-                            .onTapGesture {
-                                print("🔍 [KEYBOARD] Notes TextField tapped in ExercisesView")
-                            }
-                            .onAppear {
-                                print("🔍 [KEYBOARD] Notes TextField appeared in ExercisesView")
-                            }
                     }
                     
                     Spacer(minLength: 100)
