@@ -248,12 +248,6 @@ struct LabeledTextInput: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.white.opacity(0.06), lineWidth: 1)
                 )
-                .onTapGesture {
-                    print("🔍 [KEYBOARD] LabeledTextInput '\(label)' tapped")
-                }
-                .onAppear {
-                    print("🔍 [KEYBOARD] LabeledTextInput '\(label)' appeared")
-                }
         }
     }
 }
