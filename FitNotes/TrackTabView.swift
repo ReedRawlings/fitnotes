@@ -23,10 +23,13 @@ struct TrackTabView: View {
     
     var body: some View {
         ZStack {
-            // Dark background
+            // Dark background with tap-to-dismiss keyboard
             Color.primaryBg
                 .ignoresSafeArea()
-            
+                .onTapGesture {
+                    focusedInput = nil
+                }
+
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -373,14 +376,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            focusedInput.wrappedValue = nil
-                        }
-                    }
-                }
                 .accessibilityLabel("Weight input")
             }
 
@@ -415,14 +410,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            focusedInput.wrappedValue = nil
-                        }
-                    }
-                }
                 .accessibilityLabel("Reps input")
             }
 
@@ -465,14 +452,6 @@ struct SetRowView: View {
                         focusedInput,
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done") {
-                                focusedInput.wrappedValue = nil
-                            }
-                        }
-                    }
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
             }
