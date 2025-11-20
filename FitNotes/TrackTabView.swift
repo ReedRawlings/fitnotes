@@ -89,9 +89,19 @@ struct TrackTabView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)  // Reduced from 28
                     .padding(.bottom, 100) // Space for fixed save button
+
+                    // Spacer to allow tapping blank space below content
+                    Spacer()
+                        .frame(minHeight: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // Dismiss keyboard when tapping blank space
+                    focusedInput = nil
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
 
             // Fixed Save Button
             SaveButton(
@@ -104,14 +114,6 @@ struct TrackTabView: View {
             .padding(.bottom, 34) // Safe area + padding
             .background(Color.primaryBg) // Ensure background matches
         }
-        .background(
-            // Tap to dismiss keyboard - placed in background layer
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    focusedInput = nil
-                }
-        )
         .onAppear {
             loadSets()
         }
