@@ -96,10 +96,6 @@ struct TrackTabView: View {
                         .padding(.bottom, 100) // Space for fixed save button
                     }
                 }
-                .onTapGesture {
-                    // Dismiss keyboard when tapping on empty space
-                    focusedInput = nil
-                }
 
                 // Fixed Save Button
                 SaveButton(
@@ -377,9 +373,17 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            focusedInput.wrappedValue = nil
+                        }
+                    }
+                }
                 .accessibilityLabel("Weight input")
             }
-            
+
             // Reps Column
             VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
                 Text("REPS")
@@ -411,9 +415,17 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            focusedInput.wrappedValue = nil
+                        }
+                    }
+                }
                 .accessibilityLabel("Reps input")
             }
-            
+
             // RPE/RIR Column (conditional)
             if exercise.rpeEnabled || exercise.rirEnabled {
                 VStack(alignment: .leading, spacing: 4) {
@@ -453,10 +465,18 @@ struct SetRowView: View {
                         focusedInput,
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") {
+                                focusedInput.wrappedValue = nil
+                            }
+                        }
+                    }
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
             }
-            
+
             // Checkbox Button
             Button(action: onToggleCheck) {
                 ZStack {
