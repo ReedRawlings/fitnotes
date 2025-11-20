@@ -45,7 +45,7 @@ public class AppState: ObservableObject {
     @Published var weightUnit: String = "kg" // Global unit preference for set history display
     @Published var activeRestTimer: RestTimer?
 
-    // Rest timer manager for Live Activity support
+    // Rest timer manager for notification support
     lazy var restTimerManager: RestTimerManager = {
         RestTimerManager(appState: self)
     }()
