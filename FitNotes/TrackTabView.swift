@@ -109,7 +109,7 @@ struct TrackTabView: View {
                             focusedInput = nil
                         }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
 
             // Fixed Save Button
