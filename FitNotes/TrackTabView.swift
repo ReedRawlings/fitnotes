@@ -69,12 +69,12 @@ struct TrackTabView: View {
                                         onToggleCheck: {
                                             sets[index].isChecked.toggle()
                                             persistCurrentSets()
-                                            
+
                                             // Always trigger rest timer when checking a set (cancel any existing timer)
                                             if sets[index].isChecked {
                                                 triggerRestTimer(forSet: index + 1)
                                             }
-                                            
+
                                             handleSetCompletion()
                                         },
                                         onDelete: {
@@ -86,7 +86,7 @@ struct TrackTabView: View {
                             .padding(.horizontal, 20)
                             .padding(.bottom, 16)  // Reduced from 28
                         }
-                        
+
                         // Add Set Button
                         AddSetButton {
                             addSet()
@@ -95,8 +95,24 @@ struct TrackTabView: View {
                         .padding(.top, 16)  // Reduced from 28
                         .padding(.bottom, 100) // Space for fixed save button
                     }
+                    .onTapGesture {
+                        // Dismiss keyboard when tapping outside input fields
+                        focusedInput = nil
+                    }
                 }
-                
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button(action: {
+                            focusedInput = nil
+                        }) {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.accentPrimary)
+                        }
+                    }
+                }
+
                 // Fixed Save Button
                 SaveButton(
                     isEnabled: !sets.isEmpty,
