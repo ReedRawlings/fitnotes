@@ -1222,6 +1222,12 @@ struct AddExerciseToRoutineTemplateView: View {
                         .padding(8)
                         .background(Color.tertiaryBg)
                         .cornerRadius(10)
+                        .onTapGesture {
+                            print("🔍 [KEYBOARD] Search TextField tapped in AddExerciseToRoutineTemplateView")
+                        }
+                        .onAppear {
+                            print("🔍 [KEYBOARD] Search TextField appeared in AddExerciseToRoutineTemplateView")
+                        }
                 }
                 .padding()
                 

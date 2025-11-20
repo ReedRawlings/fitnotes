@@ -230,13 +230,13 @@ struct LabeledTextInput: View {
     @Binding var text: String
     var axis: Axis = .horizontal
     var lineLimit: ClosedRange<Int>? = nil
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 13, weight: .regular))
                 .foregroundColor(.textSecondary)
-            
+
             TextField(placeholder, text: $text, axis: axis)
                 .font(.bodyFont)
                 .foregroundColor(.textPrimary)
@@ -248,6 +248,12 @@ struct LabeledTextInput: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.white.opacity(0.06), lineWidth: 1)
                 )
+                .onTapGesture {
+                    print("🔍 [KEYBOARD] LabeledTextInput '\(label)' tapped")
+                }
+                .onAppear {
+                    print("🔍 [KEYBOARD] LabeledTextInput '\(label)' appeared")
+                }
         }
     }
 }
