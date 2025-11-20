@@ -382,11 +382,6 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
-                .contentShape(Rectangle())
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
             }
             
             // Reps Column
@@ -421,11 +416,6 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
-                .contentShape(Rectangle())
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
             }
             
             // RPE/RIR Column (conditional)
@@ -468,11 +458,6 @@ struct SetRowView: View {
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
-                    .contentShape(Rectangle())
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                 }
             }
             
