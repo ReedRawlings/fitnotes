@@ -98,20 +98,9 @@ struct TrackTabView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)  // Reduced from 28
                     .padding(.bottom, 100) // Space for fixed save button
-
-                    // Spacer to allow tapping blank space below content
-                    Spacer()
-                        .frame(minHeight: 0)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            // Dismiss keyboard when tapping blank space
-                            print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
-                            focusedInput = nil
-                        }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
-            .scrollDismissesKeyboard(.immediately)
 
             // Fixed Save Button
             SaveButton(
