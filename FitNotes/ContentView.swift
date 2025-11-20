@@ -141,8 +141,8 @@ public class AppState: ObservableObject {
             duration: duration
         )
 
-        // Start Live Activity
-        restTimerManager.startLiveActivity(
+        // Schedule notification for timer completion
+        restTimerManager.startTimer(
             exerciseName: exerciseName,
             setNumber: setNumber,
             duration: duration
@@ -151,7 +151,7 @@ public class AppState: ObservableObject {
 
     func cancelRestTimer() {
         activeRestTimer = nil
-        restTimerManager.endLiveActivity()
+        restTimerManager.endTimer()
     }
     
     func getTimeRemaining() -> TimeInterval? {
@@ -1600,15 +1600,6 @@ struct ContentView: View {
         .onAppear {
             // Sync active workout state from SwiftData on app launch
             appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
-        }
-        .onOpenURL { url in
-            // Handle URL schemes from Live Activity
-            if url.scheme == "fitnotes" {
-                if url.host == "skip-timer" {
-                    // Skip the active rest timer
-                    appState.restTimerManager.skipTimer()
-                }
-            }
         }
     }
 }
