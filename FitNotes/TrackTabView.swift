@@ -23,14 +23,9 @@ struct TrackTabView: View {
     
     var body: some View {
         ZStack {
-            // Dark background with tap gesture to dismiss keyboard
+            // Dark background
             Color.primaryBg
                 .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping on empty space
-                    focusedInput = nil
-                }
 
             VStack(spacing: 0) {
                 ScrollView {
@@ -100,7 +95,16 @@ struct TrackTabView: View {
                         .padding(.top, 16)  // Reduced from 28
                         .padding(.bottom, 100) // Space for fixed save button
                     }
+                    .background(
+                        Color.white.opacity(0.001)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // Dismiss keyboard when tapping on empty space
+                                focusedInput = nil
+                            }
+                    )
                 }
+                .scrollDismissesKeyboard(.immediately)
 
                 // Fixed Save Button
                 SaveButton(
