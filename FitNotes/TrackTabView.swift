@@ -111,7 +111,6 @@ struct TrackTabView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .scrollDismissesKeyboard(.immediately)
 
             // Fixed Save Button
             SaveButton(
