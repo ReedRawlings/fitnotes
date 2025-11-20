@@ -102,14 +102,14 @@ struct TrackTabView: View {
                     // Spacer to allow tapping blank space below content
                     Spacer()
                         .frame(minHeight: 0)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            // Dismiss keyboard when tapping blank space
+                            print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
+                            focusedInput = nil
+                        }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping blank space
-                    print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
-                    focusedInput = nil
-                }
             }
             .scrollDismissesKeyboard(.immediately)
 
