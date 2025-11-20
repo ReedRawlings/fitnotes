@@ -489,12 +489,18 @@ struct SetRowView: View {
             .buttonStyle(PlainButtonStyle())
             .accessibilityLabel(set.isChecked ? "Uncheck set" : "Check set")
             .accessibilityHint("Marks this set as complete")
+
+            // Delete Button
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .font(.system(size: 14))
+                    .foregroundColor(.errorRed.opacity(0.7))
+                    .frame(width: 32, height: 44)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
-        .onLongPressGesture(minimumDuration: 0.5) {
-            onDelete()
-        }
         // Removed background and corner radius
     }
     
