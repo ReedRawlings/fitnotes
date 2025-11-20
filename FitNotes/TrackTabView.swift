@@ -476,9 +476,6 @@ struct SetRowView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
-        .onLongPressGesture(minimumDuration: 0.5) {
-            onDelete()
-        }
         // Removed background and corner radius
     }
     
