@@ -95,11 +95,15 @@ struct TrackTabView: View {
                         .padding(.top, 16)  // Reduced from 28
                         .padding(.bottom, 100) // Space for fixed save button
                     }
-                    .onTapGesture {
-                        // Dismiss keyboard when tapping outside input fields
-                        focusedInput = nil
-                    }
                 }
+                .background(
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            // Dismiss keyboard when tapping on empty space
+                            focusedInput = nil
+                        }
+                )
 
                 // Fixed Save Button
                 SaveButton(
