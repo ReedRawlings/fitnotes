@@ -90,18 +90,9 @@ struct TrackTabView: View {
                     .padding(.top, 16)  // Reduced from 28
                     .padding(.bottom, 100) // Space for fixed save button
 
-                    // Spacer to allow tapping blank space below content
-                    Spacer()
-                        .frame(minHeight: 0)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping blank space
-                    focusedInput = nil
                 }
             }
-            .scrollDismissesKeyboard(.immediately)
+            .scrollDismissesKeyboard(.interactively)
 
             // Fixed Save Button
             SaveButton(
@@ -378,10 +369,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
-                .onTapGesture {
-                    // Explicitly set focus to prevent parent gesture from dismissing
-                    focusedInput = TrackTabView.InputFocus.weight(set.id)
-                }
                 .accessibilityLabel("Weight input")
             }
             
@@ -416,10 +403,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
-                .onTapGesture {
-                    // Explicitly set focus to prevent parent gesture from dismissing
-                    focusedInput = TrackTabView.InputFocus.reps(set.id)
-                }
                 .accessibilityLabel("Reps input")
             }
             
@@ -462,10 +445,6 @@ struct SetRowView: View {
                         focusedInput,
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
-                    .onTapGesture {
-                        // Explicitly set focus to prevent parent gesture from dismissing
-                        focusedInput = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                    }
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
             }
