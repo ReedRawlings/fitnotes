@@ -379,7 +379,8 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .onTapGesture {
-                    // Consume tap to prevent parent gesture from dismissing keyboard
+                    // Explicitly set focus to prevent parent gesture from dismissing
+                    focusedInput = TrackTabView.InputFocus.weight(set.id)
                 }
                 .accessibilityLabel("Weight input")
             }
@@ -416,7 +417,8 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .onTapGesture {
-                    // Consume tap to prevent parent gesture from dismissing keyboard
+                    // Explicitly set focus to prevent parent gesture from dismissing
+                    focusedInput = TrackTabView.InputFocus.reps(set.id)
                 }
                 .accessibilityLabel("Reps input")
             }
@@ -461,7 +463,8 @@ struct SetRowView: View {
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
                     .onTapGesture {
-                        // Consume tap to prevent parent gesture from dismissing keyboard
+                        // Explicitly set focus to prevent parent gesture from dismissing
+                        focusedInput = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     }
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
