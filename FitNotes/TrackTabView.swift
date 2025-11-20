@@ -100,18 +100,6 @@ struct TrackTabView: View {
                         focusedInput = nil
                     }
                 }
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button(action: {
-                            focusedInput = nil
-                        }) {
-                            Image(systemName: "keyboard.chevron.compact.down")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.accentPrimary)
-                        }
-                    }
-                }
 
                 // Fixed Save Button
                 SaveButton(
