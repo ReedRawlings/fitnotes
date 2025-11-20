@@ -7,6 +7,9 @@ struct WorkoutView: View {
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
+    @State private var showingSaveRoutineDialog = false
+    @State private var routineName = ""
+    @State private var routineDescription = ""
     
     // Track the last workout count to force refresh
     private var workoutCount: Int { workouts.count }
@@ -55,11 +58,11 @@ struct WorkoutView: View {
                                         .font(.caption)
                                         .foregroundColor(.textSecondary)
                                 }
-                                
+
                                 Text(displayDate.formatted(date: .abbreviated, time: .omitted))
                                     .font(.system(size: 22, weight: .semibold))
                                     .foregroundColor(.textPrimary)
-                                
+
                                 Button(action: { goToNextDay() }) {
                                     Image(systemName: "chevron.right")
                                         .font(.caption)
@@ -67,8 +70,29 @@ struct WorkoutView: View {
                                 }
                             }
                         }
-                        
+
                         Spacer()
+
+                        // Save as Routine button - only show if workout has exercises
+                        if let workout = getWorkoutForDate(displayDate), !workout.exercises.isEmpty {
+                            Button(action: {
+                                showingSaveRoutineDialog = true
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.and.arrow.down")
+                                        .font(.system(size: 14))
+                                    Text("Save as Routine")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .foregroundColor(.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.1))
+                                )
+                            }
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
@@ -104,6 +128,16 @@ struct WorkoutView: View {
                 AddExerciseToWorkoutView(selectedDate: displayDate, workout: nil)
             }
         }
+        .sheet(isPresented: $showingSaveRoutineDialog) {
+            SaveWorkoutAsRoutineView(
+                isPresented: $showingSaveRoutineDialog,
+                workout: getWorkoutForDate(displayDate),
+                modelContext: modelContext,
+                onSave: { name, description in
+                    saveWorkoutAsRoutine(name: name, description: description)
+                }
+            )
+        }
         .onAppear {
             // If active workout exists, set selectedDate to active workout's date
             if let activeWorkout = appState.activeWorkout {
@@ -126,6 +160,53 @@ struct WorkoutView: View {
         let calendar = Calendar.current
         return workouts.first { workout in
             calendar.isDate(workout.date, inSameDayAs: date)
+        }
+    }
+
+    private func saveWorkoutAsRoutine(name: String, description: String?) {
+        guard let workout = getWorkoutForDate(displayDate) else { return }
+
+        // Create the routine
+        let routine = RoutineService.shared.createRoutine(
+            name: name,
+            description: description,
+            modelContext: modelContext
+        )
+
+        // Copy exercises from workout to routine
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+        for workoutExercise in sortedExercises {
+            // Get sets for this exercise to determine defaults
+            let sets = ExerciseService.shared.getSetsByDate(
+                exerciseId: workoutExercise.exerciseId,
+                date: workout.date,
+                modelContext: modelContext
+            )
+
+            // Calculate defaults from the workout's sets
+            let numberOfSets = sets.count
+            let averageReps = sets.compactMap { $0.reps }.reduce(0, +) / max(1, sets.filter { $0.reps != nil }.count)
+            let averageWeight = sets.compactMap { $0.weight }.reduce(0, +) / Double(max(1, sets.filter { $0.weight != nil }.count))
+
+            // Add exercise to routine with defaults
+            _ = RoutineService.shared.addExerciseToRoutine(
+                routine: routine,
+                exerciseId: workoutExercise.exerciseId,
+                sets: max(1, numberOfSets),
+                reps: sets.first?.reps != nil ? averageReps : nil,
+                weight: sets.first?.weight != nil ? averageWeight : nil,
+                duration: sets.first?.duration,
+                distance: sets.first?.distance,
+                notes: workoutExercise.notes,
+                modelContext: modelContext
+            )
+        }
+
+        // Save to database
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving routine: \(error)")
         }
     }
 }
@@ -247,6 +328,13 @@ struct WorkoutDetailView: View {
                 }
                 .onDisappear {
                     if hasUncommittedChanges {
+                        commitReorder()
+                    }
+                }
+                .onChange(of: appState.selectedExercise) { _, newExercise in
+                    // Commit any pending reorder changes when an exercise sheet is about to open
+                    // This ensures navigation respects the current sort order
+                    if newExercise != nil && hasUncommittedChanges {
                         commitReorder()
                     }
                 }
@@ -892,6 +980,110 @@ struct RoutineTemplateCardView: View {
         }
         .padding(14)
         .cardStyle()
+    }
+}
+
+// MARK: - Save Workout as Routine Dialog
+struct SaveWorkoutAsRoutineView: View {
+    @Binding var isPresented: Bool
+    let workout: Workout?
+    let modelContext: ModelContext
+    let onSave: (String, String?) -> Void
+
+    @State private var routineName = ""
+    @State private var routineDescription = ""
+    @FocusState private var isNameFieldFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Routine Name")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.textSecondary)
+
+                        TextField("e.g., Push Day, Leg Day", text: $routineName)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(8)
+                            .foregroundColor(.textPrimary)
+                            .focused($isNameFieldFocused)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Description (Optional)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.textSecondary)
+
+                        TextField("e.g., Chest, Shoulders, Triceps", text: $routineDescription)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(8)
+                            .foregroundColor(.textPrimary)
+                    }
+
+                    if let workout = workout {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Exercises to Include")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.textSecondary)
+
+                            VStack(spacing: 8) {
+                                ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                                    HStack {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.accentSuccess)
+                                            .font(.system(size: 16))
+
+                                        if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == workoutExercise.exerciseId })).first {
+                                            Text(exercise.name)
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.textPrimary)
+                                        }
+
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(Color.secondaryBg)
+                                    .cornerRadius(8)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle("Save as Routine")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                    .foregroundColor(.textSecondary)
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(routineName, routineDescription.isEmpty ? nil : routineDescription)
+                        isPresented = false
+                    }
+                    .foregroundColor(.accentColor)
+                    .disabled(routineName.isEmpty)
+                }
+            }
+            .onAppear {
+                isNameFieldFocused = true
+            }
+        }
     }
 }
 
