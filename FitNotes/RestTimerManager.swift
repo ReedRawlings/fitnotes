@@ -1,7 +1,6 @@
 import SwiftUI
 import Combine
-import ActivityKit
-import os.log
+import UserNotifications
 
 /// Manages rest timer updates and completion handling for views
 @MainActor
@@ -12,14 +11,22 @@ class RestTimerManager: ObservableObject {
     private var timerUpdateTimer: Timer?
     private var appState: AppState
     private var filterExerciseId: UUID?
-    private var currentActivity: Activity<RestTimerAttributes>?
-
-    // Logger for Live Activity debugging
-    private let logger = Logger(subsystem: "com.fitnotes.app", category: "LiveActivity")
 
     init(appState: AppState, filterExerciseId: UUID? = nil) {
         self.appState = appState
         self.filterExerciseId = filterExerciseId
+        requestNotificationPermissions()
+    }
+
+    /// Request notification permissions on initialization
+    func requestNotificationPermissions() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("Error requesting notification permissions: \(error)")
+            } else if granted {
+                print("Notification permissions granted")
+            }
+        }
     }
 
     /// Start periodic timer updates to check completion state
@@ -56,9 +63,6 @@ class RestTimerManager: ObservableObject {
     func handleTimerCompletion() {
         showCompletionState = true
 
-        // Update Live Activity to completed state
-        updateLiveActivityToCompleted()
-
         // Success haptic
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.success)
@@ -86,113 +90,46 @@ class RestTimerManager: ObservableObject {
         appState.cancelRestTimer()
         showCompletionState = false
         celebrationScale = 1.0
-        endLiveActivity()
+        cancelNotification()
     }
 
-    // MARK: - Live Activity Management
+    // MARK: - Notification Management
 
-    /// Start a Live Activity for the rest timer
-    func startLiveActivity(exerciseName: String, setNumber: Int, duration: TimeInterval) {
-        logger.info("🚀 Starting Live Activity for '\(exerciseName)', Set #\(setNumber), Duration: \(duration)s")
+    /// Start timer and schedule notification
+    func startTimer(exerciseName: String, setNumber: Int, duration: TimeInterval) {
+        // Schedule notification for when timer completes
+        scheduleNotification(delay: duration)
+    }
 
-        // Check if Live Activities are supported
-        guard #available(iOS 16.2, *) else {
-            logger.warning("❌ Live Activities not supported on this iOS version (requires iOS 16.2+)")
-            return
-        }
+    /// End timer and cancel notification
+    func endTimer() {
+        cancelNotification()
+    }
 
-        let authInfo = ActivityAuthorizationInfo()
-        guard authInfo.areActivitiesEnabled else {
-            logger.warning("❌ Live Activities are disabled by user or system")
-            return
-        }
+    /// Schedule notification for timer completion
+    private func scheduleNotification(delay: TimeInterval) {
+        // Cancel any existing notifications first
+        cancelNotification()
 
-        logger.info("✅ Live Activity authorization confirmed")
+        let content = UNMutableNotificationContent()
+        content.title = "Rest Complete!"
+        content.sound = .default
 
-        // End any existing activity first
-        endLiveActivity()
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
+        let request = UNNotificationRequest(identifier: "restTimer", content: content, trigger: trigger)
 
-        let attributes = RestTimerAttributes(exerciseName: exerciseName)
-        let endTime = Date().addingTimeInterval(duration)
-        let initialState = RestTimerAttributes.ContentState(
-            setNumber: setNumber,
-            endTime: endTime,
-            duration: duration,
-            isCompleted: false
-        )
-
-        logger.info("📊 Live Activity state - Set: \(setNumber), EndTime: \(endTime), Duration: \(duration), IsCompleted: false")
-
-        // Set staleDate to 5 seconds after timer ends so system knows when activity is outdated
-        let activityContent = ActivityContent(
-            state: initialState,
-            staleDate: endTime.addingTimeInterval(5)
-        )
-
-        do {
-            self.currentActivity = try Activity.request(
-                attributes: attributes,
-                content: activityContent,
-                pushType: nil
-            )
-            logger.info("✅ Live Activity successfully created with ID: \(self.currentActivity?.id ?? "unknown")")
-            logger.info("📱 Activity state: \(String(describing: self.currentActivity?.activityState))")
-        } catch {
-            logger.error("❌ Failed to create Live Activity: \(error.localizedDescription)")
-            logger.error("🔍 Error details: \(String(describing: error))")
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling notification: \(error)")
+            } else {
+                print("Notification scheduled for \(delay) seconds from now")
+            }
         }
     }
 
-    /// Update Live Activity when timer completes
-    func updateLiveActivityToCompleted() {
-        guard let activity = currentActivity else {
-            logger.warning("⚠️ No active Live Activity to update to completed state")
-            return
-        }
-
-        logger.info("🔄 Updating Live Activity to completed state, ID: \(activity.id)")
-
-        Task {
-            let completedState = RestTimerAttributes.ContentState(
-                setNumber: activity.content.state.setNumber,
-                endTime: activity.content.state.endTime,
-                duration: activity.content.state.duration,
-                isCompleted: true
-            )
-
-            logger.info("📊 Updated state - Set: \(completedState.setNumber), IsCompleted: \(completedState.isCompleted)")
-
-            // Activity becomes stale immediately after completion
-            await activity.update(.init(state: completedState, staleDate: Date()))
-            logger.info("✅ Live Activity updated successfully to completed state")
-
-            // Auto-dismiss after 2 seconds
-            logger.info("⏱️ Waiting 2 seconds before dismissing Live Activity...")
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-
-            await activity.end(nil, dismissalPolicy: .immediate)
-            logger.info("✅ Live Activity ended successfully")
-
-            currentActivity = nil
-            logger.info("🗑️ Cleared current activity reference")
-        }
-    }
-
-    /// End the Live Activity
-    func endLiveActivity() {
-        guard let activity = currentActivity else {
-            logger.debug("ℹ️ No active Live Activity to end")
-            return
-        }
-
-        logger.info("🛑 Ending Live Activity, ID: \(activity.id)")
-
-        Task {
-            await activity.end(nil, dismissalPolicy: .immediate)
-            logger.info("✅ Live Activity ended successfully")
-            currentActivity = nil
-            logger.info("🗑️ Cleared current activity reference")
-        }
+    /// Cancel pending notification
+    private func cancelNotification() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["restTimer"])
     }
 
     nonisolated deinit {
