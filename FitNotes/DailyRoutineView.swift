@@ -1042,7 +1042,8 @@ struct SaveWorkoutAsRoutineView: View {
                                             .font(.system(size: 16))
 
                                         if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { exercise in
-                                            exercise.id == workoutExercise.exerciseId
+                                            let exerciseId = workoutExercise.exerciseId
+                                            return exercise.id == exerciseId
                                         })).first {
                                             Text(exercise.name)
                                                 .font(.system(size: 14))
