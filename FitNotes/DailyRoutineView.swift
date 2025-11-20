@@ -250,6 +250,13 @@ struct WorkoutDetailView: View {
                         commitReorder()
                     }
                 }
+                .onChange(of: appState.selectedExercise) { _, newExercise in
+                    // Commit any pending reorder changes when an exercise sheet is about to open
+                    // This ensures navigation respects the current sort order
+                    if newExercise != nil && hasUncommittedChanges {
+                        commitReorder()
+                    }
+                }
             }
             }
         }
