@@ -103,10 +103,13 @@ struct TrackTabView: View {
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
-                        Button("Done") {
+                        Button(action: {
                             focusedInput = nil
+                        }) {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.accentPrimary)
                         }
-                        .foregroundColor(.accentPrimary)
                     }
                 }
 
