@@ -8,18 +8,27 @@ struct TrackTabView: View {
     var workout: Workout?
     var workoutExercise: WorkoutExercise?
     var onSaveSuccess: (() -> Void)? = nil
-    
+
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
-    
+
     enum InputFocus: Hashable {
         case weight(UUID)
         case reps(UUID)
         case rpe(UUID)
         case rir(UUID)
     }
-    @FocusState private var focusedInput: InputFocus?
+    @FocusState private var focusedInput: InputFocus? {
+        didSet {
+            print("🔍 [KEYBOARD] Focus state changed from \(String(describing: oldValue)) to \(String(describing: focusedInput))")
+            if focusedInput != nil {
+                print("🔍 [KEYBOARD] Focus is now active on input field")
+            } else {
+                print("🔍 [KEYBOARD] Focus cleared - keyboard should dismiss")
+            }
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -98,6 +107,7 @@ struct TrackTabView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     // Dismiss keyboard when tapping blank space
+                    print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
                     focusedInput = nil
                 }
             }
@@ -115,7 +125,53 @@ struct TrackTabView: View {
             .background(Color.primaryBg) // Ensure background matches
         }
         .onAppear {
+            print("🔍 [KEYBOARD] TrackTabView appeared")
             loadSets()
+
+            // Add keyboard notification observers
+            NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardWillShowNotification,
+                object: nil,
+                queue: .main
+            ) { notification in
+                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                    print("🔍 [KEYBOARD] ✅ Keyboard WILL SHOW - Height: \(keyboardFrame.height)")
+                }
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardDidShowNotification,
+                object: nil,
+                queue: .main
+            ) { notification in
+                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                    print("🔍 [KEYBOARD] ✅ Keyboard DID SHOW - Height: \(keyboardFrame.height)")
+                }
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardWillHideNotification,
+                object: nil,
+                queue: .main
+            ) { _ in
+                print("🔍 [KEYBOARD] ❌ Keyboard WILL HIDE")
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardDidHideNotification,
+                object: nil,
+                queue: .main
+            ) { _ in
+                print("🔍 [KEYBOARD] ❌ Keyboard DID HIDE")
+            }
+        }
+        .onDisappear {
+            print("🔍 [KEYBOARD] TrackTabView disappeared")
+            // Remove observers
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidHideNotification, object: nil)
         }
     }
     
@@ -359,6 +415,7 @@ struct SetRowView: View {
                     text: Binding<String>(
                         get: { formatWeight(weight) },
                         set: { newText in
+                            print("🔍 [KEYBOARD] Weight TextField text changed: '\(newText)'")
                             let cleaned = newText.replacingOccurrences(of: ",", with: ".")
                             if cleaned.isEmpty {
                                 weight = nil
@@ -380,6 +437,13 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .onTapGesture {
                     // Consume tap to prevent parent gesture from dismissing keyboard
+                    print("🔍 [KEYBOARD] Weight TextField tapped - attempting to focus")
+                    let targetFocus = TrackTabView.InputFocus.weight(set.id)
+                    print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
+                    focusedInput.wrappedValue = targetFocus
+                }
+                .onAppear {
+                    print("🔍 [KEYBOARD] Weight TextField appeared for set \(set.id)")
                 }
                 .accessibilityLabel("Weight input")
             }
@@ -396,6 +460,7 @@ struct SetRowView: View {
                     text: Binding<String>(
                         get: { reps.map(String.init) ?? "" },
                         set: { newText in
+                            print("🔍 [KEYBOARD] Reps TextField text changed: '\(newText)'")
                             let filtered = newText.filter { $0.isNumber }
                             if filtered.isEmpty {
                                 reps = nil
@@ -417,6 +482,13 @@ struct SetRowView: View {
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .onTapGesture {
                     // Consume tap to prevent parent gesture from dismissing keyboard
+                    print("🔍 [KEYBOARD] Reps TextField tapped - attempting to focus")
+                    let targetFocus = TrackTabView.InputFocus.reps(set.id)
+                    print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
+                    focusedInput.wrappedValue = targetFocus
+                }
+                .onAppear {
+                    print("🔍 [KEYBOARD] Reps TextField appeared for set \(set.id)")
                 }
                 .accessibilityLabel("Reps input")
             }
@@ -437,6 +509,7 @@ struct SetRowView: View {
                                 else { return rir.map(String.init) ?? "" }
                             },
                             set: { newText in
+                                print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField text changed: '\(newText)'")
                                 let filtered = newText.filter { $0.isNumber }
                                 if filtered.isEmpty {
                                     if exercise.rpeEnabled { rpe = nil } else { rir = nil }
@@ -462,6 +535,13 @@ struct SetRowView: View {
                     )
                     .onTapGesture {
                         // Consume tap to prevent parent gesture from dismissing keyboard
+                        print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField tapped - attempting to focus")
+                        let targetFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                        print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
+                        focusedInput.wrappedValue = targetFocus
+                    }
+                    .onAppear {
+                        print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField appeared for set \(set.id)")
                     }
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
