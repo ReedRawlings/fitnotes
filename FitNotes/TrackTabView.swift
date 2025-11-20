@@ -102,14 +102,14 @@ struct TrackTabView: View {
                     // Spacer to allow tapping blank space below content
                     Spacer()
                         .frame(minHeight: 0)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            // Dismiss keyboard when tapping blank space
+                            print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
+                            focusedInput = nil
+                        }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping blank space
-                    print("🔍 [KEYBOARD] Blank space tapped - dismissing keyboard")
-                    focusedInput = nil
-                }
             }
             .scrollDismissesKeyboard(.immediately)
 
@@ -434,13 +434,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
-                .onTapGesture {
-                    // Consume tap to prevent parent gesture from dismissing keyboard
-                    print("🔍 [KEYBOARD] Weight TextField tapped - attempting to focus")
-                    let targetFocus = TrackTabView.InputFocus.weight(set.id)
-                    print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
-                    focusedInput.wrappedValue = targetFocus
-                }
                 .onAppear {
                     print("🔍 [KEYBOARD] Weight TextField appeared for set \(set.id)")
                 }
@@ -478,13 +471,6 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
-                .onTapGesture {
-                    // Consume tap to prevent parent gesture from dismissing keyboard
-                    print("🔍 [KEYBOARD] Reps TextField tapped - attempting to focus")
-                    let targetFocus = TrackTabView.InputFocus.reps(set.id)
-                    print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
-                    focusedInput.wrappedValue = targetFocus
-                }
                 .onAppear {
                     print("🔍 [KEYBOARD] Reps TextField appeared for set \(set.id)")
                 }
@@ -530,13 +516,6 @@ struct SetRowView: View {
                         focusedInput,
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
-                    .onTapGesture {
-                        // Consume tap to prevent parent gesture from dismissing keyboard
-                        print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField tapped - attempting to focus")
-                        let targetFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                        print("🔍 [KEYBOARD] Setting focus to: \(targetFocus)")
-                        focusedInput.wrappedValue = targetFocus
-                    }
                     .onAppear {
                         print("🔍 [KEYBOARD] \(exercise.rpeEnabled ? "RPE" : "RIR") TextField appeared for set \(set.id)")
                     }
