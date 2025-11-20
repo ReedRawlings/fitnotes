@@ -1041,7 +1041,9 @@ struct SaveWorkoutAsRoutineView: View {
                                             .foregroundColor(.accentSuccess)
                                             .font(.system(size: 16))
 
-                                        if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == workoutExercise.exerciseId })).first {
+                                        if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate<Exercise> { exercise in
+                                            exercise.id == workoutExercise.exerciseId
+                                        })).first {
                                             Text(exercise.name)
                                                 .font(.system(size: 14))
                                                 .foregroundColor(.textPrimary)
