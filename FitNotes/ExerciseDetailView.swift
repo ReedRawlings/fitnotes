@@ -62,8 +62,8 @@ struct ExerciseDetailView: View {
         ZStack {
             // Dark charcoal background
             Color.primaryBg
-                .ignoresSafeArea()
-            
+                .ignoresSafeArea(.container, edges: .all)
+
             VStack(spacing: 0) {
                 // Exercise Title Section
                 HStack {

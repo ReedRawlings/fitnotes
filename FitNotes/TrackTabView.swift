@@ -22,98 +22,96 @@ struct TrackTabView: View {
     @FocusState private var focusedInput: InputFocus?
     
     var body: some View {
-        ZStack {
-            // Dark background with tap gesture to dismiss keyboard
-            Color.primaryBg
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping on empty space
-                    focusedInput = nil
-                }
-
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Current Sets
-                        if !sets.isEmpty {
-                            VStack(spacing: 10) {  // Reduced from 12
-                                ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
-                                    SetRowView(
-                                        exercise: exercise,
-                                        set: set,
-                                        weight: Binding<Double?>(
-                                            get: { sets[index].weight },
-                                            set: { newVal in
-                                                sets[index].weight = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        reps: Binding<Int?>(
-                                            get: { sets[index].reps },
-                                            set: { newVal in
-                                                sets[index].reps = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        rpe: Binding<Int?>(
-                                            get: { sets[index].rpe },
-                                            set: { newVal in
-                                                sets[index].rpe = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        rir: Binding<Int?>(
-                                            get: { sets[index].rir },
-                                            set: { newVal in
-                                                sets[index].rir = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        focusedInput: $focusedInput,
-                                        onToggleCheck: {
-                                            sets[index].isChecked.toggle()
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Current Sets
+                    if !sets.isEmpty {
+                        VStack(spacing: 10) {  // Reduced from 12
+                            ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
+                                SetRowView(
+                                    exercise: exercise,
+                                    set: set,
+                                    weight: Binding<Double?>(
+                                        get: { sets[index].weight },
+                                        set: { newVal in
+                                            sets[index].weight = newVal
                                             persistCurrentSets()
-
-                                            // Always trigger rest timer when checking a set (cancel any existing timer)
-                                            if sets[index].isChecked {
-                                                triggerRestTimer(forSet: index + 1)
-                                            }
-
-                                            handleSetCompletion()
-                                        },
-                                        onDelete: {
-                                            deleteSet(at: index)
                                         }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 16)  // Reduced from 28
-                        }
+                                    ),
+                                    reps: Binding<Int?>(
+                                        get: { sets[index].reps },
+                                        set: { newVal in
+                                            sets[index].reps = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    rpe: Binding<Int?>(
+                                        get: { sets[index].rpe },
+                                        set: { newVal in
+                                            sets[index].rpe = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    rir: Binding<Int?>(
+                                        get: { sets[index].rir },
+                                        set: { newVal in
+                                            sets[index].rir = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    focusedInput: $focusedInput,
+                                    onToggleCheck: {
+                                        sets[index].isChecked.toggle()
+                                        persistCurrentSets()
 
-                        // Add Set Button
-                        AddSetButton {
-                            addSet()
+                                        // Always trigger rest timer when checking a set (cancel any existing timer)
+                                        if sets[index].isChecked {
+                                            triggerRestTimer(forSet: index + 1)
+                                        }
+
+                                        handleSetCompletion()
+                                    },
+                                    onDelete: {
+                                        deleteSet(at: index)
+                                    }
+                                )
+                            }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 16)  // Reduced from 28
-                        .padding(.bottom, 100) // Space for fixed save button
+                        .padding(.bottom, 16)  // Reduced from 28
                     }
-                }
 
-                // Fixed Save Button
-                SaveButton(
-                    isEnabled: !sets.isEmpty,
-                    isSaving: isSaving,
-                    isSaved: isSaved,
-                    onSave: saveSets
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 34) // Safe area + padding
-                .background(Color.primaryBg) // Ensure background matches
+                    // Add Set Button
+                    AddSetButton {
+                        addSet()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)  // Reduced from 28
+                    .padding(.bottom, 100) // Space for fixed save button
+                }
             }
+            .scrollDismissesKeyboard(.interactively)
+
+            // Fixed Save Button
+            SaveButton(
+                isEnabled: !sets.isEmpty,
+                isSaving: isSaving,
+                isSaved: isSaved,
+                onSave: saveSets
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 34) // Safe area + padding
+            .background(Color.primaryBg) // Ensure background matches
         }
+        .background(
+            // Tap to dismiss keyboard - placed in background layer
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    focusedInput = nil
+                }
+        )
         .onAppear {
             loadSets()
         }
