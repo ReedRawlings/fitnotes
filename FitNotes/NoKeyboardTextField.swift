@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import os.log
 
 /// A TextField wrapper that suppresses the system keyboard
 /// Use this when you want to show a custom keyboard instead of the iOS system keyboard
@@ -12,7 +13,11 @@ struct NoKeyboardTextField: UIViewRepresentable {
     var textColor: UIColor = .white
     var onFocusChange: ((Bool) -> Void)?
 
+    private static let logger = Logger(subsystem: "com.fitnotes.app", category: "NoKeyboardTextField")
+
     func makeUIView(context: Context) -> UITextField {
+        Self.logger.info("makeUIView called - creating NoKeyboardTextField with placeholder: '\(self.placeholder)'")
+
         let textField = UITextField()
         textField.delegate = context.coordinator
 
@@ -21,6 +26,7 @@ struct NoKeyboardTextField: UIViewRepresentable {
         let emptyView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
         emptyView.translatesAutoresizingMaskIntoConstraints = true
         textField.inputView = emptyView
+        Self.logger.debug("Set empty inputView to suppress system keyboard")
 
         // Configuration
         textField.placeholder = placeholder
@@ -40,11 +46,15 @@ struct NoKeyboardTextField: UIViewRepresentable {
             )
         }
 
+        Self.logger.info("NoKeyboardTextField UIView created successfully")
         return textField
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
-        uiView.text = text
+        if uiView.text != text {
+            Self.logger.debug("updateUIView: updating text from '\(uiView.text ?? "")' to '\(self.text)'")
+            uiView.text = text
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -53,26 +63,39 @@ struct NoKeyboardTextField: UIViewRepresentable {
 
     class Coordinator: NSObject, UITextFieldDelegate {
         var parent: NoKeyboardTextField
+        private let logger = Logger(subsystem: "com.fitnotes.app", category: "NoKeyboardTextField.Coordinator")
 
         init(_ parent: NoKeyboardTextField) {
             self.parent = parent
+            super.init()
+            logger.debug("Coordinator initialized")
         }
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
-            parent.text = textField.text ?? ""
+            let newText = textField.text ?? ""
+            logger.debug("textFieldDidChangeSelection: text is '\(newText)'")
+            if parent.text != newText {
+                logger.info("Text changed via selection, updating binding from '\(self.parent.text)' to '\(newText)'")
+                parent.text = newText
+            }
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
+            logger.info("textFieldDidBeginEditing: TextField gained focus")
             parent.onFocusChange?(true)
+            logger.debug("Called onFocusChange with true")
         }
 
         func textFieldDidEndEditing(_ textField: UITextField) {
+            logger.info("textFieldDidEndEditing: TextField lost focus")
             parent.onFocusChange?(false)
+            logger.debug("Called onFocusChange with false")
         }
 
         func textField(_ textField: UITextField,
                       shouldChangeCharactersIn range: NSRange,
                       replacementString string: String) -> Bool {
+            logger.debug("shouldChangeCharactersIn: range=\(range), replacementString='\(string)'")
             // Allow all changes - the binding will handle validation
             return true
         }

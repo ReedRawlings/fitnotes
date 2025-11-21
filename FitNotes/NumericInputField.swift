@@ -1,4 +1,5 @@
 import SwiftUI
+import os.log
 
 /// A tappable view that looks like a TextField but doesn't trigger the system keyboard
 /// Instead, it updates focus state to show a custom keyboard
@@ -7,6 +8,8 @@ struct NumericInputField: View {
     let placeholder: String
     let isActive: Bool
     let onTap: () -> Void
+
+    private let logger = Logger(subsystem: "com.fitnotes.app", category: "NumericInputField")
 
     var body: some View {
         Text(text.isEmpty ? placeholder : text)
@@ -27,7 +30,18 @@ struct NumericInputField: View {
             )
             .contentShape(Rectangle())
             .onTapGesture {
+                logger.info("NumericInputField tapped - current text: '\(self.text)', placeholder: '\(self.placeholder)', isActive: \(self.isActive)")
                 onTap()
+                logger.info("NumericInputField onTap() callback executed")
+            }
+            .onAppear {
+                logger.debug("NumericInputField appeared - text: '\(self.text)', isActive: \(self.isActive)")
+            }
+            .onChange(of: text) { oldValue, newValue in
+                logger.info("NumericInputField text changed from '\(oldValue)' to '\(newValue)'")
+            }
+            .onChange(of: isActive) { oldValue, newValue in
+                logger.info("NumericInputField isActive changed from \(oldValue) to \(newValue)")
             }
     }
 }
