@@ -16,9 +16,11 @@ struct NoKeyboardTextField: UIViewRepresentable {
         let textField = UITextField()
         textField.delegate = context.coordinator
 
-        // Key part: Suppress the system keyboard by setting empty input views
-        textField.inputView = UIView()
-        textField.inputAccessoryView = UIView()
+        // Key part: Suppress the system keyboard by setting a zero-height input view
+        // This prevents AutoLayout conflicts by explicitly setting the height to 0
+        let emptyView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+        emptyView.translatesAutoresizingMaskIntoConstraints = true
+        textField.inputView = emptyView
 
         // Configuration
         textField.placeholder = placeholder
