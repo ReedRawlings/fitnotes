@@ -154,6 +154,60 @@ struct ExerciseSettingsView: View {
                         }
                     }
 
+                    // Keyboard Increment Card
+                    FormSectionCard(title: "Keyboard Increment") {
+                        VStack(spacing: 12) {
+                            Text("Set the default increment for the +/- buttons on the custom keyboard. Useful for quick weight adjustments.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            HStack {
+                                Text("Weight Increment")
+                                    .font(.bodyFont)
+                                    .foregroundColor(.textPrimary)
+
+                                Spacer()
+
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        if exercise.incrementValue > 1 {
+                                            exercise.incrementValue -= 0.5
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Image(systemName: "minus.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(exercise.incrementValue > 1 ? .accentPrimary : .textTertiary)
+                                    }
+
+                                    Text(formatIncrement(exercise.incrementValue))
+                                        .font(.system(size: 20, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .frame(minWidth: 60)
+
+                                    Button(action: {
+                                        if exercise.incrementValue < 100 {
+                                            exercise.incrementValue += 0.5
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(exercise.incrementValue < 100 ? .accentPrimary : .textTertiary)
+                                    }
+                                }
+                            }
+
+                            Text("Reps, RPE, and RIR always use ±1")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
                     // Rest Timer Card
                     FormSectionCard(title: "Rest Timer") {
                         VStack(spacing: 12) {
@@ -541,6 +595,14 @@ struct ExerciseSettingsView: View {
            minReps >= maxReps {
             // Don't allow invalid state
             // User will see error message but we don't force changes
+        }
+    }
+
+    private func formatIncrement(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        } else {
+            return String(format: "%.1f", value)
         }
     }
 }

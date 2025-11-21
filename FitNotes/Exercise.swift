@@ -60,6 +60,7 @@ public final class Exercise {
     public var targetRepMin: Int? = nil  // Bottom of target range (e.g., 5 in "5-8 reps")
     public var targetRepMax: Int? = nil  // Top of target range (e.g., 8 in "5-8 reps")
     public var lastProgressionDate: Date? = nil  // When weight was last increased
+    public var incrementValue: Double = 5.0  // Default increment for +/- buttons on custom keyboard (range: 1-100)
 
     // Stats display preferences
     // Persistent storage - uses String for reliable SwiftData serialization
@@ -97,6 +98,7 @@ public final class Exercise {
         targetRepMin: Int? = nil,
         targetRepMax: Int? = nil,
         lastProgressionDate: Date? = nil,
+        incrementValue: Double = 5.0,
         statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState,
         statsIsExpanded: Bool = false,
         createdAt: Date = Date(),
@@ -131,6 +133,7 @@ public final class Exercise {
         self.targetRepMin = targetRepMin
         self.targetRepMax = targetRepMax
         self.lastProgressionDate = lastProgressionDate
+        self.incrementValue = incrementValue
         self.statsDisplayPreferenceRaw = statsDisplayPreference.rawValue
         self.statsIsExpanded = statsIsExpanded
         self.createdAt = createdAt

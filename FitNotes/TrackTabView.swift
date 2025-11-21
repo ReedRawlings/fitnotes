@@ -22,9 +22,10 @@ struct TrackTabView: View {
     @FocusState private var focusedInput: InputFocus?
     
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 0) {
+        ZStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
                     // Current Sets
                     if !sets.isEmpty {
                         VStack(spacing: 10) {  // Reduced from 12
@@ -88,34 +89,160 @@ struct TrackTabView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 16)  // Reduced from 28
-                    .padding(.bottom, 100) // Space for fixed save button
+                        .padding(.bottom, 100) // Space for fixed save button
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
+                .scrollDismissesKeyboard(.never)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // Dismiss keyboard when tapping outside input fields
+                    focusedInput = nil
+                }
+
+                // Fixed Save Button
+                SaveButton(
+                    isEnabled: !sets.isEmpty,
+                    isSaving: isSaving,
+                    isSaved: isSaved,
+                    onSave: saveSets
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34) // Safe area + padding
+                .background(Color.primaryBg) // Ensure background matches
             }
-            .scrollDismissesKeyboard(.never)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                // Dismiss keyboard when tapping outside input fields
-                focusedInput = nil
+            .ignoresSafeArea(.keyboard)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    EmptyView()
+                }
+            }
+            .onAppear {
+                loadSets()
             }
 
-            // Fixed Save Button
-            SaveButton(
-                isEnabled: !sets.isEmpty,
-                isSaving: isSaving,
-                isSaved: isSaved,
-                onSave: saveSets
-            )
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34) // Safe area + padding
-            .background(Color.primaryBg) // Ensure background matches
+            // Custom Keyboard Overlay
+            if focusedInput != nil {
+                VStack {
+                    Spacer()
+                    CustomNumericKeyboard(
+                        text: bindingForFocusedInput(),
+                        increment: incrementForFocusedInput(),
+                        onDismiss: {
+                            focusedInput = nil
+                        }
+                    )
+                }
+                .transition(.move(edge: .bottom))
+                .animation(.easeInOut(duration: 0.3), value: focusedInput)
+                .ignoresSafeArea(.keyboard)
+            }
         }
-        .onAppear {
-            loadSets()
-        }
-        .ignoresSafeArea(.keyboard)
     }
-    
+
+    // MARK: - Custom Keyboard Helpers
+
+    private func bindingForFocusedInput() -> Binding<String> {
+        guard let focusedInput = focusedInput else {
+            return .constant("")
+        }
+
+        switch focusedInput {
+        case .weight(let id):
+            if let index = sets.firstIndex(where: { $0.id == id }) {
+                return Binding<String>(
+                    get: {
+                        if let weight = sets[index].weight {
+                            return formatWeight(weight)
+                        }
+                        return ""
+                    },
+                    set: { newValue in
+                        let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
+                        if cleaned.isEmpty {
+                            sets[index].weight = nil
+                        } else if let val = Double(cleaned) {
+                            sets[index].weight = val
+                        }
+                        persistCurrentSets()
+                    }
+                )
+            }
+        case .reps(let id):
+            if let index = sets.firstIndex(where: { $0.id == id }) {
+                return Binding<String>(
+                    get: { sets[index].reps.map(String.init) ?? "" },
+                    set: { newValue in
+                        let filtered = newValue.filter { $0.isNumber }
+                        if filtered.isEmpty {
+                            sets[index].reps = nil
+                        } else if let val = Int(filtered) {
+                            sets[index].reps = val
+                        }
+                        persistCurrentSets()
+                    }
+                )
+            }
+        case .rpe(let id):
+            if let index = sets.firstIndex(where: { $0.id == id }) {
+                return Binding<String>(
+                    get: { sets[index].rpe.map(String.init) ?? "" },
+                    set: { newValue in
+                        let filtered = newValue.filter { $0.isNumber }
+                        if filtered.isEmpty {
+                            sets[index].rpe = nil
+                        } else if let val = Int(filtered) {
+                            let clamped = max(0, min(10, val))
+                            sets[index].rpe = clamped
+                        }
+                        persistCurrentSets()
+                    }
+                )
+            }
+        case .rir(let id):
+            if let index = sets.firstIndex(where: { $0.id == id }) {
+                return Binding<String>(
+                    get: { sets[index].rir.map(String.init) ?? "" },
+                    set: { newValue in
+                        let filtered = newValue.filter { $0.isNumber }
+                        if filtered.isEmpty {
+                            sets[index].rir = nil
+                        } else if let val = Int(filtered) {
+                            let clamped = max(0, min(10, val))
+                            sets[index].rir = clamped
+                        }
+                        persistCurrentSets()
+                    }
+                )
+            }
+        }
+
+        return .constant("")
+    }
+
+    private func incrementForFocusedInput() -> Double {
+        guard let focusedInput = focusedInput else {
+            return 1.0
+        }
+
+        switch focusedInput {
+        case .weight:
+            // Use exercise's custom increment for weight
+            return exercise.incrementValue
+        case .reps, .rpe, .rir:
+            // Always use 1 for reps/RPE/RIR
+            return 1.0
+        }
+    }
+
+    private func formatWeight(_ weight: Double) -> String {
+        if weight.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(weight))"
+        } else {
+            return String(format: "%.1f", weight)
+        }
+    }
+
     private func loadSets() {
         // Prefer today's persisted sets; if none, prefill from last session
         let todaysSets = ExerciseService.shared.getSetsByDate(
