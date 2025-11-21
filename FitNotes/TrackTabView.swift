@@ -93,7 +93,6 @@ struct TrackTabView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .scrollDismissesKeyboard(.never)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     // Dismiss keyboard when tapping outside input fields
@@ -110,12 +109,6 @@ struct TrackTabView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 34) // Safe area + padding
                 .background(Color.primaryBg) // Ensure background matches
-            }
-            .ignoresSafeArea(.keyboard)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    EmptyView()
-                }
             }
             .onAppear {
                 loadSets()
@@ -472,45 +465,22 @@ struct SetRowView: View {
                         .font(.sectionHeader)
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
-                    
+
                     Text("kg")
                         .font(.system(size: 10))
                         .foregroundColor(.textTertiary.opacity(0.6))
                 }
-                
-                NoKeyboardTextField(
-                    text: Binding<String>(
-                        get: { formatWeight(weight) },
-                        set: { newText in
-                            let cleaned = newText.replacingOccurrences(of: ",", with: ".")
-                            if cleaned.isEmpty {
-                                weight = nil
-                            } else if let val = Double(cleaned) {
-                                weight = val
-                            }
-                        }
-                    ),
+
+                NumericInputField(
+                    text: .constant(formatWeight(weight)),
                     placeholder: "0",
-                    keyboardType: .decimalPad,
-                    textAlignment: .center,
-                    font: .systemFont(ofSize: 24, weight: .medium),
-                    textColor: UIColor(Color.textPrimary),
-                    onFocusChange: { focused in
-                        if focused {
-                            focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
-                        } else if focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id) {
-                            focusedInput.wrappedValue = nil
-                        }
+                    isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
+                    onTap: {
+                        focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
                     }
                 )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
-                .cornerRadius(10)
                 .accessibilityLabel("Weight input")
-                .onTapGesture {
-                    // Block parent ScrollView gesture to allow UITextField to receive taps
-                }
+                .accessibilityHint("Double tap to enter weight")
             }
             
             // Reps Column
@@ -519,40 +489,17 @@ struct SetRowView: View {
                     .font(.sectionHeader)
                     .foregroundColor(.textTertiary)
                     .kerning(0.3)
-                
-                NoKeyboardTextField(
-                    text: Binding<String>(
-                        get: { reps.map(String.init) ?? "" },
-                        set: { newText in
-                            let filtered = newText.filter { $0.isNumber }
-                            if filtered.isEmpty {
-                                reps = nil
-                            } else if let val = Int(filtered) {
-                                reps = val
-                            }
-                        }
-                    ),
+
+                NumericInputField(
+                    text: .constant(reps.map(String.init) ?? ""),
                     placeholder: "0",
-                    keyboardType: .numberPad,
-                    textAlignment: .center,
-                    font: .systemFont(ofSize: 24, weight: .medium),
-                    textColor: UIColor(Color.textPrimary),
-                    onFocusChange: { focused in
-                        if focused {
-                            focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
-                        } else if focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id) {
-                            focusedInput.wrappedValue = nil
-                        }
+                    isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
+                    onTap: {
+                        focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
                     }
                 )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
-                .cornerRadius(10)
                 .accessibilityLabel("Reps input")
-                .onTapGesture {
-                    // Block parent ScrollView gesture to allow UITextField to receive taps
-                }
+                .accessibilityHint("Double tap to enter reps")
             }
             
             // RPE/RIR Column (conditional)
@@ -562,45 +509,17 @@ struct SetRowView: View {
                         .font(.sectionHeader)
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
-                    
-                    NoKeyboardTextField(
-                        text: Binding<String>(
-                            get: {
-                                if exercise.rpeEnabled { return rpe.map(String.init) ?? "" }
-                                else { return rir.map(String.init) ?? "" }
-                            },
-                            set: { newText in
-                                let filtered = newText.filter { $0.isNumber }
-                                if filtered.isEmpty {
-                                    if exercise.rpeEnabled { rpe = nil } else { rir = nil }
-                                } else if let val = Int(filtered) {
-                                    let clamped = max(0, min(10, val))
-                                    if exercise.rpeEnabled { rpe = clamped } else { rir = clamped }
-                                }
-                            }
-                        ),
+
+                    NumericInputField(
+                        text: .constant(exercise.rpeEnabled ? (rpe.map(String.init) ?? "") : (rir.map(String.init) ?? "")),
                         placeholder: "0",
-                        keyboardType: .numberPad,
-                        textAlignment: .center,
-                        font: .systemFont(ofSize: 24, weight: .medium),
-                        textColor: UIColor(Color.textPrimary),
-                        onFocusChange: { focused in
-                            let inputType = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                            if focused {
-                                focusedInput.wrappedValue = inputType
-                            } else if focusedInput.wrappedValue == inputType {
-                                focusedInput.wrappedValue = nil
-                            }
+                        isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
+                        onTap: {
+                            focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                         }
                     )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.04))
-                    .cornerRadius(10)
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
-                    .onTapGesture {
-                        // Block parent ScrollView gesture to allow UITextField to receive taps
-                    }
+                    .accessibilityHint("Double tap to enter \(exercise.rpeEnabled ? "RPE" : "RIR")")
                 }
             }
             
