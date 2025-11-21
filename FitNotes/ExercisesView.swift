@@ -145,11 +145,12 @@ struct ExercisesView: View {
 struct AddExerciseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    
+
     @State private var name: String
     @State private var selectedCategory = "Chest"
     @State private var selectedEquipment = "Free Weight"
     @State private var notes = ""
+    @FocusState private var focusedField: Bool
     
     init(name: String = "") {
         _name = State(initialValue: name)
@@ -192,6 +193,7 @@ struct AddExerciseView: View {
                             .background(Color.tertiaryBg)
                             .cornerRadius(10)
                             .lineLimit(2...4)
+                            .focused($focusedField)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color.white.opacity(0.06), lineWidth: 1)
@@ -203,7 +205,12 @@ struct AddExerciseView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
             }
-            
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside input fields
+                focusedField = false
+            }
+
             // Fixed CTA at bottom
             FixedModalCTAButton(
                 title: "Save Exercise",

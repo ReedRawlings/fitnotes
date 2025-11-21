@@ -1027,6 +1027,7 @@ struct SaveWorkoutAsRoutineView: View {
                             .background(Color.secondaryBg)
                             .cornerRadius(8)
                             .foregroundColor(.textPrimary)
+                            .focused($isNameFieldFocused)
                     }
 
                     if let workout = workout {
@@ -1061,6 +1062,11 @@ struct SaveWorkoutAsRoutineView: View {
                     Spacer()
                 }
                 .padding(20)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // Dismiss keyboard when tapping outside input fields
+                    isNameFieldFocused = false
+                }
             }
             .navigationTitle("Save as Routine")
             .navigationBarTitleDisplayMode(.inline)

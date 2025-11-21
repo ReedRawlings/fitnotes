@@ -5,12 +5,13 @@ struct ExerciseSettingsView: View {
     @Bindable var exercise: Exercise
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    
+
     @State private var selectedMode: RPEMode = .off
     @State private var showingTimePicker = false
     @State private var timePickerForSet: Int? = nil // nil means default/standard mode
     @State private var tempSelectedSeconds: Int = 90
     @State private var showingAdvancedToStandardAlert = false
+    @FocusState private var focusedField: Bool
     
     enum RPEMode: String, CaseIterable {
         case off = "Off"
@@ -109,6 +110,7 @@ struct ExerciseSettingsView: View {
                                         .padding(.vertical, 10)
                                         .background(Color.tertiaryBg)
                                         .cornerRadius(8)
+                                        .focused($focusedField)
                                         .onChange(of: exercise.targetRepMin) { _, newValue in
                                             validateRepRange()
                                             saveExercise()
@@ -133,6 +135,7 @@ struct ExerciseSettingsView: View {
                                         .padding(.vertical, 10)
                                         .background(Color.tertiaryBg)
                                         .cornerRadius(8)
+                                        .focused($focusedField)
                                         .onChange(of: exercise.targetRepMax) { _, newValue in
                                             validateRepRange()
                                             saveExercise()
@@ -416,6 +419,11 @@ struct ExerciseSettingsView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside input fields
+                focusedField = false
             }
             
             // Fixed CTA at bottom
