@@ -112,11 +112,6 @@ struct TrackTabView: View {
                 .background(Color.primaryBg) // Ensure background matches
             }
             .ignoresSafeArea(.keyboard)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    EmptyView()
-                }
-            }
             .onAppear {
                 loadSets()
             }
@@ -478,29 +473,19 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary.opacity(0.6))
                 }
                 
-                TextField(
-                    "0",
-                    text: Binding<String>(
-                        get: { formatWeight(weight) },
-                        set: { newText in
-                            let cleaned = newText.replacingOccurrences(of: ",", with: ".")
-                            if cleaned.isEmpty {
-                                weight = nil
-                            } else if let val = Double(cleaned) {
-                                weight = val
-                            }
-                        }
-                    )
-                )
-                .keyboardType(.decimalPad)
-                .font(.dataFont)
-                .foregroundColor(.textPrimary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
-                .cornerRadius(10)
-                .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
+                Button(action: {
+                    focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
+                }) {
+                    Text(formatWeight(weight).isEmpty ? "0" : formatWeight(weight))
+                        .font(.dataFont)
+                        .foregroundColor(formatWeight(weight).isEmpty ? .textTertiary : .textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.04))
+                        .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
                 .accessibilityLabel("Weight input")
             }
             
@@ -511,29 +496,19 @@ struct SetRowView: View {
                     .foregroundColor(.textTertiary)
                     .kerning(0.3)
                 
-                TextField(
-                    "0",
-                    text: Binding<String>(
-                        get: { reps.map(String.init) ?? "" },
-                        set: { newText in
-                            let filtered = newText.filter { $0.isNumber }
-                            if filtered.isEmpty {
-                                reps = nil
-                            } else if let val = Int(filtered) {
-                                reps = val
-                            }
-                        }
-                    )
-                )
-                .keyboardType(.numberPad)
-                .font(.dataFont)
-                .foregroundColor(.textPrimary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
-                .cornerRadius(10)
-                .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
+                Button(action: {
+                    focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
+                }) {
+                    Text(reps.map(String.init) ?? "0")
+                        .font(.dataFont)
+                        .foregroundColor(reps == nil ? .textTertiary : .textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.04))
+                        .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
                 .accessibilityLabel("Reps input")
             }
             
@@ -545,36 +520,20 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
                     
-                    TextField(
-                        "0",
-                        text: Binding<String>(
-                            get: {
-                                if exercise.rpeEnabled { return rpe.map(String.init) ?? "" }
-                                else { return rir.map(String.init) ?? "" }
-                            },
-                            set: { newText in
-                                let filtered = newText.filter { $0.isNumber }
-                                if filtered.isEmpty {
-                                    if exercise.rpeEnabled { rpe = nil } else { rir = nil }
-                                } else if let val = Int(filtered) {
-                                    let clamped = max(0, min(10, val))
-                                    if exercise.rpeEnabled { rpe = clamped } else { rir = clamped }
-                                }
-                            }
-                        )
-                    )
-                    .keyboardType(.numberPad)
-                    .font(.dataFont)
-                    .foregroundColor(.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.04))
-                    .cornerRadius(10)
-                    .focused(
-                        focusedInput,
-                        equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                    )
+                    Button(action: {
+                        focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                    }) {
+                        let value = exercise.rpeEnabled ? rpe : rir
+                        Text(value.map(String.init) ?? "0")
+                            .font(.dataFont)
+                            .foregroundColor(value == nil ? .textTertiary : .textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.white.opacity(0.04))
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
             }
