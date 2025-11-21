@@ -611,24 +611,8 @@ struct HomeView: View {
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
-                .onAppear {
-                    // Fix for RTIInputSystemClient error - dismiss any active text input before showing routine detail
-                    DispatchQueue.main.async {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                }
-        }
-        .onTapGesture {
-            // Tap outside to collapse expanded card
-            if expandedRoutineId != nil {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    expandedRoutineId = nil
-                }
-            }
         }
         .onAppear {
-            // Fix for RTIInputSystemClient error - dismiss any active text input
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             // Invalidate cache on appear
             cachedStats = (nil, nil, nil)
         }
@@ -1076,12 +1060,6 @@ struct RoutineDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToRoutineTemplateView(routine: routine)
-                .onAppear {
-                    // Fix for RTIInputSystemClient error - ensure clean text input state
-                    DispatchQueue.main.async {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                }
         }
     }
     
