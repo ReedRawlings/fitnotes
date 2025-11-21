@@ -93,6 +93,9 @@ struct TrackTabView: View {
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .scrollDismissesKeyboard(.never)
+            .onTapGesture {
+                focusedInput = nil
+            }
 
             // Fixed Save Button
             SaveButton(
