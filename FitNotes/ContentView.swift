@@ -611,8 +611,24 @@ struct HomeView: View {
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
+                .onAppear {
+                    // Fix for RTIInputSystemClient error - dismiss any active text input before showing routine detail
+                    DispatchQueue.main.async {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
+        }
+        .onTapGesture {
+            // Tap outside to collapse expanded card
+            if expandedRoutineId != nil {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    expandedRoutineId = nil
+                }
+            }
         }
         .onAppear {
+            // Fix for RTIInputSystemClient error - dismiss any active text input
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             // Invalidate cache on appear
             cachedStats = (nil, nil, nil)
         }
@@ -1060,6 +1076,12 @@ struct RoutineDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             AddExerciseToRoutineTemplateView(routine: routine)
+                .onAppear {
+                    // Fix for RTIInputSystemClient error - ensure clean text input state
+                    DispatchQueue.main.async {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
         }
     }
     
@@ -1572,10 +1594,8 @@ struct ContentView: View {
             let todaysWorkout = workouts.first { Calendar.current.isDateInToday($0.date) }
             let workoutExercise = todaysWorkout?.exercises.first { $0.exerciseId == exercise.id }
 
-            NavigationStack {
-                ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
-                    .environmentObject(appState)
-            }
+            ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
+                .environmentObject(appState)
         }
         .onAppear {
             // Sync active workout state from SwiftData on app launch
