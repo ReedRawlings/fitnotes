@@ -478,8 +478,7 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary.opacity(0.6))
                 }
                 
-                TextField(
-                    "0",
+                NoKeyboardTextField(
                     text: Binding<String>(
                         get: { formatWeight(weight) },
                         set: { newText in
@@ -490,17 +489,24 @@ struct SetRowView: View {
                                 weight = val
                             }
                         }
-                    )
+                    ),
+                    placeholder: "0",
+                    keyboardType: .decimalPad,
+                    textAlignment: .center,
+                    font: .systemFont(ofSize: 24, weight: .medium),
+                    textColor: UIColor(Color.textPrimary),
+                    onFocusChange: { focused in
+                        if focused {
+                            focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
+                        } else if focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id) {
+                            focusedInput.wrappedValue = nil
+                        }
+                    }
                 )
-                .keyboardType(.decimalPad)
-                .font(.dataFont)
-                .foregroundColor(.textPrimary)
-                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
             }
             
@@ -511,8 +517,7 @@ struct SetRowView: View {
                     .foregroundColor(.textTertiary)
                     .kerning(0.3)
                 
-                TextField(
-                    "0",
+                NoKeyboardTextField(
                     text: Binding<String>(
                         get: { reps.map(String.init) ?? "" },
                         set: { newText in
@@ -523,17 +528,24 @@ struct SetRowView: View {
                                 reps = val
                             }
                         }
-                    )
+                    ),
+                    placeholder: "0",
+                    keyboardType: .numberPad,
+                    textAlignment: .center,
+                    font: .systemFont(ofSize: 24, weight: .medium),
+                    textColor: UIColor(Color.textPrimary),
+                    onFocusChange: { focused in
+                        if focused {
+                            focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
+                        } else if focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id) {
+                            focusedInput.wrappedValue = nil
+                        }
+                    }
                 )
-                .keyboardType(.numberPad)
-                .font(.dataFont)
-                .foregroundColor(.textPrimary)
-                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
-                .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
             }
             
@@ -545,8 +557,7 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
                     
-                    TextField(
-                        "0",
+                    NoKeyboardTextField(
                         text: Binding<String>(
                             get: {
                                 if exercise.rpeEnabled { return rpe.map(String.init) ?? "" }
@@ -561,20 +572,25 @@ struct SetRowView: View {
                                     if exercise.rpeEnabled { rpe = clamped } else { rir = clamped }
                                 }
                             }
-                        )
+                        ),
+                        placeholder: "0",
+                        keyboardType: .numberPad,
+                        textAlignment: .center,
+                        font: .systemFont(ofSize: 24, weight: .medium),
+                        textColor: UIColor(Color.textPrimary),
+                        onFocusChange: { focused in
+                            let inputType = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                            if focused {
+                                focusedInput.wrappedValue = inputType
+                            } else if focusedInput.wrappedValue == inputType {
+                                focusedInput.wrappedValue = nil
+                            }
+                        }
                     )
-                    .keyboardType(.numberPad)
-                    .font(.dataFont)
-                    .foregroundColor(.textPrimary)
-                    .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(10)
-                    .focused(
-                        focusedInput,
-                        equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                    )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                 }
             }
