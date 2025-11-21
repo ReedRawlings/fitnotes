@@ -993,6 +993,7 @@ struct SaveWorkoutAsRoutineView: View {
     @State private var routineName = ""
     @State private var routineDescription = ""
     @FocusState private var isNameFieldFocused: Bool
+    @Query(sort: \Exercise.name) private var allExercises: [Exercise]
 
     var body: some View {
         NavigationStack {
@@ -1041,7 +1042,7 @@ struct SaveWorkoutAsRoutineView: View {
                                             .foregroundColor(.accentSuccess)
                                             .font(.system(size: 16))
 
-                                        if let exercise = try? modelContext.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == workoutExercise.exerciseId })).first {
+                                        if let exercise = allExercises.first(where: { $0.id == workoutExercise.exerciseId }) {
                                             Text(exercise.name)
                                                 .font(.system(size: 14))
                                                 .foregroundColor(.textPrimary)

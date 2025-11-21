@@ -230,13 +230,13 @@ struct LabeledTextInput: View {
     @Binding var text: String
     var axis: Axis = .horizontal
     var lineLimit: ClosedRange<Int>? = nil
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 13, weight: .regular))
                 .foregroundColor(.textSecondary)
-            
+
             TextField(placeholder, text: $text, axis: axis)
                 .font(.bodyFont)
                 .foregroundColor(.textPrimary)

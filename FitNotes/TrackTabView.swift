@@ -8,11 +8,11 @@ struct TrackTabView: View {
     var workout: Workout?
     var workoutExercise: WorkoutExercise?
     var onSaveSuccess: (() -> Void)? = nil
-    
+
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
     @State private var isSaving = false
     @State private var isSaved = false
-    
+
     enum InputFocus: Hashable {
         case weight(UUID)
         case reps(UUID)
@@ -22,95 +22,100 @@ struct TrackTabView: View {
     @FocusState private var focusedInput: InputFocus?
     
     var body: some View {
-        ZStack {
-            // Dark background
-            Color.primaryBg
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Current Sets
-                        if !sets.isEmpty {
-                            VStack(spacing: 10) {  // Reduced from 12
-                                ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
-                                    SetRowView(
-                                        exercise: exercise,
-                                        set: set,
-                                        weight: Binding<Double?>(
-                                            get: { sets[index].weight },
-                                            set: { newVal in
-                                                sets[index].weight = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        reps: Binding<Int?>(
-                                            get: { sets[index].reps },
-                                            set: { newVal in
-                                                sets[index].reps = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        rpe: Binding<Int?>(
-                                            get: { sets[index].rpe },
-                                            set: { newVal in
-                                                sets[index].rpe = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        rir: Binding<Int?>(
-                                            get: { sets[index].rir },
-                                            set: { newVal in
-                                                sets[index].rir = newVal
-                                                persistCurrentSets()
-                                            }
-                                        ),
-                                        focusedInput: $focusedInput,
-                                        onToggleCheck: {
-                                            sets[index].isChecked.toggle()
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Current Sets
+                    if !sets.isEmpty {
+                        VStack(spacing: 10) {  // Reduced from 12
+                            ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
+                                SetRowView(
+                                    exercise: exercise,
+                                    set: set,
+                                    weight: Binding<Double?>(
+                                        get: { sets[index].weight },
+                                        set: { newVal in
+                                            sets[index].weight = newVal
                                             persistCurrentSets()
-
-                                            // Always trigger rest timer when checking a set (cancel any existing timer)
-                                            if sets[index].isChecked {
-                                                triggerRestTimer(forSet: index + 1)
-                                            }
-
-                                            handleSetCompletion()
-                                        },
-                                        onDelete: {
-                                            deleteSet(at: index)
                                         }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 16)  // Reduced from 28
-                        }
+                                    ),
+                                    reps: Binding<Int?>(
+                                        get: { sets[index].reps },
+                                        set: { newVal in
+                                            sets[index].reps = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    rpe: Binding<Int?>(
+                                        get: { sets[index].rpe },
+                                        set: { newVal in
+                                            sets[index].rpe = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    rir: Binding<Int?>(
+                                        get: { sets[index].rir },
+                                        set: { newVal in
+                                            sets[index].rir = newVal
+                                            persistCurrentSets()
+                                        }
+                                    ),
+                                    focusedInput: $focusedInput,
+                                    onToggleCheck: {
+                                        sets[index].isChecked.toggle()
+                                        persistCurrentSets()
 
-                        // Add Set Button
-                        AddSetButton {
-                            addSet()
+                                        // Always trigger rest timer when checking a set (cancel any existing timer)
+                                        if sets[index].isChecked {
+                                            triggerRestTimer(forSet: index + 1)
+                                        }
+
+                                        handleSetCompletion()
+                                    },
+                                    onDelete: {
+                                        deleteSet(at: index)
+                                    }
+                                )
+                            }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 16)  // Reduced from 28
-                        .padding(.bottom, 100) // Space for fixed save button
+                        .padding(.bottom, 16)  // Reduced from 28
                     }
-                }
 
-                // Fixed Save Button
-                SaveButton(
-                    isEnabled: !sets.isEmpty,
-                    isSaving: isSaving,
-                    isSaved: isSaved,
-                    onSave: saveSets
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 34) // Safe area + padding
-                .background(Color.primaryBg) // Ensure background matches
+                    // Add Set Button
+                    AddSetButton {
+                        addSet()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)  // Reduced from 28
+                    .padding(.bottom, 100) // Space for fixed save button
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
             }
+            .scrollDismissesKeyboard(.never)
+
+            // Fixed Save Button
+            SaveButton(
+                isEnabled: !sets.isEmpty,
+                isSaving: isSaving,
+                isSaved: isSaved,
+                onSave: saveSets
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 34) // Safe area + padding
+            .background(Color.primaryBg) // Ensure background matches
         }
         .onAppear {
             loadSets()
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedInput = nil
+                }
+                .foregroundColor(.accentPrimary)
+            }
         }
     }
     
@@ -364,7 +369,6 @@ struct SetRowView: View {
                     )
                 )
                 .keyboardType(.decimalPad)
-                .submitLabel(.done)
                 .font(.dataFont)
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
@@ -374,11 +378,6 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.weight(set.id))
                 .accessibilityLabel("Weight input")
-                .contentShape(Rectangle())
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
             }
             
             // Reps Column
@@ -403,7 +402,6 @@ struct SetRowView: View {
                     )
                 )
                 .keyboardType(.numberPad)
-                .submitLabel(.done)
                 .font(.dataFont)
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
@@ -413,11 +411,6 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .focused(focusedInput, equals: TrackTabView.InputFocus.reps(set.id))
                 .accessibilityLabel("Reps input")
-                .contentShape(Rectangle())
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
             }
             
             // RPE/RIR Column (conditional)
@@ -447,7 +440,6 @@ struct SetRowView: View {
                         )
                     )
                     .keyboardType(.numberPad)
-                    .submitLabel(.done)
                     .font(.dataFont)
                     .foregroundColor(.textPrimary)
                     .multilineTextAlignment(.center)
@@ -460,11 +452,6 @@ struct SetRowView: View {
                         equals: exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                     )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
-                    .contentShape(Rectangle())
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                 }
             }
             
