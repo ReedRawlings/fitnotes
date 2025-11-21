@@ -92,6 +92,7 @@ struct TrackTabView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
             }
+            .scrollDismissesKeyboard(.never)
 
             // Fixed Save Button
             SaveButton(
@@ -106,6 +107,15 @@ struct TrackTabView: View {
         }
         .onAppear {
             loadSets()
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedInput = nil
+                }
+                .foregroundColor(.accentPrimary)
+            }
         }
     }
     
