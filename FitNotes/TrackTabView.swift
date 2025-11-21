@@ -108,15 +108,7 @@ struct TrackTabView: View {
         .onAppear {
             loadSets()
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    focusedInput = nil
-                }
-                .foregroundColor(.accentPrimary)
-            }
-        }
+        .ignoresSafeArea(.keyboard)
     }
     
     private func loadSets() {
