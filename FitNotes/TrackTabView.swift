@@ -95,22 +95,6 @@ struct TrackTabView: View {
                         .padding(.top, 16)  // Reduced from 28
                         .padding(.bottom, 100) // Space for fixed save button
                     }
-                    .onTapGesture {
-                        // Dismiss keyboard when tapping outside input fields
-                        focusedInput = nil
-                    }
-                }
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button(action: {
-                            focusedInput = nil
-                        }) {
-                            Image(systemName: "keyboard.chevron.compact.down")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.accentPrimary)
-                        }
-                    }
                 }
 
                 // Fixed Save Button
