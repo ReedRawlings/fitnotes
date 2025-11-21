@@ -10,6 +10,7 @@ struct NoKeyboardTextField: UIViewRepresentable {
     var textAlignment: NSTextAlignment = .center
     var font: UIFont = .systemFont(ofSize: 24, weight: .medium)
     var textColor: UIColor = .white
+    var shouldBecomeFirstResponder: Bool = false
     var onFocusChange: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> UITextField {
@@ -45,6 +46,13 @@ struct NoKeyboardTextField: UIViewRepresentable {
 
     func updateUIView(_ uiView: UITextField, context: Context) {
         uiView.text = text
+
+        // Manually trigger becomeFirstResponder when flag is set
+        if shouldBecomeFirstResponder && !uiView.isFirstResponder {
+            uiView.becomeFirstResponder()
+        } else if !shouldBecomeFirstResponder && uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
     }
 
     func makeCoordinator() -> Coordinator {

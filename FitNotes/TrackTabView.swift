@@ -495,6 +495,7 @@ struct SetRowView: View {
                     textAlignment: .center,
                     font: .systemFont(ofSize: 24, weight: .medium),
                     textColor: UIColor(Color.textPrimary),
+                    shouldBecomeFirstResponder: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
                     onFocusChange: { focused in
                         if focused {
                             focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
@@ -509,7 +510,8 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .accessibilityLabel("Weight input")
                 .onTapGesture {
-                    // Block parent ScrollView gesture to allow UITextField to receive taps
+                    // Programmatically trigger focus
+                    focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
                 }
             }
             
@@ -537,6 +539,7 @@ struct SetRowView: View {
                     textAlignment: .center,
                     font: .systemFont(ofSize: 24, weight: .medium),
                     textColor: UIColor(Color.textPrimary),
+                    shouldBecomeFirstResponder: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
                     onFocusChange: { focused in
                         if focused {
                             focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
@@ -551,7 +554,8 @@ struct SetRowView: View {
                 .cornerRadius(10)
                 .accessibilityLabel("Reps input")
                 .onTapGesture {
-                    // Block parent ScrollView gesture to allow UITextField to receive taps
+                    // Programmatically trigger focus
+                    focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
                 }
             }
             
@@ -584,6 +588,10 @@ struct SetRowView: View {
                         textAlignment: .center,
                         font: .systemFont(ofSize: 24, weight: .medium),
                         textColor: UIColor(Color.textPrimary),
+                        shouldBecomeFirstResponder: {
+                            let inputType = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                            return focusedInput.wrappedValue == inputType
+                        }(),
                         onFocusChange: { focused in
                             let inputType = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                             if focused {
@@ -599,7 +607,9 @@ struct SetRowView: View {
                     .cornerRadius(10)
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
                     .onTapGesture {
-                        // Block parent ScrollView gesture to allow UITextField to receive taps
+                        // Programmatically trigger focus
+                        let inputType = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                        focusedInput.wrappedValue = inputType
                     }
                 }
             }
