@@ -93,6 +93,11 @@ struct TrackTabView: View {
                 .frame(maxWidth: .infinity, alignment: .top)
             }
             .scrollDismissesKeyboard(.never)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside input fields
+                focusedInput = nil
+            }
 
             // Fixed Save Button
             SaveButton(
