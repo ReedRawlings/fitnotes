@@ -3,7 +3,7 @@ import SwiftUI
 /// A tappable view that looks like a TextField but doesn't trigger the system keyboard
 /// Instead, it updates focus state to show a custom keyboard
 struct NumericInputField: View {
-    @Binding var text: String
+    let text: String
     let placeholder: String
     let isActive: Bool
     let onTap: () -> Void
@@ -26,8 +26,10 @@ struct NumericInputField: View {
                     )
             )
             .contentShape(Rectangle())
-            .onTapGesture {
-                onTap()
-            }
+            .highPriorityGesture(
+                TapGesture().onEnded { _ in
+                    onTap()
+                }
+            )
     }
 }

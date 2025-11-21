@@ -472,7 +472,7 @@ struct SetRowView: View {
                 }
 
                 NumericInputField(
-                    text: .constant(formatWeight(weight)),
+                    text: formatWeight(weight),
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
                     onTap: {
@@ -491,7 +491,7 @@ struct SetRowView: View {
                     .kerning(0.3)
 
                 NumericInputField(
-                    text: .constant(reps.map(String.init) ?? ""),
+                    text: reps.map(String.init) ?? "",
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
                     onTap: {
@@ -511,7 +511,7 @@ struct SetRowView: View {
                         .kerning(0.3)
 
                     NumericInputField(
-                        text: .constant(exercise.rpeEnabled ? (rpe.map(String.init) ?? "") : (rir.map(String.init) ?? "")),
+                        text: exercise.rpeEnabled ? (rpe.map(String.init) ?? "") : (rir.map(String.init) ?? ""),
                         placeholder: "0",
                         isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
                         onTap: {
