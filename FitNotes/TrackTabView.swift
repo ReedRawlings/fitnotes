@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os.log
 
 struct TrackTabView: View {
     let exercise: Exercise
@@ -20,6 +21,8 @@ struct TrackTabView: View {
         case rir(UUID)
     }
     @FocusState private var focusedInput: InputFocus?
+
+    private let logger = Logger(subsystem: "com.fitnotes.app", category: "TrackTabView")
     
     var body: some View {
         ZStack {
@@ -122,6 +125,7 @@ struct TrackTabView: View {
                         text: bindingForFocusedInput(),
                         increment: incrementForFocusedInput(),
                         onDismiss: {
+                            logger.info("Keyboard dismiss requested from CustomNumericKeyboard")
                             focusedInput = nil
                         }
                     )
@@ -131,101 +135,165 @@ struct TrackTabView: View {
                 .ignoresSafeArea(.keyboard)
             }
         }
+        .onChange(of: focusedInput) { oldValue, newValue in
+            logger.info("FocusedInput changed from \(String(describing: oldValue)) to \(String(describing: newValue))")
+            if newValue != nil {
+                logger.info("Keyboard should now be visible")
+            } else {
+                logger.info("Keyboard should now be hidden")
+            }
+        }
     }
 
     // MARK: - Custom Keyboard Helpers
 
     private func bindingForFocusedInput() -> Binding<String> {
         guard let focusedInput = focusedInput else {
+            logger.warning("bindingForFocusedInput called but focusedInput is nil")
             return .constant("")
         }
+
+        logger.debug("Creating binding for focused input: \(String(describing: focusedInput))")
 
         switch focusedInput {
         case .weight(let id):
             if let index = sets.firstIndex(where: { $0.id == id }) {
+                logger.debug("Found weight field at index \(index)")
                 return Binding<String>(
                     get: {
                         if let weight = sets[index].weight {
-                            return formatWeight(weight)
+                            let formatted = formatWeight(weight)
+                            logger.debug("Weight binding GET: returning '\(formatted)' for weight \(weight)")
+                            return formatted
                         }
+                        logger.debug("Weight binding GET: returning empty string (no weight)")
                         return ""
                     },
                     set: { newValue in
+                        logger.info("Weight binding SET: received '\(newValue)'")
                         let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
                         if cleaned.isEmpty {
+                            logger.debug("Weight set to nil (empty string)")
                             sets[index].weight = nil
                         } else if let val = Double(cleaned) {
+                            logger.info("Weight set to \(val)")
                             sets[index].weight = val
+                        } else {
+                            logger.error("Failed to parse weight value: '\(newValue)'")
                         }
                         persistCurrentSets()
                     }
                 )
+            } else {
+                logger.error("Could not find set with id \(id) for weight field")
             }
         case .reps(let id):
             if let index = sets.firstIndex(where: { $0.id == id }) {
+                logger.debug("Found reps field at index \(index)")
                 return Binding<String>(
-                    get: { sets[index].reps.map(String.init) ?? "" },
+                    get: {
+                        let value = sets[index].reps.map(String.init) ?? ""
+                        logger.debug("Reps binding GET: returning '\(value)'")
+                        return value
+                    },
                     set: { newValue in
+                        logger.info("Reps binding SET: received '\(newValue)'")
                         let filtered = newValue.filter { $0.isNumber }
                         if filtered.isEmpty {
+                            logger.debug("Reps set to nil (empty)")
                             sets[index].reps = nil
                         } else if let val = Int(filtered) {
+                            logger.info("Reps set to \(val)")
                             sets[index].reps = val
+                        } else {
+                            logger.error("Failed to parse reps value: '\(newValue)'")
                         }
                         persistCurrentSets()
                     }
                 )
+            } else {
+                logger.error("Could not find set with id \(id) for reps field")
             }
         case .rpe(let id):
             if let index = sets.firstIndex(where: { $0.id == id }) {
+                logger.debug("Found RPE field at index \(index)")
                 return Binding<String>(
-                    get: { sets[index].rpe.map(String.init) ?? "" },
+                    get: {
+                        let value = sets[index].rpe.map(String.init) ?? ""
+                        logger.debug("RPE binding GET: returning '\(value)'")
+                        return value
+                    },
                     set: { newValue in
+                        logger.info("RPE binding SET: received '\(newValue)'")
                         let filtered = newValue.filter { $0.isNumber }
                         if filtered.isEmpty {
+                            logger.debug("RPE set to nil (empty)")
                             sets[index].rpe = nil
                         } else if let val = Int(filtered) {
                             let clamped = max(0, min(10, val))
+                            logger.info("RPE set to \(clamped) (original: \(val))")
                             sets[index].rpe = clamped
+                        } else {
+                            logger.error("Failed to parse RPE value: '\(newValue)'")
                         }
                         persistCurrentSets()
                     }
                 )
+            } else {
+                logger.error("Could not find set with id \(id) for RPE field")
             }
         case .rir(let id):
             if let index = sets.firstIndex(where: { $0.id == id }) {
+                logger.debug("Found RIR field at index \(index)")
                 return Binding<String>(
-                    get: { sets[index].rir.map(String.init) ?? "" },
+                    get: {
+                        let value = sets[index].rir.map(String.init) ?? ""
+                        logger.debug("RIR binding GET: returning '\(value)'")
+                        return value
+                    },
                     set: { newValue in
+                        logger.info("RIR binding SET: received '\(newValue)'")
                         let filtered = newValue.filter { $0.isNumber }
                         if filtered.isEmpty {
+                            logger.debug("RIR set to nil (empty)")
                             sets[index].rir = nil
                         } else if let val = Int(filtered) {
                             let clamped = max(0, min(10, val))
+                            logger.info("RIR set to \(clamped) (original: \(val))")
                             sets[index].rir = clamped
+                        } else {
+                            logger.error("Failed to parse RIR value: '\(newValue)'")
                         }
                         persistCurrentSets()
                     }
                 )
+            } else {
+                logger.error("Could not find set with id \(id) for RIR field")
             }
         }
 
+        logger.error("bindingForFocusedInput: Falling through to default empty binding")
         return .constant("")
     }
 
     private func incrementForFocusedInput() -> Double {
         guard let focusedInput = focusedInput else {
+            logger.warning("incrementForFocusedInput called but focusedInput is nil")
             return 1.0
         }
 
+        let increment: Double
         switch focusedInput {
         case .weight:
             // Use exercise's custom increment for weight
-            return exercise.incrementValue
+            increment = exercise.incrementValue
+            logger.debug("Increment for weight field: \(increment)")
         case .reps, .rpe, .rir:
             // Always use 1 for reps/RPE/RIR
-            return 1.0
+            increment = 1.0
+            logger.debug("Increment for reps/RPE/RIR field: 1.0")
         }
+        return increment
     }
 
     private func formatWeight(_ weight: Double) -> String {
@@ -476,6 +544,7 @@ struct SetRowView: View {
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
                     onTap: {
+                        print("DEBUG: Weight field tapped for set \(set.id)")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
                     }
                 )
@@ -495,6 +564,7 @@ struct SetRowView: View {
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
                     onTap: {
+                        print("DEBUG: Reps field tapped for set \(set.id)")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
                     }
                 )
@@ -515,6 +585,7 @@ struct SetRowView: View {
                         placeholder: "0",
                         isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
                         onTap: {
+                            print("DEBUG: \(exercise.rpeEnabled ? "RPE" : "RIR") field tapped for set \(set.id)")
                             focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                         }
                     )
