@@ -508,6 +508,9 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .accessibilityLabel("Weight input")
+                .onTapGesture {
+                    // Block parent ScrollView gesture to allow UITextField to receive taps
+                }
             }
             
             // Reps Column
@@ -547,6 +550,9 @@ struct SetRowView: View {
                 .background(Color.white.opacity(0.04))
                 .cornerRadius(10)
                 .accessibilityLabel("Reps input")
+                .onTapGesture {
+                    // Block parent ScrollView gesture to allow UITextField to receive taps
+                }
             }
             
             // RPE/RIR Column (conditional)
@@ -592,6 +598,9 @@ struct SetRowView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(10)
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
+                    .onTapGesture {
+                        // Block parent ScrollView gesture to allow UITextField to receive taps
+                    }
                 }
             }
             
