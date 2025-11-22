@@ -20,7 +20,7 @@ struct TrackTabView: View {
         case rpe(UUID)
         case rir(UUID)
     }
-    @FocusState private var focusedInput: InputFocus?
+    @State private var focusedInput: InputFocus?
 
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "TrackTabView")
     
@@ -524,7 +524,7 @@ struct SetRowView: View {
     @Binding var reps: Int?
     @Binding var rpe: Int?
     @Binding var rir: Int?
-    var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
+    @Binding var focusedInput: TrackTabView.InputFocus?
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
 
@@ -551,13 +551,13 @@ struct SetRowView: View {
                         set: { _ in } // No-op: editing happens through keyboard binding
                     ),
                     placeholder: "0",
-                    isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
+                    isActive: focusedInput == TrackTabView.InputFocus.weight(set.id),
                     onTap: {
                         logger.info("👆 WEIGHT FIELD TAPPED - Set ID: \(set.id)")
-                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
                         logger.info("   Setting focusedInput to: weight(\(set.id))")
-                        focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
-                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
+                        focusedInput = TrackTabView.InputFocus.weight(set.id)
+                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
                     }
                 )
                 .accessibilityLabel("Weight input")
@@ -577,13 +577,13 @@ struct SetRowView: View {
                         set: { _ in } // No-op: editing happens through keyboard binding
                     ),
                     placeholder: "0",
-                    isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
+                    isActive: focusedInput == TrackTabView.InputFocus.reps(set.id),
                     onTap: {
                         logger.info("👆 REPS FIELD TAPPED - Set ID: \(set.id)")
-                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
                         logger.info("   Setting focusedInput to: reps(\(set.id))")
-                        focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
-                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
+                        focusedInput = TrackTabView.InputFocus.reps(set.id)
+                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
                     }
                 )
                 .accessibilityLabel("Reps input")
@@ -604,15 +604,15 @@ struct SetRowView: View {
                             set: { _ in } // No-op: editing happens through keyboard binding
                         ),
                         placeholder: "0",
-                        isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
+                        isActive: focusedInput == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
                         onTap: {
                             let fieldType = exercise.rpeEnabled ? "RPE" : "RIR"
                             logger.info("👆 \(fieldType) FIELD TAPPED - Set ID: \(set.id)")
-                            logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                            logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
                             let newFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
                             logger.info("   Setting focusedInput to: \(String(describing: newFocus))")
-                            focusedInput.wrappedValue = newFocus
-                            logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
+                            focusedInput = newFocus
+                            logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
                         }
                     )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
@@ -657,7 +657,7 @@ struct SetRowView: View {
         .onAppear {
             logger.debug("SetRowView appeared for set \(set.id)")
         }
-        .onChange(of: focusedInput.wrappedValue) { oldValue, newValue in
+        .onChange(of: focusedInput) { oldValue, newValue in
             logger.debug("SetRowView (\(set.id)) detected focusedInput change: \(String(describing: oldValue)) -> \(String(describing: newValue))")
         }
         // Removed background and corner radius
