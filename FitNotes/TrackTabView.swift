@@ -109,11 +109,14 @@ struct TrackTabView: View {
                 .background(Color.primaryBg) // Ensure background matches
             }
             .onAppear {
+                logger.info("🔄 TrackTabView appeared - loading sets for exercise: \(exercise.name)")
                 loadSets()
+                logger.info("📋 Loaded \(sets.count) sets")
             }
 
             // Custom Keyboard Overlay
             if focusedInput != nil {
+                let _ = logger.info("🎹 RENDERING KEYBOARD OVERLAY - focusedInput: \(String(describing: self.focusedInput))")
                 VStack {
                     Spacer()
                     CustomNumericKeyboard(
@@ -128,14 +131,20 @@ struct TrackTabView: View {
                 .transition(.move(edge: .bottom))
                 .animation(.easeInOut(duration: 0.3), value: focusedInput)
                 .ignoresSafeArea(.keyboard)
+            } else {
+                let _ = logger.debug("🎹 Keyboard overlay NOT rendered - focusedInput is nil")
             }
         }
         .onChange(of: focusedInput) { oldValue, newValue in
-            logger.info("FocusedInput changed from \(String(describing: oldValue)) to \(String(describing: newValue))")
+            logger.info("⚡️ FocusedInput CHANGED - OLD: \(String(describing: oldValue)) -> NEW: \(String(describing: newValue))")
             if newValue != nil {
-                logger.info("Keyboard should now be visible")
+                logger.info("✅ Keyboard should now be VISIBLE - focusedInput is NOT nil")
             } else {
-                logger.info("Keyboard should now be hidden")
+                logger.info("❌ Keyboard should now be HIDDEN - focusedInput is nil")
+            }
+            // Log the current state after the change
+            DispatchQueue.main.async {
+                self.logger.info("📊 State after focusedInput change: focusedInput = \(String(describing: self.focusedInput))")
             }
         }
     }
@@ -518,7 +527,9 @@ struct SetRowView: View {
     var focusedInput: FocusState<TrackTabView.InputFocus?>.Binding
     let onToggleCheck: () -> Void
     let onDelete: () -> Void
-    
+
+    private let logger = Logger(subsystem: "com.fitnotes.app", category: "SetRowView")
+
     var body: some View {
         HStack(spacing: 20) {
             // Weight Column
@@ -542,8 +553,11 @@ struct SetRowView: View {
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
                     onTap: {
-                        print("DEBUG: Weight field tapped for set \(set.id)")
+                        logger.info("👆 WEIGHT FIELD TAPPED - Set ID: \(set.id)")
+                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                        logger.info("   Setting focusedInput to: weight(\(set.id))")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
+                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
                     }
                 )
                 .accessibilityLabel("Weight input")
@@ -565,8 +579,11 @@ struct SetRowView: View {
                     placeholder: "0",
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
                     onTap: {
-                        print("DEBUG: Reps field tapped for set \(set.id)")
+                        logger.info("👆 REPS FIELD TAPPED - Set ID: \(set.id)")
+                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                        logger.info("   Setting focusedInput to: reps(\(set.id))")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
+                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
                     }
                 )
                 .accessibilityLabel("Reps input")
@@ -589,8 +606,13 @@ struct SetRowView: View {
                         placeholder: "0",
                         isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
                         onTap: {
-                            print("DEBUG: \(exercise.rpeEnabled ? "RPE" : "RIR") field tapped for set \(set.id)")
-                            focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                            let fieldType = exercise.rpeEnabled ? "RPE" : "RIR"
+                            logger.info("👆 \(fieldType) FIELD TAPPED - Set ID: \(set.id)")
+                            logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput.wrappedValue))")
+                            let newFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                            logger.info("   Setting focusedInput to: \(String(describing: newFocus))")
+                            focusedInput.wrappedValue = newFocus
+                            logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput.wrappedValue))")
                         }
                     )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
@@ -631,6 +653,12 @@ struct SetRowView: View {
         .padding(.vertical, 0)  // Removed vertical padding
         .onLongPressGesture(minimumDuration: 0.5) {
             onDelete()
+        }
+        .onAppear {
+            logger.debug("SetRowView appeared for set \(set.id)")
+        }
+        .onChange(of: focusedInput.wrappedValue) { oldValue, newValue in
+            logger.debug("SetRowView (\(set.id)) detected focusedInput change: \(String(describing: oldValue)) -> \(String(describing: newValue))")
         }
         // Removed background and corner radius
     }
