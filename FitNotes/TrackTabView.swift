@@ -543,7 +543,9 @@ struct SetRowView: View {
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.weight(set.id),
                     onTap: {
                         print("DEBUG: Weight field tapped for set \(set.id)")
+                        print("DEBUG: focusedInput BEFORE: \(String(describing: focusedInput.wrappedValue))")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.weight(set.id)
+                        print("DEBUG: focusedInput AFTER: \(String(describing: focusedInput.wrappedValue))")
                     }
                 )
                 .accessibilityLabel("Weight input")
@@ -566,7 +568,9 @@ struct SetRowView: View {
                     isActive: focusedInput.wrappedValue == TrackTabView.InputFocus.reps(set.id),
                     onTap: {
                         print("DEBUG: Reps field tapped for set \(set.id)")
+                        print("DEBUG: focusedInput BEFORE: \(String(describing: focusedInput.wrappedValue))")
                         focusedInput.wrappedValue = TrackTabView.InputFocus.reps(set.id)
+                        print("DEBUG: focusedInput AFTER: \(String(describing: focusedInput.wrappedValue))")
                     }
                 )
                 .accessibilityLabel("Reps input")
@@ -590,7 +594,9 @@ struct SetRowView: View {
                         isActive: focusedInput.wrappedValue == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
                         onTap: {
                             print("DEBUG: \(exercise.rpeEnabled ? "RPE" : "RIR") field tapped for set \(set.id)")
+                            print("DEBUG: focusedInput BEFORE: \(String(describing: focusedInput.wrappedValue))")
                             focusedInput.wrappedValue = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                            print("DEBUG: focusedInput AFTER: \(String(describing: focusedInput.wrappedValue))")
                         }
                     )
                     .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
