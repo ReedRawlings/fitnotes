@@ -119,7 +119,8 @@ struct TrackTabView: View {
                 let _ = logger.info("🎹 RENDERING KEYBOARD OVERLAY - focusedInput: \(String(describing: self.focusedInput))")
                 ZStack {
                     // Tap-to-dismiss overlay
-                    Color.black.opacity(0.001)
+                    Color.clear
+                        .contentShape(Rectangle())
                         .ignoresSafeArea()
                         .onTapGesture {
                             logger.info("Background tapped - dismissing keyboard")
