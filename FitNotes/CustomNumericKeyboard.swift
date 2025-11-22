@@ -10,9 +10,9 @@ struct CustomNumericKeyboard: View {
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "CustomNumericKeyboard")
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             // Top row: [-X] [Dismiss] [+X]
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 // Decrement button
                 KeyboardButton(
                     label: "-\(formatIncrement(increment))",
@@ -46,26 +46,26 @@ struct CustomNumericKeyboard: View {
             }
 
             // Number rows
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 KeyboardButton(label: "1", action: { logger.info("Digit '1' tapped"); appendDigit("1") })
                 KeyboardButton(label: "2", action: { logger.info("Digit '2' tapped"); appendDigit("2") })
                 KeyboardButton(label: "3", action: { logger.info("Digit '3' tapped"); appendDigit("3") })
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 KeyboardButton(label: "4", action: { logger.info("Digit '4' tapped"); appendDigit("4") })
                 KeyboardButton(label: "5", action: { logger.info("Digit '5' tapped"); appendDigit("5") })
                 KeyboardButton(label: "6", action: { logger.info("Digit '6' tapped"); appendDigit("6") })
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 KeyboardButton(label: "7", action: { logger.info("Digit '7' tapped"); appendDigit("7") })
                 KeyboardButton(label: "8", action: { logger.info("Digit '8' tapped"); appendDigit("8") })
                 KeyboardButton(label: "9", action: { logger.info("Digit '9' tapped"); appendDigit("9") })
             }
 
             // Bottom row: [•] [0] [⌫]
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 KeyboardButton(
                     label: "•",
                     action: { logger.info("Decimal point tapped"); appendDigit(".") }
@@ -81,7 +81,7 @@ struct CustomNumericKeyboard: View {
                 )
             }
         }
-        .padding(12)
+        .padding(10)
         .background(Color.secondaryBg)
         .onAppear {
             logger.info("CustomNumericKeyboard appeared - initial text: '\(self.text)', increment: \(self.increment)")
@@ -213,7 +213,7 @@ struct KeyboardButton: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: 45)
             .background(backgroundColor)
             .cornerRadius(12)
         }

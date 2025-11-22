@@ -117,16 +117,26 @@ struct TrackTabView: View {
             // Custom Keyboard Overlay
             if focusedInput != nil {
                 let _ = logger.info("🎹 RENDERING KEYBOARD OVERLAY - focusedInput: \(String(describing: self.focusedInput))")
-                VStack {
-                    Spacer()
-                    CustomNumericKeyboard(
-                        text: bindingForFocusedInput(),
-                        increment: incrementForFocusedInput(),
-                        onDismiss: {
-                            logger.info("Keyboard dismiss requested from CustomNumericKeyboard")
+                ZStack {
+                    // Tap-to-dismiss overlay
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            logger.info("Background tapped - dismissing keyboard")
                             focusedInput = nil
                         }
-                    )
+
+                    VStack {
+                        Spacer()
+                        CustomNumericKeyboard(
+                            text: bindingForFocusedInput(),
+                            increment: incrementForFocusedInput(),
+                            onDismiss: {
+                                logger.info("Keyboard dismiss requested from CustomNumericKeyboard")
+                                focusedInput = nil
+                            }
+                        )
+                    }
                 }
                 .transition(.move(edge: .bottom))
                 .animation(.easeInOut(duration: 0.3), value: focusedInput)
