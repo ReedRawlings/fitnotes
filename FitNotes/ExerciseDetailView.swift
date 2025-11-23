@@ -291,7 +291,7 @@ struct RestTimerBannerView: View {
                     HStack {
                         Text("Rest: \(formatTime(timeRemaining)) remaining")
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.textPrimary)
+                            .foregroundColor(.white)
                         
                         Spacer()
                         
