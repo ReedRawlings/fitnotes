@@ -551,7 +551,7 @@ struct SetRowView: View {
                         .foregroundColor(.textTertiary)
                         .kerning(0.3)
 
-                    Text("kg")
+                    Text(exercise.unit)
                         .font(.system(size: 10))
                         .foregroundColor(.textTertiary.opacity(0.6))
                 }

@@ -1121,7 +1121,7 @@ struct RoutineTemplateExerciseRowView: View {
                         Text("\(Int(weight))")
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
                             .foregroundColor(.textSecondary)
-                        Text("kg")
+                        Text(exercise?.unit ?? "kg")
                         .font(.caption)
                         .foregroundColor(.textSecondary)
                     }
