@@ -208,6 +208,42 @@ struct ExerciseSettingsView: View {
                         }
                     }
 
+                    // Weight Unit Card
+                    FormSectionCard(title: "Weight Unit") {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 0) {
+                                ForEach(["kg", "lbs"], id: \.self) { unit in
+                                    Button(action: {
+                                        withAnimation(.standardSpring) {
+                                            exercise.unit = unit
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Text(unit)
+                                            .font(.system(size: 15, weight: exercise.unit == unit ? .semibold : .medium))
+                                            .foregroundColor(exercise.unit == unit ? .textPrimary : .textSecondary)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 44)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(exercise.unit == unit ? Color.tertiaryBg : Color.clear)
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(4)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(12)
+
+                            Text("Choose the weight unit for this exercise")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
                     // Rest Timer Card
                     FormSectionCard(title: "Rest Timer") {
                         VStack(spacing: 12) {
