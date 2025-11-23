@@ -302,7 +302,7 @@ class ProgressionService {
 
         // Upper body exercises get smaller increments (2.5kg)
         // Lower body exercises get larger increments (5kg)
-        let upperBodyCategories = ["Chest", "Back", "Shoulders", "Arms", "Biceps", "Triceps"]
+        let upperBodyCategories = ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]
 
         if upperBodyCategories.contains(exercise.primaryCategory) {
             increment = 2.5
