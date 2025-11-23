@@ -398,6 +398,7 @@ struct TrackTabView: View {
         let success = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
             date: today,
+            unit: exercise.unit,
             sets: setData,
             modelContext: modelContext
         )
@@ -442,6 +443,7 @@ struct TrackTabView: View {
         _ = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
             date: today,
+            unit: exercise.unit,
             sets: setData,
             modelContext: modelContext
         )

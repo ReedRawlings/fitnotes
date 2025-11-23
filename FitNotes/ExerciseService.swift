@@ -147,10 +147,11 @@ public final class ExerciseService {
 
     /// Calculates total volume from a collection of sets.
     /// Volume = sum of (weight × reps) for all sets with both weight and reps.
+    /// Weights are converted to kg for consistency.
     public func calculateVolumeFromSets(_ sets: [WorkoutSet]) -> Double {
         sets.reduce(0) { total, set in
             guard let weight = set.weight, let reps = set.reps else { return total }
-            return total + (weight * Double(reps))
+            return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
     }
 
@@ -220,6 +221,7 @@ public final class ExerciseService {
     public func saveSets(
         exerciseId: UUID,
         date: Date,
+        unit: String = "kg",
         sets: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)],
         modelContext: ModelContext
     ) -> Bool {
@@ -238,6 +240,7 @@ public final class ExerciseService {
                     order: index + 1,
                     reps: setData.reps,
                     weight: setData.weight,
+                    unit: unit,
                     notes: nil,
                     isCompleted: setData.isCompleted,
                     completedAt: completedAt,

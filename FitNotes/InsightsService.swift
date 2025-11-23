@@ -38,7 +38,7 @@ public final class InsightsService {
                 let dayStart = calendar.startOfDay(for: set.date)
 
                 if let weight = set.weight, let reps = set.reps {
-                    let volume = weight * Double(reps)
+                    let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                     dailyVolumes[dayStart, default: 0] += volume
                 }
             }
@@ -87,7 +87,7 @@ public final class InsightsService {
             for set in sets {
                 if let weekStart = calendar.dateInterval(of: .weekOfYear, for: set.date)?.start {
                     if let weight = set.weight, let reps = set.reps {
-                        let volume = weight * Double(reps)
+                        let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                         weeklyVolumes[weekStart, default: 0] += volume
                     }
                 }
@@ -189,7 +189,7 @@ public final class InsightsService {
                 guard let weight = set.weight, let reps = set.reps else {
                     return total
                 }
-                return total + (weight * Double(reps))
+                return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
             }
         } catch {
             print("Error fetching total volume: \(error)")
@@ -287,7 +287,7 @@ public final class InsightsService {
                     continue
                 }
 
-                let volume = weight * Double(reps)
+                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 let category = exercise.primaryCategory
                 categoryVolumes[category, default: 0] += volume
             }
