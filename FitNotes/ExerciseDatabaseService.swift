@@ -8,7 +8,7 @@ public final class ExerciseDatabaseService {
     // Comprehensive list of muscle groups
     public static let muscleGroups = [
         "Chest", "Back", "Shoulders", "Biceps", "Triceps",
-        "Quads", "Hamstrings", "Glutes", "Abs"
+        "Quads", "Hamstrings", "Glutes", "Calves", "Abs", "Forearms"
     ]
     
     
