@@ -38,7 +38,8 @@ struct HistoryTabView: View {
                                 SessionSummaryView(
                                     sets: sets,
                                     targetRepMin: exercise.targetRepMin,
-                                    targetRepMax: exercise.targetRepMax
+                                    targetRepMax: exercise.targetRepMax,
+                                    unit: exercise.unit
                                 )
                                 .padding(.horizontal, 12)
                                 .padding(.top, 8)
@@ -46,7 +47,7 @@ struct HistoryTabView: View {
                                 // Session Cards
                                 VStack(spacing: 8) {
                                     ForEach(sets.sorted { $0.order < $1.order }) { set in
-                                        SessionCardView(exercise: exercise, set: set)
+                                        SessionCardView(exercise: exercise, set: set, unit: exercise.unit)
                                     }
                                 }
                                 .padding(.horizontal, 12)
@@ -101,6 +102,7 @@ struct SessionSummaryView: View {
     let sets: [WorkoutSet]
     let targetRepMin: Int?
     let targetRepMax: Int?
+    let unit: String
 
     private var totalSets: Int {
         sets.filter { $0.isCompleted }.count
@@ -131,7 +133,7 @@ struct SessionSummaryView: View {
             Spacer()
 
             // Volume
-            Text("\(formatVolume(totalVolume)) kg")
+            Text("\(formatVolume(totalVolume)) \(unit)")
                 .font(.system(size: 14, weight: .semibold, design: .monospaced))
                 .foregroundColor(.textPrimary)
 
@@ -140,7 +142,7 @@ struct SessionSummaryView: View {
                 Text("•")
                     .foregroundColor(.textTertiary)
 
-                Text("~\(formatWeight(e1rm)) kg 1RM")
+                Text("~\(formatWeight(e1rm)) \(unit) 1RM")
                     .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(.accentPrimary)
             }
@@ -172,6 +174,7 @@ struct SessionSummaryView: View {
 struct SessionCardView: View {
     let exercise: Exercise
     let set: WorkoutSet
+    let unit: String
     
     var body: some View {
         HStack {
@@ -192,12 +195,12 @@ struct SessionCardView: View {
     
     private func formatSetDisplay() -> String {
         var parts: [String] = []
-        
+
         // Weight and reps
         if let weight = set.weight, let reps = set.reps {
-            parts.append("\(formatWeight(weight))kg × \(reps) reps")
+            parts.append("\(formatWeight(weight))\(unit) × \(reps) reps")
         } else if let weight = set.weight {
-            parts.append("\(formatWeight(weight))kg")
+            parts.append("\(formatWeight(weight))\(unit)")
         } else if let reps = set.reps {
             parts.append("\(reps) reps")
         }
