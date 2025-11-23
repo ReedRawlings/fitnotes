@@ -833,9 +833,12 @@ struct AddExerciseToWorkoutView: View {
                 modelContext: modelContext
             ), !lastSession.isEmpty {
                 let setData = lastSession.map { (weight: $0.weight, reps: $0.reps, rpe: Int?(nil), rir: Int?(nil), isCompleted: false) }
+                // Get exercise to retrieve its unit
+                let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
                 _ = ExerciseService.shared.saveSets(
                     exerciseId: exerciseId,
                     date: selectedDate,
+                    unit: exercise?.unit ?? "kg",
                     sets: setData,
                     modelContext: modelContext
                 )

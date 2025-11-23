@@ -782,6 +782,7 @@ struct E1RMComparisonIndicatorView: View {
     let lastE1RM: Double
     let currentE1RM: Double
     let percentChange: Double
+    let unit: String
 
     // MARK: - Computed Properties
 
@@ -819,7 +820,7 @@ struct E1RMComparisonIndicatorView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text("E1RM: ~\(formattedE1RM) kg")
+            Text("E1RM: ~\(formattedE1RM) \(unit)")
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
                 .foregroundColor(.textSecondary)
 

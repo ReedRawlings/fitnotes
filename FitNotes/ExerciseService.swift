@@ -96,11 +96,12 @@ public final class ExerciseService {
     }
     
     // MARK: - Get Exercise History
-    
+
     /// Returns all historical sessions for this exercise, sorted by date (most recent first).
     /// Used in the "View History" modal.
     public func getExerciseHistory(
         exerciseId: UUID,
+        unit: String,
         modelContext: ModelContext
     ) -> [ExerciseSessionSummary] {
         let descriptor = FetchDescriptor<WorkoutSet>(
@@ -123,7 +124,7 @@ public final class ExerciseService {
                 let sortedSets = sets.sorted { $0.order < $1.order }
                 
                 // Create summary string like "225kg × 5/5/3"
-                let setsSummary = createSetsSummary(from: sortedSets)
+                let setsSummary = createSetsSummary(from: sortedSets, unit: unit)
                 
                 let summary = ExerciseSessionSummary(
                     date: date,
@@ -146,14 +147,15 @@ public final class ExerciseService {
 
     /// Calculates total volume from a collection of sets.
     /// Volume = sum of (weight × reps) for all sets with both weight and reps.
+    /// Weights are converted to kg for consistency.
     public func calculateVolumeFromSets(_ sets: [WorkoutSet]) -> Double {
         sets.reduce(0) { total, set in
             guard let weight = set.weight, let reps = set.reps else { return total }
-            return total + (weight * Double(reps))
+            return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
     }
 
-    private func createSetsSummary(from sets: [WorkoutSet]) -> String {
+    private func createSetsSummary(from sets: [WorkoutSet], unit: String) -> String {
         guard !sets.isEmpty else { return "No sets" }
 
         // Group by weight to create summary like "225kg × 5/5/3"
@@ -161,7 +163,7 @@ public final class ExerciseService {
         let reps = sets.compactMap { $0.reps }.map { "\($0)" }.joined(separator: "/")
 
         if weight > 0 {
-            return "\(Int(weight))kg × \(reps)"
+            return "\(Int(weight))\(unit) × \(reps)"
         } else {
             return "\(reps) reps"
         }
@@ -219,6 +221,7 @@ public final class ExerciseService {
     public func saveSets(
         exerciseId: UUID,
         date: Date,
+        unit: String = "kg",
         sets: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)],
         modelContext: ModelContext
     ) -> Bool {
@@ -237,6 +240,7 @@ public final class ExerciseService {
                     order: index + 1,
                     reps: setData.reps,
                     weight: setData.weight,
+                    unit: unit,
                     notes: nil,
                     isCompleted: setData.isCompleted,
                     completedAt: completedAt,

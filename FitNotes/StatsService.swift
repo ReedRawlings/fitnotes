@@ -48,7 +48,8 @@ public final class StatsService {
             guard let weight = set.weight, let reps = set.reps else {
                 return total
             }
-            return total + (weight * Double(reps))
+            // Convert weight to kg before calculating volume
+            return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
     }
     

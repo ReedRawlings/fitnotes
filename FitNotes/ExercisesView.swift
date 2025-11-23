@@ -149,6 +149,7 @@ struct AddExerciseView: View {
     @State private var name: String
     @State private var selectedCategory = "Chest"
     @State private var selectedEquipment = "Free Weight"
+    @State private var selectedUnit = "kg"
     @State private var notes = ""
     @FocusState private var focusedField: Bool
     
@@ -183,7 +184,34 @@ struct AddExerciseView: View {
                             selection: $selectedEquipment
                         )
                     }
-                    
+
+                    // Weight Unit Card
+                    FormSectionCard(title: "Weight Unit") {
+                        HStack(spacing: 0) {
+                            ForEach(["kg", "lbs"], id: \.self) { unit in
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        selectedUnit = unit
+                                    }
+                                }) {
+                                    Text(unit)
+                                        .font(.system(size: 15, weight: selectedUnit == unit ? .semibold : .medium))
+                                        .foregroundColor(selectedUnit == unit ? .textPrimary : .textSecondary)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(selectedUnit == unit ? Color.tertiaryBg : Color.clear)
+                                        )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .padding(4)
+                        .background(Color.secondaryBg)
+                        .cornerRadius(12)
+                    }
+
                     // Notes Card
                     FormSectionCard(title: "Notes (Optional)") {
                         TextField("Personal notes...", text: $notes, axis: .vertical)
@@ -238,6 +266,7 @@ struct AddExerciseView: View {
             secondaryCategories: [],
             equipment: selectedEquipment,
             notes: notes.isEmpty ? nil : notes,
+            unit: selectedUnit,
             isCustom: true
         )
         

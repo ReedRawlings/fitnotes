@@ -89,7 +89,11 @@ public final class WorkoutService {
         workoutExercise.workout = workout
         workout.exercises.append(workoutExercise)  // Add to workout's exercises array
         modelContext.insert(workoutExercise)
-        
+
+        // Get exercise to retrieve its unit
+        let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
+        let exerciseUnit = exercise?.unit ?? "kg"
+
         // Create sets from the provided setData
         for (index, setInfo) in setData.enumerated() {
             let workoutSet = WorkoutSet(
@@ -97,6 +101,7 @@ public final class WorkoutService {
                 order: index + 1,
                 reps: setInfo.reps,
                 weight: setInfo.weight,
+                unit: exerciseUnit,
                 duration: setInfo.duration,
                 distance: setInfo.distance,
                 notes: notes,
@@ -506,9 +511,12 @@ public final class RoutineService {
             (weight: baseWeight, reps: baseReps, rpe: nil, rir: nil, isCompleted: false)
         }
 
+        // Get exercise to retrieve its unit
+        let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
         _ = ExerciseService.shared.saveSets(
             exerciseId: exerciseId,
             date: date,
+            unit: exercise?.unit ?? "kg",
             sets: setsData,
             modelContext: modelContext
         )

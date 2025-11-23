@@ -1,6 +1,45 @@
 import Foundation
 import SwiftData
 
+// MARK: - Weight Unit Conversion
+
+/// Utility for converting between weight units
+public enum WeightUnitConverter {
+    private static let lbsToKgRatio = 0.453592
+    private static let kgToLbsRatio = 2.20462
+
+    /// Converts a weight value to kilograms
+    /// - Parameters:
+    ///   - weight: The weight value to convert
+    ///   - unit: The unit of the weight ("kg" or "lbs")
+    /// - Returns: Weight in kilograms
+    public static func toKg(_ weight: Double, from unit: String) -> Double {
+        guard unit.lowercased() == "lbs" else { return weight }
+        return weight * lbsToKgRatio
+    }
+
+    /// Converts a weight value from kilograms to a target unit
+    /// - Parameters:
+    ///   - weight: The weight value in kilograms
+    ///   - unit: The target unit ("kg" or "lbs")
+    /// - Returns: Weight in the target unit
+    public static func fromKg(_ weight: Double, to unit: String) -> Double {
+        guard unit.lowercased() == "lbs" else { return weight }
+        return weight * kgToLbsRatio
+    }
+
+    /// Calculates volume in kg (converts weight to kg first)
+    /// - Parameters:
+    ///   - weight: The weight value
+    ///   - reps: Number of repetitions
+    ///   - unit: Unit of the weight ("kg" or "lbs")
+    /// - Returns: Volume in kg units
+    public static func volumeInKg(_ weight: Double, reps: Int, unit: String) -> Double {
+        let weightInKg = toKg(weight, from: unit)
+        return weightInKg * Double(reps)
+    }
+}
+
 // MARK: - Routine Model (Reusable Templates)
 @Model
 public final class Routine {
@@ -108,6 +147,7 @@ public final class WorkoutSet {
     public var order: Int             // Set number (1, 2, 3...)
     public var reps: Int?
     public var weight: Double?
+    public var unit: String           // Weight unit (kg or lbs) - stored when set was logged
     public var duration: Int?         // For cardio/timed
     public var distance: Double?      // For distance-based
     public var notes: String?
@@ -125,6 +165,7 @@ public final class WorkoutSet {
         order: Int,
         reps: Int?,
         weight: Double?,
+        unit: String = "kg",
         duration: Int? = nil,
         distance: Double? = nil,
         notes: String? = nil,
@@ -141,6 +182,7 @@ public final class WorkoutSet {
         self.order = order
         self.reps = reps
         self.weight = weight
+        self.unit = unit
         self.duration = duration
         self.distance = distance
         self.notes = notes

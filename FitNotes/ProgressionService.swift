@@ -43,10 +43,10 @@ struct SessionSummary {
         // Calculate top weight
         self.topWeight = sets.compactMap { $0.weight }.max() ?? 0
 
-        // Calculate total volume
+        // Calculate total volume (convert to kg for consistency)
         self.totalVolume = sets.reduce(0.0) { sum, set in
             guard let weight = set.weight, let reps = set.reps else { return sum }
-            return sum + (weight * Double(reps))
+            return sum + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
 
         // Calculate E1RM from first set (before fatigue)
@@ -86,9 +86,13 @@ enum ProgressionStatus {
     }
 
     var message: String {
+        getMessage(unit: "kg")
+    }
+
+    func getMessage(unit: String) -> String {
         switch self {
         case .readyToProgress(let weight):
-            return "You've hit your targets for 2 sessions straight. Try \(String(format: "%.1f", weight)) kg next session."
+            return "You've hit your targets for 2 sessions straight. Try \(String(format: "%.1f", weight)) \(unit) next session."
         case .progressingTowardTarget:
             return "You're getting closer! Keep at this weight until you hit all target reps."
         case .maintainingBelowTarget:
