@@ -223,6 +223,73 @@ struct FormSectionCard<Content: View>: View {
     }
 }
 
+// MARK: - ExpandableSettingsSection
+struct ExpandableSettingsSection<Content: View>: View {
+    let title: String
+    let isExpanded: Bool
+    let onToggle: () -> Void
+    let content: Content
+    
+    init(
+        title: String,
+        isExpanded: Bool,
+        onToggle: @escaping () -> Void,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.isExpanded = isExpanded
+        self.onToggle = onToggle
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header - always visible and fully tappable
+            Button(action: {
+                withAnimation(.standardSpring) {
+                    onToggle()
+                }
+            }) {
+                HStack {
+                    Text(title)
+                        .font(.bodyFont)
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .padding(16)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Content - only visible when expanded
+            if isExpanded {
+                VStack(spacing: 12) {
+                    Divider()
+                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, 16)
+                    
+                    content
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(Color.secondaryBg)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
 // MARK: - LabeledTextInput
 struct LabeledTextInput: View {
     let label: String
@@ -506,11 +573,11 @@ struct TimePickerModal: View {
                     ForEach(minuteOptions, id: \.self) { minute in
                         Text("\(minute)")
                             .tag(minute)
-                            .foregroundColor(.textPrimary)
+                            .foregroundStyle(.white)
                     }
                 }
                 .pickerStyle(.wheel)
-                .foregroundColor(.textPrimary)
+                .colorScheme(.dark)
                 .frame(maxWidth: .infinity)
                 .onChange(of: selectedMinutes) {
                     triggerHapticFeedback()
@@ -526,11 +593,11 @@ struct TimePickerModal: View {
                     ForEach(secondOptions, id: \.self) { second in
                         Text(String(format: "%02d", second))
                             .tag(second)
-                            .foregroundColor(.textPrimary)
+                            .foregroundStyle(.white)
                     }
                 }
                 .pickerStyle(.wheel)
-                .foregroundColor(.textPrimary)
+                .colorScheme(.dark)
                 .frame(maxWidth: .infinity)
                 .onChange(of: selectedSecondsValue) {
                     triggerHapticFeedback()
@@ -542,6 +609,7 @@ struct TimePickerModal: View {
                     .padding(.horizontal, 8)
             }
             .frame(height: 200)
+            .colorScheme(.dark)
         }
         .background(Color.secondaryBg)
         .cornerRadius(20, corners: [.topLeft, .topRight])

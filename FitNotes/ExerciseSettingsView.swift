@@ -13,6 +13,14 @@ struct ExerciseSettingsView: View {
     @State private var showingAdvancedToStandardAlert = false
     @FocusState private var focusedField: Bool
     
+    // Expandable section states
+    @State private var isRestTimerExpanded = false
+    @State private var isProgressiveOverloadExpanded = false
+    @State private var isRPERIRExpanded = false
+    @State private var isWeightUnitExpanded = false
+    @State private var isKeyboardIncrementExpanded = false
+    @State private var isStatsDisplayExpanded = false
+    
     enum RPEMode: String, CaseIterable {
         case off = "Off"
         case rpe = "RPE"
@@ -48,204 +56,13 @@ struct ExerciseSettingsView: View {
                 .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 16) {
-                    // RPE/RIR Tracking Card
-                    FormSectionCard(title: "RPE/RIR Tracking") {
                         VStack(spacing: 12) {
-                            // Segmented Control
-                            HStack(spacing: 0) {
-                                ForEach(RPEMode.allCases, id: \.self) { mode in
-                                    Button(action: {
-                                        withAnimation(.standardSpring) {
-                                            selectedMode = mode
-                                            updateExerciseMode()
-                                        }
-                                    }) {
-                                        Text(mode.rawValue)
-                                            .font(.system(size: 15, weight: selectedMode == mode ? .semibold : .medium))
-                                            .foregroundColor(selectedMode == mode ? .textPrimary : .textSecondary)
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 44)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(selectedMode == mode ? Color.tertiaryBg : Color.clear)
-                                            )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(4)
-                            .background(Color.secondaryBg)
-                            .cornerRadius(12)
-                            
-                            // Description text
-                            Text(modeDescription)
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 4)
-                        }
-                    }
-                    
-                    // Progressive Overload Card
-                    FormSectionCard(title: "Progressive Overload (Optional)") {
-                        VStack(spacing: 12) {
-                            Text("Set a target rep range to get progression recommendations when you consistently hit targets.")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Min Reps")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(.textSecondary)
-
-                                    TextField("5", value: $exercise.targetRepMin, format: .number)
-                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.textPrimary)
-                                        .keyboardType(.numberPad)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .background(Color.tertiaryBg)
-                                        .cornerRadius(8)
-                                        .focused($focusedField)
-                                        .onChange(of: exercise.targetRepMin) { _, newValue in
-                                            validateRepRange()
-                                            saveExercise()
-                                        }
-                                }
-
-                                Text("to")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.textSecondary)
-                                    .padding(.top, 20)
-
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Max Reps")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(.textSecondary)
-
-                                    TextField("8", value: $exercise.targetRepMax, format: .number)
-                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.textPrimary)
-                                        .keyboardType(.numberPad)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .background(Color.tertiaryBg)
-                                        .cornerRadius(8)
-                                        .focused($focusedField)
-                                        .onChange(of: exercise.targetRepMax) { _, newValue in
-                                            validateRepRange()
-                                            saveExercise()
-                                        }
-                                }
-                            }
-
-                            if let minReps = exercise.targetRepMin, let maxReps = exercise.targetRepMax {
-                                if minReps >= maxReps {
-                                    Text("Max reps must be greater than min reps")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.errorRed)
-                                        .padding(.top, 4)
-                                }
-                            }
-                        }
-                    }
-
-                    // Keyboard Increment Card
-                    FormSectionCard(title: "Keyboard Increment") {
-                        VStack(spacing: 12) {
-                            Text("Set the default increment for the +/- buttons on the custom keyboard. Useful for quick weight adjustments.")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            HStack {
-                                Text("Weight Increment")
-                                    .font(.bodyFont)
-                                    .foregroundColor(.textPrimary)
-
-                                Spacer()
-
-                                HStack(spacing: 12) {
-                                    Button(action: {
-                                        if exercise.incrementValue > 1 {
-                                            exercise.incrementValue -= 0.5
-                                            saveExercise()
-                                        }
-                                    }) {
-                                        Image(systemName: "minus.circle.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(exercise.incrementValue > 1 ? .accentPrimary : .textTertiary)
-                                    }
-
-                                    Text(formatIncrement(exercise.incrementValue))
-                                        .font(.system(size: 20, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.textPrimary)
-                                        .frame(minWidth: 60)
-
-                                    Button(action: {
-                                        if exercise.incrementValue < 100 {
-                                            exercise.incrementValue += 0.5
-                                            saveExercise()
-                                        }
-                                    }) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(exercise.incrementValue < 100 ? .accentPrimary : .textTertiary)
-                                    }
-                                }
-                            }
-
-                            Text("Reps, RPE, and RIR always use ±1")
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 4)
-                        }
-                    }
-
-                    // Weight Unit Card
-                    FormSectionCard(title: "Weight Unit") {
-                        VStack(spacing: 12) {
-                            HStack(spacing: 0) {
-                                ForEach(["kg", "lbs"], id: \.self) { unit in
-                                    Button(action: {
-                                        withAnimation(.standardSpring) {
-                                            exercise.unit = unit
-                                            saveExercise()
-                                        }
-                                    }) {
-                                        Text(unit)
-                                            .font(.system(size: 15, weight: exercise.unit == unit ? .semibold : .medium))
-                                            .foregroundColor(exercise.unit == unit ? .textPrimary : .textSecondary)
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 44)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(exercise.unit == unit ? Color.tertiaryBg : Color.clear)
-                                            )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(4)
-                            .background(Color.secondaryBg)
-                            .cornerRadius(12)
-
-                            Text("Choose the weight unit for this exercise")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 4)
-                        }
-                    }
-
-                    // Rest Timer Card
-                    FormSectionCard(title: "Rest Timer") {
+                    // Rest Timer Section
+                    ExpandableSettingsSection(
+                        title: "Rest Timer",
+                        isExpanded: isRestTimerExpanded,
+                        onToggle: { isRestTimerExpanded.toggle() }
+                    ) {
                         VStack(spacing: 12) {
                             // Rest Timer Toggle
                             HStack {
@@ -392,8 +209,223 @@ struct ExerciseSettingsView: View {
                         }
                     }
 
-                    // Stats Display Card
-                    FormSectionCard(title: "Stats Display") {
+                    // Progressive Overload Section
+                    ExpandableSettingsSection(
+                        title: "Progressive Overload",
+                        isExpanded: isProgressiveOverloadExpanded,
+                        onToggle: { isProgressiveOverloadExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            Text("Set a target rep range to get progression recommendations when you consistently hit targets.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Min Reps")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.textSecondary)
+
+                                    TextField("5", value: $exercise.targetRepMin, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .focused($focusedField)
+                                        .onChange(of: exercise.targetRepMin) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
+                                }
+
+                                Text("to")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.textSecondary)
+                                    .padding(.top, 20)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Max Reps")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.textSecondary)
+
+                                    TextField("8", value: $exercise.targetRepMax, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .focused($focusedField)
+                                        .onChange(of: exercise.targetRepMax) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
+                                }
+                            }
+
+                            if let minReps = exercise.targetRepMin, let maxReps = exercise.targetRepMax {
+                                if minReps >= maxReps {
+                                    Text("Max reps must be greater than min reps")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.errorRed)
+                                        .padding(.top, 4)
+                                }
+                            }
+                        }
+                    }
+                    
+                    // RPE/RIR Tracking Section
+                    ExpandableSettingsSection(
+                        title: "RPE/RIR",
+                        isExpanded: isRPERIRExpanded,
+                        onToggle: { isRPERIRExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            // Segmented Control
+                            HStack(spacing: 0) {
+                                ForEach(RPEMode.allCases, id: \.self) { mode in
+                                    Button(action: {
+                                        withAnimation(.standardSpring) {
+                                            selectedMode = mode
+                                            updateExerciseMode()
+                                        }
+                                    }) {
+                                        Text(mode.rawValue)
+                                            .font(.system(size: 15, weight: selectedMode == mode ? .semibold : .medium))
+                                            .foregroundColor(selectedMode == mode ? .textPrimary : .textSecondary)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 44)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(selectedMode == mode ? Color.tertiaryBg : Color.clear)
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(4)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(12)
+                            
+                            // Description text
+                            Text(modeDescription)
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
+                    // Weight Unit Section
+                    ExpandableSettingsSection(
+                        title: "Lbs or KGs",
+                        isExpanded: isWeightUnitExpanded,
+                        onToggle: { isWeightUnitExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 0) {
+                                ForEach(["kg", "lbs"], id: \.self) { unit in
+                                    Button(action: {
+                                        withAnimation(.standardSpring) {
+                                            exercise.unit = unit
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Text(unit)
+                                            .font(.system(size: 15, weight: exercise.unit == unit ? .semibold : .medium))
+                                            .foregroundColor(exercise.unit == unit ? .textPrimary : .textSecondary)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 44)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(exercise.unit == unit ? Color.tertiaryBg : Color.clear)
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(4)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(12)
+
+                            Text("Choose the weight unit for this exercise")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
+                    // Keyboard Increment Section
+                    ExpandableSettingsSection(
+                        title: "Keyboard Increment",
+                        isExpanded: isKeyboardIncrementExpanded,
+                        onToggle: { isKeyboardIncrementExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            Text("Set the default increment for the +/- buttons on the custom keyboard. Useful for quick weight adjustments.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            HStack {
+                                Text("Weight Increment")
+                                    .font(.bodyFont)
+                                    .foregroundColor(.textPrimary)
+
+                                Spacer()
+
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        if exercise.incrementValue > 1 {
+                                            exercise.incrementValue -= 0.5
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Image(systemName: "minus.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(exercise.incrementValue > 1 ? .accentPrimary : .textTertiary)
+                                    }
+
+                                    Text(formatIncrement(exercise.incrementValue))
+                                        .font(.system(size: 20, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .frame(minWidth: 60)
+
+                                    Button(action: {
+                                        if exercise.incrementValue < 100 {
+                                            exercise.incrementValue += 0.5
+                                            saveExercise()
+                                        }
+                                    }) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(exercise.incrementValue < 100 ? .accentPrimary : .textTertiary)
+                                    }
+                                }
+                            }
+
+                            Text("Reps, RPE, and RIR always use ±1")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
+                    // Stats Display Section
+                    ExpandableSettingsSection(
+                        title: "Stats Display",
+                        isExpanded: isStatsDisplayExpanded,
+                        onToggle: { isStatsDisplayExpanded.toggle() }
+                    ) {
                         VStack(spacing: 12) {
                             Text("Control how the volume and E1RM comparison stats are displayed in the exercise detail view.")
                                 .font(.system(size: 13, weight: .regular))
