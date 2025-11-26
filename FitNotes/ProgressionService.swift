@@ -92,7 +92,7 @@ enum ProgressionStatus {
     func getMessage(unit: String) -> String {
         switch self {
         case .readyToProgress(let weight):
-            return "You've hit your targets for 2 sessions straight. Try \(String(format: "%.1f", weight)) \(unit) next session."
+            return "You've hit your targets for 2 sessions straight. Try increase the weight and/or reps"
         case .progressingTowardTarget:
             return "You're getting closer! Keep at this weight until you hit all target reps."
         case .maintainingBelowTarget:
@@ -193,9 +193,9 @@ class ProgressionService {
         targetRepMax: Int?,
         modelContext: ModelContext
     ) -> [SessionSummary] {
-        // Fetch all sets for this exercise
+        // Fetch all sets for this exercise (including incomplete sets for current session)
         let descriptor = FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate { $0.exerciseId == exerciseId && $0.isCompleted },
+            predicate: #Predicate { $0.exerciseId == exerciseId },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
 
