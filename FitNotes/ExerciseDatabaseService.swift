@@ -17,16 +17,54 @@ public final class ExerciseDatabaseService {
         "Machine", "Free Weight", "Body"
     ]
     
+    /// Normalizes equipment type strings to match the standard format used in the UI
+    /// Converts: "free-weight" -> "Free Weight", "bodyweight" -> "Body", "machine" -> "Machine"
+    public static func normalizeEquipmentType(_ equipment: String) -> String {
+        let lowercased = equipment.lowercased()
+        switch lowercased {
+        case "free-weight", "free weight":
+            return "Free Weight"
+        case "bodyweight", "body":
+            return "Body"
+        case "machine":
+            return "Machine"
+        default:
+            // Return as-is if already in correct format or unknown
+            return equipment
+        }
+    }
+    
     public func createDefaultExercises(modelContext: ModelContext) {
         let defaultExercises = getDefaultExercises()
+        
+        // Get global defaults from preferences
+        let defaultUnit = PreferencesService.shared.getDefaultWeightUnit(modelContext: modelContext)
+        let defaultRestSeconds = PreferencesService.shared.getDefaultRestSeconds(modelContext: modelContext)
+        let defaultStatsDisplay = PreferencesService.shared.getDefaultStatsDisplayPreference(modelContext: modelContext)
         
         for exerciseData in defaultExercises {
             let exercise = Exercise(
                 name: exerciseData.name,
                 primaryCategory: exerciseData.primaryCategory,
                 secondaryCategories: exerciseData.secondaryCategories,
-                equipment: exerciseData.equipment,
-                isCustom: false
+                equipment: ExerciseDatabaseService.normalizeEquipmentType(exerciseData.equipment),
+                notes: nil,
+                unit: defaultUnit,
+                isCustom: false,
+                rpeEnabled: false,
+                rirEnabled: false,
+                useRestTimer: false,
+                defaultRestSeconds: defaultRestSeconds,
+                useAdvancedRest: false,
+                customRestSeconds: [:],
+                targetRepMin: nil,
+                targetRepMax: nil,
+                lastProgressionDate: nil,
+                incrementValue: 5.0,
+                statsDisplayPreference: defaultStatsDisplay,
+                statsIsExpanded: false,
+                createdAt: Date(),
+                updatedAt: Date()
             )
             modelContext.insert(exercise)
         }

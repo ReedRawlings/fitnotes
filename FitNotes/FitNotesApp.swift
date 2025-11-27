@@ -25,7 +25,8 @@ struct FitNotesApp: App {
             WorkoutExercise.self,
             WorkoutSet.self,
             RoutineExercise.self,
-            Routine.self
+            Routine.self,
+            UserPreferences.self
         ])
         
         // Use a specific URL for the database to make it easier to manage

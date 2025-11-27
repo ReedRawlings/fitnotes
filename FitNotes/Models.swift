@@ -27,3 +27,46 @@ public final class BodyMetric {
         self.updatedAt = updatedAt
     }
 }
+
+// MARK: - UserPreferences Model
+@Model
+public final class UserPreferences {
+    @Attribute(.unique) public var id: UUID
+    public var defaultWeightUnit: String
+    public var defaultRestSeconds: Int
+    public var defaultStatsDisplayPreferenceRaw: String
+    public var keepCurrentRoutineView: Bool
+    public var keepCurrentWorkoutView: Bool
+    public var createdAt: Date
+    public var updatedAt: Date
+    
+    // Computed property for stats display preference
+    public var defaultStatsDisplayPreference: StatsDisplayPreference {
+        get {
+            StatsDisplayPreference(rawValue: defaultStatsDisplayPreferenceRaw) ?? .rememberLastState
+        }
+        set {
+            defaultStatsDisplayPreferenceRaw = newValue.rawValue
+        }
+    }
+    
+    public init(
+        id: UUID = UUID(),
+        defaultWeightUnit: String = "kg",
+        defaultRestSeconds: Int = 90,
+        defaultStatsDisplayPreference: StatsDisplayPreference = .rememberLastState,
+        keepCurrentRoutineView: Bool = false,
+        keepCurrentWorkoutView: Bool = false,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.id = id
+        self.defaultWeightUnit = defaultWeightUnit
+        self.defaultRestSeconds = defaultRestSeconds
+        self.defaultStatsDisplayPreferenceRaw = defaultStatsDisplayPreference.rawValue
+        self.keepCurrentRoutineView = keepCurrentRoutineView
+        self.keepCurrentWorkoutView = keepCurrentWorkoutView
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}

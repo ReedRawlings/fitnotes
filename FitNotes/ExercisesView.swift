@@ -20,9 +20,9 @@ struct ExercisesView: View {
         )
     }
     
+    // Use unified muscle groups list from ExerciseDatabaseService
     private var muscleGroups: [String] {
-        let groups = Set(allExercises.map { $0.primaryCategory })
-        return groups.sorted()
+        ExerciseDatabaseService.muscleGroups
     }
     
     var body: some View {
@@ -149,12 +149,14 @@ struct AddExerciseView: View {
     @State private var name: String
     @State private var selectedCategory = "Chest"
     @State private var selectedEquipment = "Free Weight"
-    @State private var selectedUnit = "kg"
+    @State private var selectedUnit: String
     @State private var notes = ""
     @FocusState private var focusedField: Bool
     
     init(name: String = "") {
         _name = State(initialValue: name)
+        // Initialize selectedUnit with a placeholder, will be set in onAppear
+        _selectedUnit = State(initialValue: "kg")
     }
 
     var body: some View {
@@ -257,9 +259,17 @@ struct AddExerciseView: View {
                 .foregroundColor(.accentPrimary)
             }
         }
+        .onAppear {
+            // Set default unit from preferences
+            selectedUnit = PreferencesService.shared.getDefaultWeightUnit(modelContext: modelContext)
+        }
     }
     
     private func saveExercise() {
+        // Get global defaults from preferences
+        let defaultRestSeconds = PreferencesService.shared.getDefaultRestSeconds(modelContext: modelContext)
+        let defaultStatsDisplay = PreferencesService.shared.getDefaultStatsDisplayPreference(modelContext: modelContext)
+        
         let exercise = Exercise(
             name: name,
             primaryCategory: selectedCategory,
@@ -267,7 +277,21 @@ struct AddExerciseView: View {
             equipment: selectedEquipment,
             notes: notes.isEmpty ? nil : notes,
             unit: selectedUnit,
-            isCustom: true
+            isCustom: true,
+            rpeEnabled: false,
+            rirEnabled: false,
+            useRestTimer: false,
+            defaultRestSeconds: defaultRestSeconds,
+            useAdvancedRest: false,
+            customRestSeconds: [:],
+            targetRepMin: nil,
+            targetRepMax: nil,
+            lastProgressionDate: nil,
+            incrementValue: 5.0,
+            statsDisplayPreference: defaultStatsDisplay,
+            statsIsExpanded: false,
+            createdAt: Date(),
+            updatedAt: Date()
         )
         
         modelContext.insert(exercise)

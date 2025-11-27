@@ -731,8 +731,7 @@ struct AddExerciseToWorkoutView: View {
                     // Muscle group chips
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            let groups = Array(Set(exercises.map { $0.primaryCategory })).sorted()
-                            ForEach(groups, id: \.self) { group in
+                            ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
                                 Button(action: {
                                     selectedMuscleGroup = selectedMuscleGroup == group ? "" : group
                                 }) {

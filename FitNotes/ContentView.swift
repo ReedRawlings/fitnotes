@@ -128,6 +128,11 @@ public class AppState: ObservableObject {
         }
     }
     
+    func syncWeightUnitFromPreferences(modelContext: ModelContext) {
+        let defaultUnit = PreferencesService.shared.getDefaultWeightUnit(modelContext: modelContext)
+        self.weightUnit = defaultUnit
+    }
+    
     // MARK: - Rest Timer Management
     func startRestTimer(exerciseId: UUID, exerciseName: String, setNumber: Int, duration: TimeInterval) {
         // Cancel existing timer if any
@@ -1227,8 +1232,7 @@ struct AddExerciseToRoutineTemplateView: View {
                     // Muscle group chips
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            let groups = Array(Set(exercises.map { $0.primaryCategory })).sorted()
-                            ForEach(groups, id: \.self) { group in
+                            ForEach(ExerciseDatabaseService.muscleGroups, id: \.self) { group in
                                 Button(action: {
                                     selectedMuscleGroup = selectedMuscleGroup == group ? "" : group
                                 }) {
@@ -1341,13 +1345,13 @@ struct SettingsView: View {
                 VStack(spacing: 0) {
                     // Custom Segmented Control for Settings Sections
                     HStack(spacing: 0) {
-                        // Routines Tab
+                        // Preferences Tab
                         Button(action: {
                             withAnimation(.standardSpring) {
                                 selectedTab = 0
                             }
                         }) {
-                            Text("Routines")
+                            Text("Preferences")
                                 .font(selectedTab == 0 ? .system(size: 15, weight: .semibold) : .tabFont)
                                 .foregroundColor(selectedTab == 0 ? .textPrimary : .textSecondary)
                                 .frame(maxWidth: .infinity)
@@ -1361,13 +1365,13 @@ struct SettingsView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        // Exercises Tab
+                        // Routines Tab
                         Button(action: {
                             withAnimation(.standardSpring) {
                                 selectedTab = 1
                             }
                         }) {
-                            Text("Exercises")
+                            Text("Routines")
                                 .font(selectedTab == 1 ? .system(size: 15, weight: .semibold) : .tabFont)
                                 .foregroundColor(selectedTab == 1 ? .textPrimary : .textSecondary)
                                 .frame(maxWidth: .infinity)
@@ -1377,6 +1381,26 @@ struct SettingsView: View {
                                         .fill(selectedTab == 1 ? Color.tertiaryBg : Color.clear)
                                 )
                                 .scaleEffect(selectedTab == 1 ? 1.02 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: selectedTab)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Exercises Tab
+                        Button(action: {
+                            withAnimation(.standardSpring) {
+                                selectedTab = 2
+                            }
+                        }) {
+                            Text("Exercises")
+                                .font(selectedTab == 2 ? .system(size: 15, weight: .semibold) : .tabFont)
+                                .foregroundColor(selectedTab == 2 ? .textPrimary : .textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(selectedTab == 2 ? Color.tertiaryBg : Color.clear)
+                                )
+                                .scaleEffect(selectedTab == 2 ? 1.02 : 1.0)
                                 .animation(.easeInOut(duration: 0.15), value: selectedTab)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -1391,6 +1415,8 @@ struct SettingsView: View {
                     
                     // Content based on selected tab
                     if selectedTab == 0 {
+                        PreferencesView()
+                    } else if selectedTab == 1 {
                         RoutinesView()
                     } else {
                         ExercisesView()
@@ -1400,6 +1426,255 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
         }
+    }
+}
+
+// MARK: - PreferencesView
+struct PreferencesView: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
+    @Query private var preferencesQuery: [UserPreferences]
+    
+    @State private var showingTimePicker = false
+    @State private var tempSelectedSeconds: Int = 90
+    
+    // Expandable section states
+    @State private var isWeightUnitExpanded = false
+    @State private var isRestTimerExpanded = false
+    @State private var isStatsDisplayExpanded = false
+    
+    private var preferences: UserPreferences {
+        if let existing = preferencesQuery.first {
+            return existing
+        } else {
+            // Create if doesn't exist
+            let newPrefs = PreferencesService.shared.getOrCreatePreferences(modelContext: modelContext)
+            return newPrefs
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            Color.primaryBg
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 12) {
+                    // Weight Unit Section
+                    ExpandableSettingsSection(
+                        title: "Lbs or KGs",
+                        isExpanded: isWeightUnitExpanded,
+                        onToggle: { isWeightUnitExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 0) {
+                                ForEach(["kg", "lbs"], id: \.self) { unit in
+                                    Button(action: {
+                                        withAnimation(.standardSpring) {
+                                            preferences.defaultWeightUnit = unit
+                                            appState.weightUnit = unit
+                                            savePreferences()
+                                        }
+                                    }) {
+                                        Text(unit)
+                                            .font(.system(size: 15, weight: preferences.defaultWeightUnit == unit ? .semibold : .medium))
+                                            .foregroundColor(preferences.defaultWeightUnit == unit ? .textPrimary : .textSecondary)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(height: 44)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(preferences.defaultWeightUnit == unit ? Color.tertiaryBg : Color.clear)
+                                            )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(4)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(12)
+                            
+                            Text("Default weight unit for new exercises. Individual exercises can override this.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    
+                    // Default Rest Timer Section
+                    ExpandableSettingsSection(
+                        title: "Default Rest Timer",
+                        isExpanded: isRestTimerExpanded,
+                        onToggle: { isRestTimerExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            Button(action: {
+                                tempSelectedSeconds = preferences.defaultRestSeconds
+                                showingTimePicker = true
+                            }) {
+                                HStack {
+                                    Text(formatTime(preferences.defaultRestSeconds))
+                                        .font(.system(size: 20, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(Color.tertiaryBg)
+                                .cornerRadius(10)
+                            }
+                            
+                            Text("Default rest time between sets for new exercises. Individual exercises can override this.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Default Stats Display Section
+                    ExpandableSettingsSection(
+                        title: "Default Stats Display",
+                        isExpanded: isStatsDisplayExpanded,
+                        onToggle: { isStatsDisplayExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            Text("Control how the volume and E1RM comparison stats are displayed in the exercise detail view.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            VStack(spacing: 8) {
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        preferences.defaultStatsDisplayPreference = .alwaysCollapsed
+                                        savePreferences()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Always Collapsed")
+                                                .font(.system(size: 15, weight: preferences.defaultStatsDisplayPreference == .alwaysCollapsed ? .semibold : .medium))
+                                                .foregroundColor(preferences.defaultStatsDisplayPreference == .alwaysCollapsed ? .textPrimary : .textSecondary)
+                                            
+                                            Text("Stats shown in compact form only")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if preferences.defaultStatsDisplayPreference == .alwaysCollapsed {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(preferences.defaultStatsDisplayPreference == .alwaysCollapsed ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        preferences.defaultStatsDisplayPreference = .alwaysExpanded
+                                        savePreferences()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Always Expanded")
+                                                .font(.system(size: 15, weight: preferences.defaultStatsDisplayPreference == .alwaysExpanded ? .semibold : .medium))
+                                                .foregroundColor(preferences.defaultStatsDisplayPreference == .alwaysExpanded ? .textPrimary : .textSecondary)
+                                            
+                                            Text("Stats shown in detailed form")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if preferences.defaultStatsDisplayPreference == .alwaysExpanded {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(preferences.defaultStatsDisplayPreference == .alwaysExpanded ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: {
+                                    withAnimation(.standardSpring) {
+                                        preferences.defaultStatsDisplayPreference = .rememberLastState
+                                        savePreferences()
+                                    }
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Remember State")
+                                                .font(.system(size: 15, weight: preferences.defaultStatsDisplayPreference == .rememberLastState ? .semibold : .medium))
+                                                .foregroundColor(preferences.defaultStatsDisplayPreference == .rememberLastState ? .textPrimary : .textSecondary)
+                                            
+                                            Text("Tap to expand/collapse, state is saved")
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.textTertiary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if preferences.defaultStatsDisplayPreference == .rememberLastState {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(preferences.defaultStatsDisplayPreference == .rememberLastState ? Color.tertiaryBg : Color.clear)
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 100)
+                }
+            }
+        }
+        .sheet(isPresented: $showingTimePicker) {
+            TimePickerModal(selectedSeconds: $tempSelectedSeconds, isPresented: $showingTimePicker)
+                .presentationDetents([.height(300)])
+                .presentationBackground(.clear)
+                .onDisappear {
+                    preferences.defaultRestSeconds = tempSelectedSeconds
+                    savePreferences()
+                }
+        }
+    }
+    
+    private func savePreferences() {
+        PreferencesService.shared.savePreferences(preferences, modelContext: modelContext)
+    }
+    
+    private func formatTime(_ seconds: Int) -> String {
+        let minutes = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%d:%02d", minutes, secs)
     }
 }
 
@@ -1580,6 +1855,8 @@ struct ContentView: View {
         .onAppear {
             // Sync active workout state from SwiftData on app launch
             appState.syncActiveWorkoutFromSwiftData(modelContext: modelContext)
+            // Sync weight unit from preferences
+            appState.syncWeightUnitFromPreferences(modelContext: modelContext)
         }
     }
 }
