@@ -310,10 +310,29 @@ struct MonthlyCalendarView: View {
     }
 
     private func colorForRoutine(_ routineId: UUID) -> Color {
-        // Generate consistent color based on routine ID
-        let routineIndex = routines.firstIndex { $0.id == routineId } ?? 0
-        let colors: [Color] = [.accentPrimary, .accentSecondary, .accentSuccess, .blue, .purple, .pink, .orange]
-        return colors[routineIndex % colors.count]
+        // Use the routine's actual color property
+        if let routine = routines.first(where: { $0.id == routineId }) {
+            return Color.forRoutineColor(routine.color)
+        }
+        return .accentPrimary
+    }
+
+    /// Get the scheduled routine for a future date (if any)
+    private func scheduledRoutine(for date: Date) -> Routine? {
+        let startOfDay = calendar.startOfDay(for: date)
+        let today = calendar.startOfDay(for: Date())
+
+        // Only show scheduled indicator for future dates (not today, not past)
+        guard startOfDay > today else { return nil }
+
+        // Check if any routine is scheduled for this date
+        return routines.first { $0.isScheduledFor(date: date) }
+    }
+
+    /// Get the color for a scheduled routine on a future date
+    private func scheduledColorForDay(_ date: Date) -> Color? {
+        guard let routine = scheduledRoutine(for: date) else { return nil }
+        return Color.forRoutineColor(routine.color)
     }
 
     private func colorForCategory(_ category: String) -> Color {
@@ -408,7 +427,8 @@ struct MonthlyCalendarView: View {
                         date: date,
                         isCurrentMonth: isCurrentMonth(date),
                         isToday: calendar.isDateInToday(date),
-                        color: colorForDay(date)
+                        color: colorForDay(date),
+                        scheduledColor: scheduledColorForDay(date)
                     )
                 }
             }
@@ -428,7 +448,16 @@ struct DayCell: View {
     let date: Date
     let isCurrentMonth: Bool
     let isToday: Bool
-    let color: Color?
+    let color: Color?              // Completed workout color
+    let scheduledColor: Color?     // Scheduled future workout color (dotted outline)
+
+    init(date: Date, isCurrentMonth: Bool, isToday: Bool, color: Color?, scheduledColor: Color? = nil) {
+        self.date = date
+        self.isCurrentMonth = isCurrentMonth
+        self.isToday = isToday
+        self.color = color
+        self.scheduledColor = scheduledColor
+    }
 
     private var dayNumber: Int {
         Calendar.current.component(.day, from: date)
@@ -443,6 +472,12 @@ struct DayCell: View {
             } else {
                 Circle()
                     .fill(Color.tertiaryBg.opacity(isCurrentMonth ? 0.3 : 0.1))
+            }
+
+            // Scheduled future workout indicator (dotted outline)
+            if color == nil, let scheduledColor = scheduledColor {
+                Circle()
+                    .strokeBorder(scheduledColor, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
             }
 
             // Today indicator ring
@@ -727,6 +762,56 @@ struct UnifiedCardView: View {
     }
 }
 
+// MARK: - RoutineSettingsCardView Component (Settings > Routines specific)
+struct RoutineSettingsCardView: View {
+    let routine: Routine
+    let subtitle: String?
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                // Color indicator dot
+                Circle()
+                    .fill(Color.forRoutineColor(routine.color))
+                    .frame(width: 10, height: 10)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(routine.name)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.textPrimary)
+
+                        // Schedule badge
+                        ScheduleBadge(routine: routine)
+                    }
+
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
 
 // MARK: - RoutineCardView Component (Homepage specific)
 struct RoutineCardView: View {
@@ -876,8 +961,8 @@ struct RoutinesView: View {
                         VStack(spacing: 0) {
                             LazyVStack(spacing: 0) {
                                 ForEach(routines) { routine in
-                                    UnifiedCardView(
-                                        title: routine.name,
+                                    RoutineSettingsCardView(
+                                        routine: routine,
                                         subtitle: RoutineService.shared.getDaysSinceLastUsed(
                                             for: routine,
                                             modelContext: modelContext
@@ -889,7 +974,7 @@ struct RoutinesView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 12)
-                            
+
                             Spacer(minLength: 100) // Space for bottom button and tab bar
                         }
                     }

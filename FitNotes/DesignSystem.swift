@@ -29,7 +29,29 @@ extension Color {
     
     // Error State
     static let errorRed = Color(hex: "#FF4444")
-    
+
+    // Routine Colors
+    static let routineCoral = Color(hex: "#FF6B35")   // Same as accentPrimary
+    static let routineAmber = Color(hex: "#F7931E")   // Warm amber
+    static let routineTeal = Color(hex: "#00D9A3")    // Bright teal
+    static let routineBlue = Color(hex: "#4A9EFF")    // Blue
+    static let routinePurple = Color(hex: "#A855F7")  // Purple
+    static let routinePink = Color(hex: "#EC4899")    // Pink
+    static let routineRed = Color(hex: "#EF4444")     // Red
+
+    /// Get SwiftUI Color for a RoutineColor
+    static func forRoutineColor(_ color: RoutineColor) -> Color {
+        switch color {
+        case .coral: return .routineCoral
+        case .amber: return .routineAmber
+        case .teal: return .routineTeal
+        case .blue: return .routineBlue
+        case .purple: return .routinePurple
+        case .pink: return .routinePink
+        case .red: return .routineRed
+        }
+    }
+
     // Helper for hex colors
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

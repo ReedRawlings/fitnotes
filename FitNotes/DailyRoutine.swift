@@ -47,6 +47,29 @@ public enum RoutineScheduleType: String, Codable {
     case interval = "interval"   // Repeats every X days from a start date
 }
 
+// MARK: - Routine Color Options
+public enum RoutineColor: String, CaseIterable, Codable {
+    case coral = "coral"         // Default - matches accentPrimary
+    case amber = "amber"         // Warm amber/orange
+    case teal = "teal"           // Bright teal/green
+    case blue = "blue"           // Blue
+    case purple = "purple"       // Purple
+    case pink = "pink"           // Pink
+    case red = "red"             // Red
+
+    public var displayName: String {
+        switch self {
+        case .coral: return "Coral"
+        case .amber: return "Amber"
+        case .teal: return "Teal"
+        case .blue: return "Blue"
+        case .purple: return "Purple"
+        case .pink: return "Pink"
+        case .red: return "Red"
+        }
+    }
+}
+
 // MARK: - Routine Model (Reusable Templates)
 @Model
 public final class Routine {
@@ -56,6 +79,17 @@ public final class Routine {
     public var createdAt: Date
     public var updatedAt: Date
     @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
+
+    // MARK: - Appearance
+
+    /// The color used to display this routine (stored as raw string)
+    public var colorRaw: String = RoutineColor.coral.rawValue
+
+    /// The routine color
+    public var color: RoutineColor {
+        get { RoutineColor(rawValue: colorRaw) ?? .coral }
+        set { colorRaw = newValue.rawValue }
+    }
 
     // MARK: - Scheduling Fields
 

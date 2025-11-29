@@ -12,6 +12,7 @@ struct RoutineScheduleView: View {
     @State private var selectedDays: Set<Int> = []
     @State private var intervalDays: Int = 2
     @State private var startDate: Date = Date()
+    @State private var selectedColor: RoutineColor
     @State private var showingConflictAlert = false
     @State private var conflictingRoutines: [(date: Date, conflictingRoutine: Routine)] = []
 
@@ -21,6 +22,7 @@ struct RoutineScheduleView: View {
         _selectedDays = State(initialValue: routine.scheduleDays)
         _intervalDays = State(initialValue: routine.scheduleIntervalDays ?? 2)
         _startDate = State(initialValue: routine.scheduleStartDate ?? Date())
+        _selectedColor = State(initialValue: routine.color)
     }
 
     var body: some View {
@@ -30,6 +32,11 @@ struct RoutineScheduleView: View {
 
             ScrollView {
                 VStack(spacing: 16) {
+                    // Routine Color Picker
+                    FormSectionCard(title: "Color") {
+                        RoutineColorPicker(selectedColor: $selectedColor)
+                    }
+
                     // Schedule Type Selector
                     FormSectionCard(title: "Schedule Type") {
                         ScheduleTypePicker(selectedType: $selectedScheduleType)
@@ -130,6 +137,10 @@ struct RoutineScheduleView: View {
     }
 
     private func performSave() {
+        // Save color
+        routine.color = selectedColor
+
+        // Save schedule
         RoutineService.shared.updateRoutineSchedule(
             routine: routine,
             scheduleType: selectedScheduleType,
@@ -139,6 +150,39 @@ struct RoutineScheduleView: View {
             modelContext: modelContext
         )
         dismiss()
+    }
+}
+
+// MARK: - Routine Color Picker
+struct RoutineColorPicker: View {
+    @Binding var selectedColor: RoutineColor
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ForEach(RoutineColor.allCases, id: \.self) { color in
+                Button(action: {
+                    selectedColor = color
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.forRoutineColor(color))
+                            .frame(width: 36, height: 36)
+
+                        if selectedColor == color {
+                            Circle()
+                                .strokeBorder(Color.white, lineWidth: 2)
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
