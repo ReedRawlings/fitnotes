@@ -40,6 +40,13 @@ public enum WeightUnitConverter {
     }
 }
 
+// MARK: - Routine Schedule Type
+public enum RoutineScheduleType: String, Codable {
+    case none = "none"           // No schedule set
+    case weekly = "weekly"       // Repeats on specific days of the week
+    case interval = "interval"   // Repeats every X days from a start date
+}
+
 // MARK: - Routine Model (Reusable Templates)
 @Model
 public final class Routine {
@@ -49,6 +56,152 @@ public final class Routine {
     public var createdAt: Date
     public var updatedAt: Date
     @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
+
+    // MARK: - Scheduling Fields
+
+    /// The type of schedule (none, weekly, or interval)
+    public var scheduleTypeRaw: String = RoutineScheduleType.none.rawValue
+
+    /// For weekly schedules: days of the week (0 = Sunday, 1 = Monday, etc.)
+    /// Stored as comma-separated string like "1,3,5" for Mon, Wed, Fri
+    public var scheduleDaysRaw: String?
+
+    /// For interval schedules: repeat every X days
+    public var scheduleIntervalDays: Int?
+
+    /// For interval schedules: the start date for the interval calculation
+    public var scheduleStartDate: Date?
+
+    // MARK: - Computed Properties for Schedule
+
+    public var scheduleType: RoutineScheduleType {
+        get { RoutineScheduleType(rawValue: scheduleTypeRaw) ?? .none }
+        set { scheduleTypeRaw = newValue.rawValue }
+    }
+
+    /// Days of the week for weekly schedule (0 = Sunday, 6 = Saturday)
+    public var scheduleDays: Set<Int> {
+        get {
+            guard let raw = scheduleDaysRaw, !raw.isEmpty else { return [] }
+            let days = raw.split(separator: ",").compactMap { Int($0) }
+            return Set(days)
+        }
+        set {
+            if newValue.isEmpty {
+                scheduleDaysRaw = nil
+            } else {
+                scheduleDaysRaw = newValue.sorted().map { String($0) }.joined(separator: ",")
+            }
+        }
+    }
+
+    /// Returns whether the routine is scheduled for a given date
+    public func isScheduledFor(date: Date) -> Bool {
+        let calendar = Calendar.current
+
+        switch scheduleType {
+        case .none:
+            return false
+
+        case .weekly:
+            let weekday = calendar.component(.weekday, from: date) - 1 // Convert to 0-based (0 = Sunday)
+            return scheduleDays.contains(weekday)
+
+        case .interval:
+            guard let startDate = scheduleStartDate,
+                  let intervalDays = scheduleIntervalDays,
+                  intervalDays > 0 else {
+                return false
+            }
+
+            let startOfStartDate = calendar.startOfDay(for: startDate)
+            let startOfCheckDate = calendar.startOfDay(for: date)
+
+            // Don't schedule before start date
+            if startOfCheckDate < startOfStartDate {
+                return false
+            }
+
+            let daysSinceStart = calendar.dateComponents([.day], from: startOfStartDate, to: startOfCheckDate).day ?? 0
+            return daysSinceStart % intervalDays == 0
+        }
+    }
+
+    /// Returns the next scheduled date from a given date (inclusive)
+    public func nextScheduledDate(from date: Date) -> Date? {
+        let calendar = Calendar.current
+        let startOfDate = calendar.startOfDay(for: date)
+
+        switch scheduleType {
+        case .none:
+            return nil
+
+        case .weekly:
+            guard !scheduleDays.isEmpty else { return nil }
+
+            // Check the next 7 days (will definitely find a match if any days are selected)
+            for dayOffset in 0..<7 {
+                if let checkDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfDate) {
+                    let weekday = calendar.component(.weekday, from: checkDate) - 1
+                    if scheduleDays.contains(weekday) {
+                        return checkDate
+                    }
+                }
+            }
+            return nil
+
+        case .interval:
+            guard let startDate = scheduleStartDate,
+                  let intervalDays = scheduleIntervalDays,
+                  intervalDays > 0 else {
+                return nil
+            }
+
+            let startOfStartDate = calendar.startOfDay(for: startDate)
+
+            // If we're before the start date, the next scheduled date is the start date
+            if startOfDate < startOfStartDate {
+                return startOfStartDate
+            }
+
+            let daysSinceStart = calendar.dateComponents([.day], from: startOfStartDate, to: startOfDate).day ?? 0
+            let daysUntilNext = intervalDays - (daysSinceStart % intervalDays)
+
+            if daysUntilNext == intervalDays {
+                // We're on a scheduled day
+                return startOfDate
+            }
+
+            return calendar.date(byAdding: .day, value: daysUntilNext, to: startOfDate)
+        }
+    }
+
+    /// Shifts the schedule forward or backward by one occurrence
+    public func shiftSchedule(forward: Bool) {
+        let calendar = Calendar.current
+
+        switch scheduleType {
+        case .none:
+            break
+
+        case .weekly:
+            // For weekly, shifting doesn't change the pattern - it stays the same days
+            // But we could shift which days are selected
+            break
+
+        case .interval:
+            guard let startDate = scheduleStartDate,
+                  let intervalDays = scheduleIntervalDays else {
+                return
+            }
+
+            // Shift the start date by the interval amount
+            let shiftAmount = forward ? intervalDays : -intervalDays
+            if let newStartDate = calendar.date(byAdding: .day, value: shiftAmount, to: startDate) {
+                scheduleStartDate = newStartDate
+            }
+        }
+    }
 
     public init(
         id: UUID = UUID(),

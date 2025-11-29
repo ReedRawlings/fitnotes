@@ -10,9 +10,30 @@ struct WorkoutView: View {
     @State private var showingSaveRoutineDialog = false
     @State private var routineName = ""
     @State private var routineDescription = ""
-    
+    @State private var dismissedScheduledRoutineId: UUID? // Track if user dismissed today's prompt
+
     // Track the last workout count to force refresh
     private var workoutCount: Int { workouts.count }
+
+    // Get the routine scheduled for today (if any and no workout exists)
+    private var scheduledRoutineForToday: Routine? {
+        // Only show on today's view
+        guard Calendar.current.isDateInToday(displayDate) else { return nil }
+
+        // Don't show if user already has an active workout
+        guard appState.activeWorkout == nil else { return nil }
+
+        // Don't show if there's already a workout for today
+        if todaysWorkout != nil { return nil }
+
+        // Don't show if user dismissed this routine today
+        let scheduled = RoutineService.shared.getScheduledRoutine(for: Date(), modelContext: modelContext)
+        if let routine = scheduled, routine.id == dismissedScheduledRoutineId {
+            return nil
+        }
+
+        return scheduled
+    }
     
     var displayDate: Date {
         if let activeWorkout = appState.activeWorkout {
@@ -100,11 +121,38 @@ struct WorkoutView: View {
                     
                     Divider()
                     
+                    // Scheduled routine prompt (if applicable)
+                    if let scheduledRoutine = scheduledRoutineForToday {
+                        ScheduledRoutinePromptView(
+                            routine: scheduledRoutine,
+                            onStart: {
+                                // Start workout from the scheduled routine
+                                let workout = RoutineService.shared.createWorkoutFromTemplate(
+                                    routine: scheduledRoutine,
+                                    modelContext: modelContext
+                                )
+
+                                appState.startWorkoutAndNavigate(
+                                    workoutId: workout.id,
+                                    routineId: scheduledRoutine.id,
+                                    totalExercises: scheduledRoutine.exercises.count
+                                )
+                            },
+                            onSkip: {
+                                // Dismiss the prompt for today
+                                dismissedScheduledRoutineId = scheduledRoutine.id
+                            }
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                    }
+
                     // Always use the same view for workouts
                     if let workout = getWorkoutForDate(displayDate) {
                         WorkoutDetailView(workout: workout, appState: appState)
                             .id(workout.id) // Force refresh when workout changes
-                    } else {
+                    } else if scheduledRoutineForToday == nil {
+                        // Only show empty state if there's no scheduled routine prompt
                         EmptyWorkoutView(selectedDate: displayDate)
                     }
                     

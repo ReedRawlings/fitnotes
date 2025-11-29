@@ -1,6 +1,13 @@
 import Foundation
 import SwiftData
 
+// MARK: - Safe Array Subscript Extension
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
+    }
+}
+
 // MARK: - WorkoutService (Individual Day's Exercises)
 public final class WorkoutService {
     public static let shared = WorkoutService()
@@ -464,6 +471,192 @@ public final class RoutineService {
         }
         
         return addedExercises
+    }
+
+    // MARK: - Schedule Management
+
+    /// Get the routine scheduled for a specific date, if any
+    public func getScheduledRoutine(for date: Date, modelContext: ModelContext) -> Routine? {
+        let descriptor = FetchDescriptor<Routine>()
+
+        do {
+            let routines = try modelContext.fetch(descriptor)
+            return routines.first { $0.isScheduledFor(date: date) }
+        } catch {
+            print("Error fetching scheduled routine: \(error)")
+            return nil
+        }
+    }
+
+    /// Get all routines scheduled for a specific date
+    public func getAllScheduledRoutines(for date: Date, modelContext: ModelContext) -> [Routine] {
+        let descriptor = FetchDescriptor<Routine>()
+
+        do {
+            let routines = try modelContext.fetch(descriptor)
+            return routines.filter { $0.isScheduledFor(date: date) }
+        } catch {
+            print("Error fetching scheduled routines: \(error)")
+            return []
+        }
+    }
+
+    /// Check if setting a schedule would cause conflicts with other routines
+    /// Returns the list of conflicting routines for the next 30 days
+    public func getScheduleConflicts(
+        for routine: Routine,
+        scheduleType: RoutineScheduleType,
+        scheduleDays: Set<Int>?,
+        intervalDays: Int?,
+        startDate: Date?,
+        modelContext: ModelContext
+    ) -> [(date: Date, conflictingRoutine: Routine)] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        var conflicts: [(date: Date, conflictingRoutine: Routine)] = []
+
+        // Check the next 30 days for conflicts
+        for dayOffset in 0..<30 {
+            guard let checkDate = calendar.date(byAdding: .day, value: dayOffset, to: today) else { continue }
+
+            // Check if this routine would be scheduled on this date
+            let wouldBeScheduled: Bool
+            switch scheduleType {
+            case .none:
+                wouldBeScheduled = false
+            case .weekly:
+                let weekday = calendar.component(.weekday, from: checkDate) - 1
+                wouldBeScheduled = scheduleDays?.contains(weekday) ?? false
+            case .interval:
+                guard let start = startDate, let interval = intervalDays, interval > 0 else {
+                    wouldBeScheduled = false
+                    break
+                }
+                let startOfStart = calendar.startOfDay(for: start)
+                let startOfCheck = calendar.startOfDay(for: checkDate)
+                if startOfCheck < startOfStart {
+                    wouldBeScheduled = false
+                } else {
+                    let daysSinceStart = calendar.dateComponents([.day], from: startOfStart, to: startOfCheck).day ?? 0
+                    wouldBeScheduled = daysSinceStart % interval == 0
+                }
+            }
+
+            if wouldBeScheduled {
+                // Check if any other routine is scheduled for this date
+                let otherRoutines = getAllScheduledRoutines(for: checkDate, modelContext: modelContext)
+                    .filter { $0.id != routine.id }
+
+                for conflictingRoutine in otherRoutines {
+                    conflicts.append((date: checkDate, conflictingRoutine: conflictingRoutine))
+                }
+            }
+        }
+
+        return conflicts
+    }
+
+    /// Update routine schedule
+    public func updateRoutineSchedule(
+        routine: Routine,
+        scheduleType: RoutineScheduleType,
+        scheduleDays: Set<Int>? = nil,
+        intervalDays: Int? = nil,
+        startDate: Date? = nil,
+        modelContext: ModelContext
+    ) {
+        routine.scheduleType = scheduleType
+
+        switch scheduleType {
+        case .none:
+            routine.scheduleDays = []
+            routine.scheduleIntervalDays = nil
+            routine.scheduleStartDate = nil
+
+        case .weekly:
+            routine.scheduleDays = scheduleDays ?? []
+            routine.scheduleIntervalDays = nil
+            routine.scheduleStartDate = nil
+
+        case .interval:
+            routine.scheduleDays = []
+            routine.scheduleIntervalDays = intervalDays
+            routine.scheduleStartDate = startDate ?? Date()
+        }
+
+        routine.updatedAt = Date()
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving routine schedule: \(error)")
+        }
+    }
+
+    /// Shift the routine schedule forward or backward
+    public func shiftRoutineSchedule(
+        routine: Routine,
+        forward: Bool,
+        modelContext: ModelContext
+    ) {
+        routine.shiftSchedule(forward: forward)
+        routine.updatedAt = Date()
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error shifting routine schedule: \(error)")
+        }
+    }
+
+    /// Format the next scheduled date for display
+    public func formatNextScheduledDate(for routine: Routine) -> String? {
+        guard let nextDate = routine.nextScheduledDate(from: Date()) else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        if calendar.isDate(nextDate, inSameDayAs: today) {
+            return "Today"
+        }
+
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+        if calendar.isDate(nextDate, inSameDayAs: tomorrow) {
+            return "Tomorrow"
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d" // e.g., "Mon, Dec 2"
+        return formatter.string(from: nextDate)
+    }
+
+    /// Get a human-readable description of the schedule
+    public func getScheduleDescription(for routine: Routine) -> String? {
+        switch routine.scheduleType {
+        case .none:
+            return nil
+
+        case .weekly:
+            let days = routine.scheduleDays
+            if days.isEmpty { return nil }
+
+            let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+            let selectedDays = days.sorted().compactMap { dayNames[safe: $0] }
+            return "Every \(selectedDays.joined(separator: ", "))"
+
+        case .interval:
+            guard let intervalDays = routine.scheduleIntervalDays else { return nil }
+
+            if intervalDays == 1 {
+                return "Every day"
+            } else if intervalDays == 7 {
+                return "Every week"
+            } else {
+                return "Every \(intervalDays) days"
+            }
+        }
     }
 
     // MARK: - Helpers
