@@ -1014,15 +1014,22 @@ struct RoutinesView: View {
 struct AddRoutineView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    
+
     @State private var name = ""
     @State private var description = ""
-    
+
+    // Schedule configuration state
+    @State private var selectedColor: RoutineColor = .teal
+    @State private var selectedScheduleType: RoutineScheduleType = .none
+    @State private var selectedDays: Set<Int> = []
+    @State private var intervalDays: Int = 2
+    @State private var startDate: Date = Date()
+
     var body: some View {
         ZStack {
             Color.primaryBg
                 .ignoresSafeArea()
-            
+
             ScrollView {
                 VStack(spacing: 16) {
                     // Routine Details Card
@@ -1032,7 +1039,7 @@ struct AddRoutineView: View {
                             placeholder: "e.g., Upper Body Day",
                             text: $name
                         )
-                        
+
                         LabeledTextInput(
                             label: "Description (optional)",
                             placeholder: "Add a description...",
@@ -1041,18 +1048,53 @@ struct AddRoutineView: View {
                             lineLimit: 3...6
                         )
                     }
-                    
+
+                    // Color Picker Card
+                    FormSectionCard(title: "Color") {
+                        RoutineColorPicker(selectedColor: $selectedColor)
+                    }
+
+                    // Schedule Type Card
+                    FormSectionCard(title: "Schedule (optional)") {
+                        ScheduleTypePicker(selectedType: $selectedScheduleType)
+                    }
+
+                    // Configuration based on schedule type
+                    if selectedScheduleType == .weekly {
+                        FormSectionCard(title: "Repeat Days") {
+                            DayOfWeekSelector(selectedDays: $selectedDays)
+                        }
+                    } else if selectedScheduleType == .interval {
+                        FormSectionCard(title: "Repeat Interval") {
+                            IntervalSchedulePicker(
+                                intervalDays: $intervalDays,
+                                startDate: $startDate
+                            )
+                        }
+                    }
+
+                    // Next occurrence preview (if schedule is configured)
+                    if selectedScheduleType != .none && isValidSchedule {
+                        NextOccurrencePreview(
+                            scheduleType: selectedScheduleType,
+                            selectedDays: selectedDays,
+                            intervalDays: intervalDays,
+                            startDate: startDate
+                        )
+                        .padding(.horizontal, 0)
+                    }
+
                     Spacer(minLength: 100) // Space for fixed button
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
             }
-            
+
             // Fixed CTA at bottom
             FixedModalCTAButton(
                 title: "Create Routine",
                 icon: "checkmark",
-                isEnabled: !name.isEmpty,
+                isEnabled: !name.isEmpty && isValidSchedule,
                 action: createRoutine
             )
         }
@@ -1067,14 +1109,40 @@ struct AddRoutineView: View {
             }
         }
     }
-    
+
+    private var isValidSchedule: Bool {
+        switch selectedScheduleType {
+        case .none:
+            return true
+        case .weekly:
+            return !selectedDays.isEmpty
+        case .interval:
+            return intervalDays >= 1
+        }
+    }
+
     private func createRoutine() {
         let routine = RoutineService.shared.createRoutine(
             name: name,
             description: description.isEmpty ? nil : description,
             modelContext: modelContext
         )
-        
+
+        // Set the routine color
+        routine.color = selectedColor
+
+        // Apply schedule configuration if set
+        if selectedScheduleType != .none {
+            RoutineService.shared.updateRoutineSchedule(
+                routine: routine,
+                scheduleType: selectedScheduleType,
+                scheduleDays: selectedScheduleType == .weekly ? selectedDays : nil,
+                intervalDays: selectedScheduleType == .interval ? intervalDays : nil,
+                startDate: selectedScheduleType == .interval ? startDate : nil,
+                modelContext: modelContext
+            )
+        }
+
         // Immediately present the Add Exercises picker for the new routine
         // Using sheet to keep consistent with modal add flows
         // Dismiss creation view and then show picker
@@ -1100,21 +1168,79 @@ struct RoutineDetailView: View {
     @State private var showingScheduleView = false
     @State private var cachedExercises: [RoutineExercise] = []
     @State private var hasUncommittedChanges = false
-    
+
+    private var scheduleDescription: String {
+        switch routine.scheduleType {
+        case .none:
+            return "No schedule set"
+        case .weekly:
+            let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+            let selectedDayNames = routine.scheduleDays.sorted().compactMap { dayNames[safe: $0] }
+            return selectedDayNames.isEmpty ? "No days selected" : "Every \(selectedDayNames.joined(separator: ", "))"
+        case .interval:
+            if let interval = routine.scheduleIntervalDays {
+                return interval == 1 ? "Every day" : "Every \(interval) days"
+            }
+            return "Interval not set"
+        }
+    }
+
+    private var nextScheduledText: String? {
+        RoutineService.shared.formatNextScheduledDate(for: routine)
+    }
+
     var body: some View {
         ZStack {
             Color.primaryBg
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 if routine.exercises.isEmpty {
-                    EmptyStateView(
-                        icon: "dumbbell",
-                        title: "No exercises added",
-                        subtitle: "Add exercises to build your routine",
-                        actionTitle: nil,
-                        onAction: nil
-                    )
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Routine Header Card
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(routine.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.textPrimary)
+
+                                if let description = routine.routineDescription, !description.isEmpty {
+                                    Text(description)
+                                        .font(.body)
+                                        .foregroundColor(.textSecondary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color.secondaryBg)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                            )
+
+                            // Schedule Card (tappable to edit)
+                            RoutineScheduleCard(
+                                routine: routine,
+                                scheduleDescription: scheduleDescription,
+                                nextScheduledText: nextScheduledText,
+                                onTap: { showingScheduleView = true }
+                            )
+
+                            EmptyStateView(
+                                icon: "dumbbell",
+                                title: "No exercises added",
+                                subtitle: "Add exercises to build your routine",
+                                actionTitle: nil,
+                                onAction: nil
+                            )
+
+                            Spacer(minLength: 100)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                    }
                 } else {
                     List {
                         // Routine Header Card as first row
@@ -1123,7 +1249,7 @@ struct RoutineDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.textPrimary)
-                            
+
                             if let description = routine.routineDescription, !description.isEmpty {
                                 Text(description)
                                     .font(.body)
@@ -1140,6 +1266,27 @@ struct RoutineDetailView: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
 
+                        // Schedule Card (tappable to edit)
+                        RoutineScheduleCard(
+                            routine: routine,
+                            scheduleDescription: scheduleDescription,
+                            nextScheduledText: nextScheduledText,
+                            onTap: { showingScheduleView = true }
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                        .padding(.top, 8)
+
+                        // Exercises section header
+                        Text("EXERCISES")
+                            .font(.sectionHeader)
+                            .foregroundColor(.textTertiary)
+                            .kerning(0.3)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                            .padding(.top, 16)
+                            .padding(.bottom, 4)
+
                         // Exercises List with reordering support
                         ForEach(cachedExercises, id: \.id) { routineExercise in
                             RoutineTemplateExerciseRowView(routineExercise: routineExercise)
@@ -1151,11 +1298,11 @@ struct RoutineDetailView: View {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 cachedExercises.move(fromOffsets: indices, toOffset: newOffset)
                             }
-                            
+
                             // Haptic feedback
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
-                            
+
                             // Mark as having uncommitted changes
                             hasUncommittedChanges = true
                         }
@@ -1187,14 +1334,6 @@ struct RoutineDetailView: View {
             }
             .navigationTitle("Routine Details")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingScheduleView = true }) {
-                        Image(systemName: "calendar.badge.clock")
-                            .foregroundColor(.accentPrimary)
-                    }
-                }
-            }
             .overlay(
                 // Fixed bottom button - overlay on top
                 VStack {
