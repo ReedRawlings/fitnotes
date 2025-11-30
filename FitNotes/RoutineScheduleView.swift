@@ -758,6 +758,61 @@ struct ScheduleBadge: View {
     }
 }
 
+// MARK: - Routine Schedule Card (for inline display in RoutineDetailView)
+struct RoutineScheduleCard: View {
+    let routine: Routine
+    let scheduleDescription: String
+    let nextScheduledText: String?
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Color indicator
+                Circle()
+                    .fill(Color.forRoutineColor(routine.color))
+                    .frame(width: 12, height: 12)
+
+                // Schedule info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Schedule")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.textTertiary)
+
+                    Text(scheduleDescription)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.textPrimary)
+
+                    if let nextText = nextScheduledText, routine.scheduleType != .none {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 11))
+                            Text("Next: \(nextText)")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.accentPrimary)
+                    }
+                }
+
+                Spacer()
+
+                // Edit indicator
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.textTertiary)
+            }
+            .padding(16)
+            .background(Color.secondaryBg)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(routine.scheduleType != .none ? Color.forRoutineColor(routine.color).opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 #Preview {
     NavigationStack {
         RoutineScheduleView(routine: Routine(name: "Push Day"))
