@@ -289,11 +289,6 @@ public final class RoutineExercise {
     @Attribute(.unique) public var id: UUID
     public var exerciseId: UUID
     public var order: Int
-    public var sets: Int
-    public var reps: Int?
-    public var weight: Double?
-    public var duration: Int? // For time-based exercises
-    public var distance: Double? // For distance-based exercises
     public var notes: String?
     public var createdAt: Date
     public var updatedAt: Date
@@ -303,11 +298,6 @@ public final class RoutineExercise {
         id: UUID = UUID(),
         exerciseId: UUID,
         order: Int,
-        sets: Int = 1,
-        reps: Int? = nil,
-        weight: Double? = nil,
-        duration: Int? = nil,
-        distance: Double? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -315,11 +305,6 @@ public final class RoutineExercise {
         self.id = id
         self.exerciseId = exerciseId
         self.order = order
-        self.sets = sets
-        self.reps = reps
-        self.weight = weight
-        self.duration = duration
-        self.distance = distance
         self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt

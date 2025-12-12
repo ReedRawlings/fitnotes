@@ -187,7 +187,7 @@ struct ProgressionBannerView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.textPrimary)
 
-                    Text(progressionStatus.message)
+                    Text(progressionStatus.getMessage(unit: exercise.unit))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -208,7 +208,7 @@ struct ProgressionBannerView: View {
 
     private var iconName: String {
         switch progressionStatus {
-        case .readyToProgress:
+        case .readyToIncreaseReps, .readyToIncreaseWeight:
             return "arrow.up.circle.fill"
         case .progressingTowardTarget:
             return "chart.line.uptrend.xyaxis"
@@ -223,7 +223,7 @@ struct ProgressionBannerView: View {
 
     private var bannerColor: Color {
         switch progressionStatus {
-        case .readyToProgress:
+        case .readyToIncreaseReps, .readyToIncreaseWeight:
             return .green
         case .progressingTowardTarget:
             return .blue
@@ -238,7 +238,7 @@ struct ProgressionBannerView: View {
 
     private var backgroundColor: Color {
         switch progressionStatus {
-        case .readyToProgress:
+        case .readyToIncreaseReps, .readyToIncreaseWeight:
             return Color.green.opacity(0.15)
         case .progressingTowardTarget:
             return Color.blue.opacity(0.10)

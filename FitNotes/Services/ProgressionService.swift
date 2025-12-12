@@ -35,6 +35,7 @@ struct SessionSummary {
     let totalVolume: Double
     let estimatedOneRepMax: Double?
     let hitTargetReps: Bool
+    let typicalReps: Int? // Most common reps in completed sets (for progression recommendations)
 
     init(date: Date, sets: [WorkoutSet], targetRepMin: Int?, targetRepMax: Int?) {
         self.date = date
@@ -52,11 +53,26 @@ struct SessionSummary {
         // Calculate E1RM from first set (before fatigue)
         self.estimatedOneRepMax = E1RMCalculator.fromSession(sets)
 
-        // Check if target reps were hit (all sets within range)
+        // Get typical reps (most common reps value in completed sets)
+        let completedSetsReps = sets.compactMap { set -> Int? in
+            guard set.isCompleted, let reps = set.reps else { return nil }
+            return reps
+        }
+        
+        if !completedSetsReps.isEmpty {
+            // Find the most common reps value (mode)
+            let repsCounts = Dictionary(grouping: completedSetsReps) { $0 }.mapValues { $0.count }
+            self.typicalReps = repsCounts.max(by: { $0.value < $1.value })?.key
+        } else {
+            self.typicalReps = nil
+        }
+
+        // Check if target reps were hit (all sets meet minimum, exceeding max is OK)
         if let minReps = targetRepMin, let maxReps = targetRepMax {
             self.hitTargetReps = sets.allSatisfy { set in
                 guard let reps = set.reps, set.isCompleted else { return false }
-                return reps >= minReps && reps <= maxReps
+                // Hitting minimum is sufficient - exceeding max indicates readiness to progress
+                return reps >= minReps
             }
         } else {
             self.hitTargetReps = false
@@ -67,7 +83,8 @@ struct SessionSummary {
 // MARK: - Progression Status
 
 enum ProgressionStatus {
-    case readyToProgress(recommendedWeight: Double)
+    case readyToIncreaseReps(recommendedReps: Int)  // Increase reps at current weight
+    case readyToIncreaseWeight(recommendedWeight: Double, resetReps: Int)  // Increase weight, reset to min reps
     case progressingTowardTarget
     case maintainingBelowTarget
     case decliningPerformance(percentDrop: Double)
@@ -76,7 +93,8 @@ enum ProgressionStatus {
 
     var title: String {
         switch self {
-        case .readyToProgress: return "Ready to Progress!"
+        case .readyToIncreaseReps: return "Ready to Progress!"
+        case .readyToIncreaseWeight: return "Ready to Progress!"
         case .progressingTowardTarget: return "Progressing Toward Target"
         case .maintainingBelowTarget: return "Maintaining Below Target"
         case .decliningPerformance: return "Performance Declining"
@@ -91,8 +109,11 @@ enum ProgressionStatus {
 
     func getMessage(unit: String) -> String {
         switch self {
-        case .readyToProgress(let weight):
-            return "You've hit your targets for 2 sessions straight. Try increase the weight and/or reps"
+        case .readyToIncreaseReps(let reps):
+            return "Great work! Try \(reps) reps at the same weight next session."
+        case .readyToIncreaseWeight(let weight, let reps):
+            let weightStr = String(format: "%.1f", weight)
+            return "You've hit the top of your range! Increase weight to \(weightStr)\(unit) and reset reps to \(reps)."
         case .progressingTowardTarget:
             return "You're getting closer! Keep at this weight until you hit all target reps."
         case .maintainingBelowTarget:
@@ -108,7 +129,7 @@ enum ProgressionStatus {
 
     var color: String {
         switch self {
-        case .readyToProgress: return "green"
+        case .readyToIncreaseReps, .readyToIncreaseWeight: return "green"
         case .progressingTowardTarget: return "blue"
         case .maintainingBelowTarget: return "gray"
         case .decliningPerformance: return "orange"
@@ -170,10 +191,12 @@ class ProgressionService {
             return .recentlyRegressed
         }
 
-        // Check if ready to progress
-        if isReadyToProgress(sessions: sessions, exercise: exercise) {
-            let nextWeight = calculateNextWeight(currentWeight: latestSession.topWeight, exercise: exercise)
-            return .readyToProgress(recommendedWeight: nextWeight)
+        // Check if ready to progress (rep increase or weight increase)
+        if let progressionRecommendation = getProgressionRecommendation(
+            latestSession: latestSession,
+            exercise: exercise
+        ) {
+            return progressionRecommendation
         }
 
         // Check if progressing toward target
@@ -226,29 +249,35 @@ class ProgressionService {
 
     // MARK: - Private Helper Methods
 
-    /// Check if last 2 sessions hit targets and metrics are flat (ready to progress)
-    private static func isReadyToProgress(sessions: [SessionSummary], exercise: Exercise) -> Bool {
-        guard sessions.count >= consecutiveTargetSessions else { return false }
-
-        // Get last 2 sessions
-        let recentSessions = Array(sessions.prefix(consecutiveTargetSessions))
-
-        // Both sessions must have hit target reps
-        guard recentSessions.allSatisfy({ $0.hitTargetReps }) else { return false }
-
-        let latest = recentSessions[0]
-        let previous = recentSessions[1]
-
-        // Volume should be flat
-        guard isVolumeFlat(session1: latest, session2: previous) else { return false }
-
-        // E1RM should be flat
-        guard isE1RMFlat(session1: latest, session2: previous) else { return false }
-
-        // Weight should be flat (same weight used)
-        guard isWeightFlat(session1: latest, session2: previous) else { return false }
-
-        return true
+    /// Gets progression recommendation based on latest session
+    /// Returns rep increase recommendation if below max, weight increase if at max
+    private static func getProgressionRecommendation(
+        latestSession: SessionSummary,
+        exercise: Exercise
+    ) -> ProgressionStatus? {
+        // Must have hit target reps in latest session
+        guard latestSession.hitTargetReps else { return nil }
+        
+        // Must have typical reps value
+        guard let typicalReps = latestSession.typicalReps,
+              let minReps = exercise.targetRepMin,
+              let maxReps = exercise.targetRepMax else { return nil }
+        
+        // If at or above max reps, suggest weight increase and reset to min reps
+        if typicalReps >= maxReps {
+            let nextWeight = calculateNextWeight(currentWeight: latestSession.topWeight, unit: exercise.unit, exercise: exercise)
+            return .readyToIncreaseWeight(recommendedWeight: nextWeight, resetReps: minReps)
+        }
+        
+        // If below max reps, suggest rep increase
+        if typicalReps >= minReps && typicalReps < maxReps {
+            let nextReps = typicalReps + 1
+            // Make sure we don't exceed max (though this should be handled above)
+            let recommendedReps = min(nextReps, maxReps)
+            return .readyToIncreaseReps(recommendedReps: recommendedReps)
+        }
+        
+        return nil
     }
 
     /// Check if volume is improving between sessions
@@ -300,18 +329,17 @@ class ProgressionService {
     }
 
     /// Calculate the next recommended weight
-    private static func calculateNextWeight(currentWeight: Double, exercise: Exercise) -> Double {
-        // Determine increment based on exercise category
+    private static func calculateNextWeight(currentWeight: Double, unit: String, exercise: Exercise) -> Double {
+        // Determine increment based on exercise category and unit
         let increment: Double
-
-        // Upper body exercises get smaller increments (2.5kg)
-        // Lower body exercises get larger increments (5kg)
         let upperBodyCategories = ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]
-
-        if upperBodyCategories.contains(exercise.primaryCategory) {
-            increment = 2.5
+        
+        if unit.lowercased() == "lbs" {
+            // For lbs: upper body gets 5 lbs, lower body gets 10 lbs
+            increment = upperBodyCategories.contains(exercise.primaryCategory) ? 5.0 : 10.0
         } else {
-            increment = 5.0
+            // For kg: upper body gets 2.5 kg, lower body gets 5 kg
+            increment = upperBodyCategories.contains(exercise.primaryCategory) ? 2.5 : 5.0
         }
 
         return currentWeight + increment

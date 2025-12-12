@@ -224,27 +224,10 @@ struct WorkoutView: View {
         // Copy exercises from workout to routine
         let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
         for workoutExercise in sortedExercises {
-            // Get sets for this exercise to determine defaults
-            let sets = ExerciseService.shared.getSetsByDate(
-                exerciseId: workoutExercise.exerciseId,
-                date: workout.date,
-                modelContext: modelContext
-            )
-
-            // Calculate defaults from the workout's sets
-            let numberOfSets = sets.count
-            let averageReps = sets.compactMap { $0.reps }.reduce(0, +) / max(1, sets.filter { $0.reps != nil }.count)
-            let averageWeight = sets.compactMap { $0.weight }.reduce(0, +) / Double(max(1, sets.filter { $0.weight != nil }.count))
-
-            // Add exercise to routine with defaults
+            // Add exercise to routine (weight/reps will be pulled from last session when workout is created)
             _ = RoutineService.shared.addExerciseToRoutine(
                 routine: routine,
                 exerciseId: workoutExercise.exerciseId,
-                sets: max(1, numberOfSets),
-                reps: sets.first?.reps != nil ? averageReps : nil,
-                weight: sets.first?.weight != nil ? averageWeight : nil,
-                duration: sets.first?.duration,
-                distance: sets.first?.distance,
                 notes: workoutExercise.notes,
                 modelContext: modelContext
             )

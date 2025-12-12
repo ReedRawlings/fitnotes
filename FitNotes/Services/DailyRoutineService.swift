@@ -276,11 +276,6 @@ public final class RoutineService {
     public func addExerciseToRoutine(
         routine: Routine,
         exerciseId: UUID,
-        sets: Int = 1,
-        reps: Int? = nil,
-        weight: Double? = nil,
-        duration: Int? = nil,
-        distance: Double? = nil,
         notes: String? = nil,
         modelContext: ModelContext
     ) -> RoutineExercise {
@@ -293,11 +288,6 @@ public final class RoutineService {
         let routineExercise = RoutineExercise(
             exerciseId: exerciseId,
             order: order,
-            sets: sets,
-            reps: reps,
-            weight: weight,
-            duration: duration,
-            distance: distance,
             notes: notes
         )
         
@@ -660,7 +650,7 @@ public final class RoutineService {
     }
 
     // MARK: - Helpers
-    /// Creates initial sets for a workout based on the routine template defaults or last session fallback
+    /// Creates initial sets for a workout based on last session data
     private func hydrateInitialSets(
         for templateExercise: RoutineExercise,
         on workout: Workout,
@@ -669,43 +659,43 @@ public final class RoutineService {
         let exerciseId = templateExercise.exerciseId
         let date = workout.date
 
-        // Determine number of sets
-        var setCount = max(0, templateExercise.sets)
+        // Get exercise to retrieve its unit and type
+        let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
 
-        // Try to load last session for fallback values
+        // Try to load last session for values
         let lastSession = ExerciseService.shared.getLastSessionForExercise(
             exerciseId: exerciseId,
             modelContext: modelContext
         )
 
-        // Determine base reps/weight/duration/distance
+        var setCount: Int
         var baseReps: Int?
         var baseWeight: Double?
 
-        if let reps = templateExercise.reps { baseReps = reps }
-        if let weight = templateExercise.weight { baseWeight = weight }
-
-        if baseReps == nil || baseWeight == nil || setCount == 0 {
-            if let last = lastSession, let first = last.first {
-                // Fallback to last session
-                baseReps = baseReps ?? first.reps
-                baseWeight = baseWeight ?? first.weight
-                if setCount == 0 { setCount = last.count }
+        if let last = lastSession, !last.isEmpty {
+            // Use last session data
+            setCount = last.count
+            if let first = last.first {
+                baseReps = first.reps
+                baseWeight = first.weight
+            }
+        } else {
+            // No history - use defaults based on exercise type
+            setCount = 3
+            if exercise?.equipment == "Body" || exercise?.primaryCategory == "Cardio" {
+                baseReps = nil
+                baseWeight = nil
+            } else {
+                baseReps = 10
+                baseWeight = 0
             }
         }
-
-        // Final defaults if still missing
-        if setCount == 0 { setCount = 3 }
-        if baseReps == nil { baseReps = 10 }
-        if baseWeight == nil { baseWeight = 0 }
 
         // Build sets array (all not completed initially)
         let setsData: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)] = (0..<setCount).map { _ in
             (weight: baseWeight, reps: baseReps, rpe: nil, rir: nil, isCompleted: false)
         }
 
-        // Get exercise to retrieve its unit
-        let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
         _ = ExerciseService.shared.saveSets(
             exerciseId: exerciseId,
             date: date,

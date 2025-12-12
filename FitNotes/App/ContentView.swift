@@ -1385,51 +1385,11 @@ struct RoutineTemplateExerciseRowView: View {
     var body: some View {
         HStack(spacing: 16) {
             // Exercise Info
-                VStack(alignment: .leading, spacing: 4) {
-                Text(exercise?.name ?? "Unknown Exercise")
-                        .font(.headline)
-                        .foregroundColor(.textPrimary)
-                    
-                HStack(spacing: 8) {
-                    if routineExercise.sets > 0 {
-                        Text("\(routineExercise.sets)")
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundColor(.textSecondary)
-                        Text("sets")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
+            Text(exercise?.name ?? "Unknown Exercise")
+                .font(.headline)
+                .foregroundColor(.textPrimary)
                 
-                    if let reps = routineExercise.reps {
-                        Text("\(reps)")
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundColor(.textSecondary)
-                        Text("reps")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    }
-                    
-                    if let weight = routineExercise.weight {
-                        Text("\(Int(weight))")
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundColor(.textSecondary)
-                        Text(exercise?.unit ?? "kg")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    }
-                    
-                    if let duration = routineExercise.duration {
-                        Text("\(duration)")
-                            .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundColor(.textSecondary)
-                        Text("sec")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    }
-                    }
-                }
-                
-                Spacer()
+            Spacer()
             
             // Delete Button
             Button(action: {
@@ -1571,47 +1531,11 @@ struct AddExerciseToRoutineTemplateView: View {
         }
     }
     
-    private func defaultsForExercise(exercise: Exercise) -> (sets: Int, reps: Int?, weight: Double?, duration: Int?) {
-        var sets = 1
-        var reps: Int? = nil
-        var weight: Double? = nil
-        var duration: Int? = nil
-        if let lastSession = ExerciseService.shared.getLastSessionForExercise(
-            exerciseId: exercise.id,
-            modelContext: modelContext
-        ), let firstSet = lastSession.first {
-            sets = lastSession.count
-            reps = firstSet.reps
-            weight = firstSet.weight
-            duration = firstSet.duration
-        } else {
-            if exercise.equipment == "Body" || exercise.primaryCategory == "Cardio" {
-                duration = 60
-                reps = nil
-                weight = nil
-            } else {
-                reps = 10
-                weight = 0
-                duration = nil
-            }
-        }
-        return (sets, reps, weight, duration)
-    }
-    
     private func addExercisesToRoutine(ids: [UUID]) {
-        // Map selected IDs to Exercise models
-        let byId = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
         for id in ids {
-            guard let exercise = byId[id] else { continue }
-            let defaults = defaultsForExercise(exercise: exercise)
             _ = RoutineService.shared.addExerciseToRoutine(
                 routine: routine,
-                exerciseId: exercise.id,
-                sets: defaults.sets,
-                reps: defaults.reps,
-                weight: defaults.weight,
-                duration: defaults.duration,
-                notes: nil,
+                exerciseId: id,
                 modelContext: modelContext
             )
         }
