@@ -8,9 +8,11 @@ struct VolumeChartView: View {
     let periodType: PeriodType
 
     enum PeriodType {
-        case week   // 7 days
-        case month  // 4-5 weeks
-        case threeMonths  // 12 weeks
+        case week        // 7 days
+        case month       // 4-5 weeks
+        case threeMonths // 12 weeks
+        case yearToDate  // Variable weeks since Jan 1
+        case allTime     // All historical data
     }
 
     private var maxVolume: Double {
@@ -24,8 +26,22 @@ struct VolumeChartView: View {
             formatter.dateFormat = "EEE" // Mon, Tue, etc.
         case .month, .threeMonths:
             formatter.dateFormat = "MMM d" // Jan 1, Jan 8, etc.
+        case .yearToDate:
+            formatter.dateFormat = "MMM" // Jan, Feb, etc.
+        case .allTime:
+            formatter.dateFormat = "MMM yy" // Jan 24, Feb 24, etc.
         }
         return formatter
+    }
+
+    private var desiredAxisCount: Int {
+        switch periodType {
+        case .week: return 7
+        case .month: return 5
+        case .threeMonths: return 6
+        case .yearToDate: return 6
+        case .allTime: return 6
+        }
     }
 
     var body: some View {
@@ -85,7 +101,7 @@ struct VolumeChartView: View {
                     }
                 }
                 .chartXAxis {
-                    AxisMarks(values: .automatic(desiredCount: periodType == .week ? 7 : 5)) { value in
+                    AxisMarks(values: .automatic(desiredCount: desiredAxisCount)) { value in
                         if let date = value.as(Date.self) {
                             AxisValueLabel {
                                 Text(dateFormatter.string(from: date))
