@@ -656,68 +656,89 @@ struct RoundedCorner: Shape {
 
 // MARK: - Insights Components
 
+// MARK: - InsightsPeriod Enum
+/// Represents the available time period options for insights filtering
+enum InsightsPeriod: Int, CaseIterable {
+    case week = 0
+    case month = 1
+    case threeMonths = 2
+    case yearToDate = 3
+    case allTime = 4
+
+    var title: String {
+        switch self {
+        case .week: return "7 Days"
+        case .month: return "30 Days"
+        case .threeMonths: return "90 Days"
+        case .yearToDate: return "YTD"
+        case .allTime: return "All Time"
+        }
+    }
+
+    /// Returns the number of days for this period, or nil for all-time
+    var days: Int? {
+        let calendar = Calendar.current
+        let today = Date()
+
+        switch self {
+        case .week: return 7
+        case .month: return 30
+        case .threeMonths: return 90
+        case .yearToDate:
+            // Days from January 1 of current year to today
+            let yearStart = calendar.date(from: calendar.dateComponents([.year], from: today))!
+            let components = calendar.dateComponents([.day], from: yearStart, to: today)
+            return (components.day ?? 0) + 1 // +1 to include today
+        case .allTime: return nil // Represents no date filter
+        }
+    }
+
+    /// Returns the number of weeks for weekly aggregation
+    var weeks: Int {
+        switch self {
+        case .week: return 1
+        case .month: return 4
+        case .threeMonths: return 12
+        case .yearToDate:
+            let calendar = Calendar.current
+            let today = Date()
+            let yearStart = calendar.date(from: calendar.dateComponents([.year], from: today))!
+            let components = calendar.dateComponents([.weekOfYear], from: yearStart, to: today)
+            return max(1, (components.weekOfYear ?? 0) + 1)
+        case .allTime: return 52 // Show last 52 weeks for all-time weekly view
+        }
+    }
+}
+
 // MARK: - InsightsPeriodSelector
 /// Segmented control for selecting time period in Insights tab
 struct InsightsPeriodSelector: View {
     @Binding var selectedPeriod: Int
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Week Tab
-            Button(action: {
-                withAnimation(.standardSpring) {
-                    selectedPeriod = 0
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(InsightsPeriod.allCases, id: \.rawValue) { period in
+                    Button(action: {
+                        withAnimation(.standardSpring) {
+                            selectedPeriod = period.rawValue
+                        }
+                    }) {
+                        Text(period.title)
+                            .font(selectedPeriod == period.rawValue ? .system(size: 14, weight: .semibold) : .system(size: 14, weight: .medium))
+                            .foregroundColor(selectedPeriod == period.rawValue ? .textPrimary : .textSecondary)
+                            .padding(.horizontal, 16)
+                            .frame(height: 36)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(selectedPeriod == period.rawValue ? Color.tertiaryBg : Color.clear)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-            }) {
-                Text("Week")
-                    .font(selectedPeriod == 0 ? .system(size: 15, weight: .semibold) : .tabFont)
-                    .foregroundColor(selectedPeriod == 0 ? .textPrimary : .textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(selectedPeriod == 0 ? Color.tertiaryBg : Color.clear)
-                    )
             }
-            .buttonStyle(PlainButtonStyle())
-
-            // Month Tab
-            Button(action: {
-                withAnimation(.standardSpring) {
-                    selectedPeriod = 1
-                }
-            }) {
-                Text("Month")
-                    .font(selectedPeriod == 1 ? .system(size: 15, weight: .semibold) : .tabFont)
-                    .foregroundColor(selectedPeriod == 1 ? .textPrimary : .textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(selectedPeriod == 1 ? Color.tertiaryBg : Color.clear)
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-
-            // 3 Months Tab
-            Button(action: {
-                withAnimation(.standardSpring) {
-                    selectedPeriod = 2
-                }
-            }) {
-                Text("3 Months")
-                    .font(selectedPeriod == 2 ? .system(size: 15, weight: .semibold) : .tabFont)
-                    .foregroundColor(selectedPeriod == 2 ? .textPrimary : .textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(selectedPeriod == 2 ? Color.tertiaryBg : Color.clear)
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
+            .padding(4)
         }
-        .padding(4)
         .background(Color.secondaryBg)
         .cornerRadius(12)
         .padding(.horizontal, 12)
@@ -733,6 +754,12 @@ struct StatCardsGridView: View {
     let totalVolume: String
     let prCount: Int
 
+    // Optional comparison data
+    var workoutsComparison: InsightsService.PeriodComparison?
+    var setsComparison: InsightsService.PeriodComparison?
+    var volumeComparison: InsightsService.PeriodComparison?
+    var prsComparison: InsightsService.PeriodComparison?
+
     var body: some View {
         LazyVGrid(columns: [
             GridItem(.flexible(), spacing: 12),
@@ -741,25 +768,29 @@ struct StatCardsGridView: View {
             // Workouts Card
             StatCardView(
                 value: "\(workouts)",
-                label: "Workouts"
+                label: "Workouts",
+                comparison: workoutsComparison
             )
 
             // Sets Card
             StatCardView(
                 value: "\(sets)",
-                label: "Sets"
+                label: "Sets",
+                comparison: setsComparison
             )
 
             // Total Volume Card
             StatCardView(
                 value: totalVolume,
-                label: "Total Volume"
+                label: "Total Volume",
+                comparison: volumeComparison
             )
 
             // PR Count Card
             StatCardView(
                 value: "\(prCount)",
-                label: "PRs"
+                label: "PRs",
+                comparison: prsComparison
             )
         }
     }
@@ -769,14 +800,24 @@ struct StatCardsGridView: View {
 struct StatCardView: View {
     let value: String
     let label: String
+    var comparison: InsightsService.PeriodComparison?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(value)
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
-                .foregroundColor(.accentPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            HStack(alignment: .top) {
+                Text(value)
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundColor(.accentPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Spacer()
+
+                // Delta indicator
+                if let comparison = comparison, comparison.hasData {
+                    ComparisonDeltaIndicator(percentChange: comparison.percentChange)
+                }
+            }
 
             Text(label)
                 .font(.system(size: 13, weight: .regular))
@@ -791,6 +832,60 @@ struct StatCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - ComparisonDeltaIndicator
+/// Shows the percentage change between current and previous period
+struct ComparisonDeltaIndicator: View {
+    let percentChange: Double?
+
+    private var color: Color {
+        guard let change = percentChange else { return .textTertiary }
+        if change > 0.5 {
+            return Color(hex: "#00D9A3") // Success green
+        } else if change < -0.5 {
+            return Color(hex: "#FF4444") // Error red
+        } else {
+            return .textTertiary // Neutral
+        }
+    }
+
+    private var icon: String {
+        guard let change = percentChange else { return "–" }
+        if change > 0.5 {
+            return "↑"
+        } else if change < -0.5 {
+            return "↓"
+        } else {
+            return "–"
+        }
+    }
+
+    private var text: String {
+        guard let change = percentChange else { return "–" }
+        if abs(change) < 0.5 {
+            return "–"
+        }
+        return String(format: "%+.0f%%", change)
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(color)
+
+            if percentChange != nil && abs(percentChange!) >= 0.5 {
+                Text(text)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(color)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.15))
+        .cornerRadius(6)
     }
 }
 

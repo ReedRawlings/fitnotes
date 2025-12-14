@@ -215,9 +215,11 @@ struct MonthlyCalendarView: View {
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
     @Query private var routines: [Routine]
+    @Query private var allSets: [WorkoutSet]
 
     @State private var colorMode: CalendarColorMode = .routine
     @State private var currentDate = Date()
+    @State private var selectedDayWorkout: (date: Date, workout: Workout)? = nil
 
     enum CalendarColorMode {
         case routine
@@ -361,54 +363,112 @@ struct MonthlyCalendarView: View {
         calendar.isDate(date, equalTo: currentDate, toGranularity: .month)
     }
 
+    private func navigateToPreviousMonth() {
+        withAnimation(.standardSpring) {
+            if let newDate = calendar.date(byAdding: .month, value: -1, to: currentDate) {
+                currentDate = newDate
+            }
+        }
+    }
+
+    private func navigateToNextMonth() {
+        withAnimation(.standardSpring) {
+            if let newDate = calendar.date(byAdding: .month, value: 1, to: currentDate) {
+                currentDate = newDate
+            }
+        }
+    }
+
+    private func navigateToToday() {
+        withAnimation(.standardSpring) {
+            currentDate = Date()
+        }
+    }
+
+    private func handleDayTap(_ date: Date) {
+        if let workout = workout(for: date) {
+            // Haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+
+            selectedDayWorkout = (date: date, workout: workout)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
-            // Header with month/year and color mode toggle
-            VStack(spacing: 12) {
-                Text(monthYearText)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.textPrimary)
-
-                // Toggle between Routine and Category
-                HStack(spacing: 0) {
-                    Button(action: {
-                        withAnimation(.quickFeedback) {
-                            colorMode = .routine
-                        }
-                    }) {
-                        Text("Routine")
-                            .font(.system(size: 13, weight: colorMode == .routine ? .semibold : .medium))
-                            .foregroundColor(colorMode == .routine ? .textPrimary : .textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 32)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(colorMode == .routine ? Color.tertiaryBg : Color.clear)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-
-                    Button(action: {
-                        withAnimation(.quickFeedback) {
-                            colorMode = .category
-                        }
-                    }) {
-                        Text("Category")
-                            .font(.system(size: 13, weight: colorMode == .category ? .semibold : .medium))
-                            .foregroundColor(colorMode == .category ? .textPrimary : .textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 32)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(colorMode == .category ? Color.tertiaryBg : Color.clear)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+            // Header with month navigation
+            HStack {
+                // Previous month button
+                Button(action: navigateToPreviousMonth) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.textSecondary)
+                        .frame(width: 44, height: 44)
                 }
-                .padding(4)
-                .background(Color.secondaryBg)
-                .cornerRadius(10)
+                .buttonStyle(PlainButtonStyle())
+
+                Spacer()
+
+                // Month/year label (tappable to go to today)
+                Button(action: navigateToToday) {
+                    Text(monthYearText)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.textPrimary)
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Spacer()
+
+                // Next month button
+                Button(action: navigateToNextMonth) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.textSecondary)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
+
+            // Toggle between Routine and Category
+            HStack(spacing: 0) {
+                Button(action: {
+                    withAnimation(.quickFeedback) {
+                        colorMode = .routine
+                    }
+                }) {
+                    Text("Routine")
+                        .font(.system(size: 13, weight: colorMode == .routine ? .semibold : .medium))
+                        .foregroundColor(colorMode == .routine ? .textPrimary : .textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(colorMode == .routine ? Color.tertiaryBg : Color.clear)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Button(action: {
+                    withAnimation(.quickFeedback) {
+                        colorMode = .category
+                    }
+                }) {
+                    Text("Category")
+                        .font(.system(size: 13, weight: colorMode == .category ? .semibold : .medium))
+                        .foregroundColor(colorMode == .category ? .textPrimary : .textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(colorMode == .category ? Color.tertiaryBg : Color.clear)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(4)
+            .background(Color.secondaryBg)
+            .cornerRadius(10)
 
             // Weekday headers
             HStack(spacing: 4) {
@@ -428,7 +488,9 @@ struct MonthlyCalendarView: View {
                         isCurrentMonth: isCurrentMonth(date),
                         isToday: calendar.isDateInToday(date),
                         color: colorForDay(date),
-                        scheduledColor: scheduledColorForDay(date)
+                        scheduledColor: scheduledColorForDay(date),
+                        hasWorkout: workout(for: date) != nil,
+                        onTap: { handleDayTap(date) }
                     )
                 }
             }
@@ -440,7 +502,20 @@ struct MonthlyCalendarView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
+        .sheet(item: Binding(
+            get: { selectedDayWorkout.map { DayWorkoutWrapper(date: $0.date, workout: $0.workout) } },
+            set: { newValue in selectedDayWorkout = newValue.map { ($0.date, $0.workout) } }
+        )) { wrapper in
+            DayDetailSheet(date: wrapper.date, workout: wrapper.workout, exercises: exercises, allSets: allSets)
+        }
     }
+}
+
+// MARK: - DayWorkoutWrapper (for sheet binding)
+struct DayWorkoutWrapper: Identifiable {
+    let id = UUID()
+    let date: Date
+    let workout: Workout
 }
 
 // MARK: - Day Cell Component
@@ -450,13 +525,19 @@ struct DayCell: View {
     let isToday: Bool
     let color: Color?              // Completed workout color
     let scheduledColor: Color?     // Scheduled future workout color (dotted outline)
+    let hasWorkout: Bool
+    let onTap: () -> Void
 
-    init(date: Date, isCurrentMonth: Bool, isToday: Bool, color: Color?, scheduledColor: Color? = nil) {
+    @State private var isPressed = false
+
+    init(date: Date, isCurrentMonth: Bool, isToday: Bool, color: Color?, scheduledColor: Color? = nil, hasWorkout: Bool = false, onTap: @escaping () -> Void = {}) {
         self.date = date
         self.isCurrentMonth = isCurrentMonth
         self.isToday = isToday
         self.color = color
         self.scheduledColor = scheduledColor
+        self.hasWorkout = hasWorkout
+        self.onTap = onTap
     }
 
     private var dayNumber: Int {
@@ -493,6 +574,230 @@ struct DayCell: View {
         }
         .frame(height: 36)
         .aspectRatio(1, contentMode: .fit)
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .opacity(isPressed ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        .onTapGesture {
+            if hasWorkout {
+                onTap()
+            }
+        }
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            if hasWorkout {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Day Detail Sheet
+struct DayDetailSheet: View {
+    let date: Date
+    let workout: Workout
+    let exercises: [Exercise]
+    let allSets: [WorkoutSet]
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    private var dateString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d"
+        return formatter.string(from: date)
+    }
+
+    private var workoutSets: [WorkoutSet] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        return allSets.filter { set in
+            set.date >= startOfDay && set.date < endOfDay && set.isCompleted
+        }
+    }
+
+    private var totalVolume: Double {
+        workoutSets.reduce(0) { total, set in
+            guard let weight = set.weight, let reps = set.reps else { return total }
+            return total + (weight * Double(reps))
+        }
+    }
+
+    private var exerciseSummaries: [(exercise: Exercise, setCount: Int, bestSet: String)] {
+        // Group sets by exercise
+        var exerciseSetCounts: [UUID: [WorkoutSet]] = [:]
+        for set in workoutSets {
+            exerciseSetCounts[set.exerciseId, default: []].append(set)
+        }
+
+        // Build summaries
+        var summaries: [(exercise: Exercise, setCount: Int, bestSet: String)] = []
+        for workoutExercise in workout.exercises.sorted(by: { $0.order < $1.order }) {
+            guard let exercise = exercises.first(where: { $0.id == workoutExercise.exerciseId }) else { continue }
+            let sets = exerciseSetCounts[workoutExercise.exerciseId] ?? []
+
+            // Find best set (highest volume)
+            var bestSetString = "–"
+            if let bestSet = sets.max(by: {
+                let v1 = ($0.weight ?? 0) * Double($0.reps ?? 0)
+                let v2 = ($1.weight ?? 0) * Double($1.reps ?? 0)
+                return v1 < v2
+            }) {
+                if let weight = bestSet.weight, let reps = bestSet.reps {
+                    let weightStr = weight.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(weight))" : String(format: "%.1f", weight)
+                    bestSetString = "\(weightStr) \(bestSet.unit) × \(reps)"
+                }
+            }
+
+            summaries.append((exercise: exercise, setCount: sets.count, bestSet: bestSetString))
+        }
+
+        return summaries
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Workout Summary Card
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Workout Summary")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.textSecondary)
+
+                            HStack(spacing: 24) {
+                                // Exercise count
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("\(workout.exercises.count)")
+                                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.accentPrimary)
+                                    Text("Exercises")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.textSecondary)
+                                }
+
+                                // Sets
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("\(workoutSets.count)")
+                                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.accentPrimary)
+                                    Text("Sets")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.textSecondary)
+                                }
+
+                                // Volume
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(StatsService.shared.formatVolume(totalVolume))
+                                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.accentPrimary)
+                                    Text("Volume")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.textSecondary)
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.secondaryBg)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        )
+
+                        // Exercise List
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Exercises")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.textSecondary)
+
+                            VStack(spacing: 8) {
+                                ForEach(exerciseSummaries, id: \.exercise.id) { summary in
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(summary.exercise.name)
+                                                .font(.system(size: 15, weight: .medium))
+                                                .foregroundColor(.textPrimary)
+
+                                            HStack(spacing: 8) {
+                                                Text("\(summary.setCount) sets")
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(.textSecondary)
+
+                                                Text("Best: \(summary.bestSet)")
+                                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                                    .foregroundColor(.textSecondary)
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.textTertiary)
+                                    }
+                                    .padding(12)
+                                    .background(Color.tertiaryBg)
+                                    .cornerRadius(12)
+                                    .onTapGesture {
+                                        appState.selectedExercise = summary.exercise
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.secondaryBg)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        )
+
+                        // View Full Workout Button
+                        Button(action: {
+                            appState.selectedTab = 2 // Switch to Workout tab
+                            dismiss()
+                        }) {
+                            HStack {
+                                Image(systemName: "dumbbell.fill")
+                                    .font(.system(size: 14))
+                                Text("View Full Workout")
+                                    .font(.buttonFont)
+                            }
+                            .foregroundColor(.accentPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.accentPrimary.opacity(0.3), lineWidth: 2)
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
+                        Spacer(minLength: 40)
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle(dateString)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(.accentPrimary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color.primaryBg)
     }
 }
 
@@ -1895,43 +2200,45 @@ struct InsightsView: View {
     @EnvironmentObject private var appState: AppState
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
+    @Query(filter: #Predicate<FitnessGoal> { $0.isActive }) private var activeGoals: [FitnessGoal]
 
-    @State private var selectedPeriod: Int = 0 // 0=week, 1=month, 2=3months
+    @State private var selectedPeriod: Int = 0 // Uses InsightsPeriod raw values
+    @State private var showingAddGoal = false
+    @State private var showingYearInReview = false
 
-    private var periodDays: Int {
-        switch selectedPeriod {
-        case 0: return 7
-        case 1: return 30
-        case 2: return 90
-        default: return 7
-        }
+    private var currentPeriod: InsightsPeriod {
+        InsightsPeriod(rawValue: selectedPeriod) ?? .week
+    }
+
+    private var periodDays: Int? {
+        currentPeriod.days
     }
 
     private var periodWeeks: Int {
-        switch selectedPeriod {
-        case 0: return 1
-        case 1: return 4
-        case 2: return 12
-        default: return 1
-        }
+        currentPeriod.weeks
+    }
+
+    private var isAllTime: Bool {
+        currentPeriod == .allTime
     }
 
     private var chartPeriodType: VolumeChartView.PeriodType {
-        switch selectedPeriod {
-        case 0: return .week
-        case 1: return .month
-        case 2: return .threeMonths
-        default: return .week
+        switch currentPeriod {
+        case .week: return .week
+        case .month: return .month
+        case .threeMonths: return .threeMonths
+        case .yearToDate: return .yearToDate
+        case .allTime: return .allTime
         }
     }
 
     private var volumeData: [(date: Date, volume: Double)] {
-        if selectedPeriod == 0 {
+        if currentPeriod == .week {
             // Week view: daily data
             return InsightsService.shared.getVolumeTrendForPeriod(days: periodDays, modelContext: modelContext)
         } else {
-            // Month/3-month view: weekly aggregates
-            return InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, modelContext: modelContext)
+            // All other views: weekly aggregates
+            return InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, isAllTime: isAllTime, modelContext: modelContext)
         }
     }
 
@@ -1960,6 +2267,43 @@ struct InsightsView: View {
         InsightsService.shared.getRecentPRs(limit: 10, modelContext: modelContext)
     }
 
+    private var muscleRecoveryStatus: [String: InsightsService.MuscleRecoveryStatus] {
+        InsightsService.shared.getMuscleRecoveryStatus(modelContext: modelContext)
+    }
+
+    private var topExercises: [(exercise: Exercise, setCount: Int)] {
+        InsightsService.shared.getTopExercises(limit: 5, modelContext: modelContext)
+    }
+
+    private var streakData: InsightsService.StreakData {
+        InsightsService.shared.getStreakData(modelContext: modelContext)
+    }
+
+    private var goalProgress: [InsightsService.GoalProgress] {
+        InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
+    }
+
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: Date())
+    }
+
+    private var yearInReviewData: InsightsService.YearInReviewData {
+        InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
+    }
+
+    private var hasYearData: Bool {
+        yearInReviewData.totalWorkouts > 0
+    }
+
+    private var comparisonStats: (
+        workouts: InsightsService.PeriodComparison,
+        sets: InsightsService.PeriodComparison,
+        volume: InsightsService.PeriodComparison,
+        prs: InsightsService.PeriodComparison
+    ) {
+        InsightsService.shared.getComparisonStats(days: periodDays, modelContext: modelContext)
+    }
+
     var body: some View {
         ZStack {
             // Dark theme background
@@ -1978,26 +2322,60 @@ struct InsightsView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 12) {
+                        // Year in Review Card
+                        YearInReviewCard(
+                            currentYear: currentYear,
+                            hasData: hasYearData,
+                            onTap: { showingYearInReview = true }
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+
                         // Period Selector
                         InsightsPeriodSelector(selectedPeriod: $selectedPeriod)
-                            .padding(.top, 8)
+
+                        // Muscle Recovery Heatmap
+                        MuscleRecoveryHeatmapView(recoveryStatus: muscleRecoveryStatus)
+                            .padding(.horizontal, 20)
 
                         // Volume Chart
                         VolumeChartView(data: volumeData, periodType: chartPeriodType)
                             .padding(.horizontal, 20)
 
-                        // Stat Cards Grid
+                        // Stat Cards Grid with comparison data
                         StatCardsGridView(
                             workouts: workoutCount,
                             sets: setCount,
                             totalVolume: totalVolume,
-                            prCount: prCount
+                            prCount: prCount,
+                            workoutsComparison: isAllTime ? nil : comparisonStats.workouts,
+                            setsComparison: isAllTime ? nil : comparisonStats.sets,
+                            volumeComparison: isAllTime ? nil : comparisonStats.volume,
+                            prsComparison: isAllTime ? nil : comparisonStats.prs
                         )
                         .padding(.horizontal, 20)
 
                         // Muscle Group Breakdown
                         MuscleGroupBreakdownView(breakdown: muscleBreakdown)
                             .padding(.horizontal, 20)
+
+                        // Top Exercises
+                        TopExercisesView(topExercises: topExercises)
+                            .padding(.horizontal, 20)
+
+                        // Streak & Consistency
+                        StreakConsistencyView(streakData: streakData)
+                            .padding(.horizontal, 20)
+
+                        // Goals & Targets
+                        GoalsCardView(
+                            goalProgress: goalProgress,
+                            onAddGoal: { showingAddGoal = true },
+                            onDeleteGoal: { goal in
+                                InsightsService.shared.deleteGoal(goal, modelContext: modelContext)
+                            }
+                        )
+                        .padding(.horizontal, 20)
 
                         // Recent PRs
                         RecentPRsListView(prs: recentPRs, unit: appState.weightUnit)
@@ -2006,6 +2384,13 @@ struct InsightsView: View {
                         Spacer(minLength: 100) // Space for tab bar
                     }
                     .padding(.bottom, 20)
+                }
+                .sheet(isPresented: $showingAddGoal) {
+                    AddGoalSheet()
+                        .environmentObject(appState)
+                }
+                .fullScreenCover(isPresented: $showingYearInReview) {
+                    YearInReviewSheet(data: yearInReviewData)
                 }
             }
         }
@@ -2074,6 +2459,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, RoutineExercise.self, Routine.self], inMemory: true)
+        .modelContainer(for: [Exercise.self, Workout.self, BodyMetric.self, WorkoutExercise.self, RoutineExercise.self, Routine.self, FitnessGoal.self], inMemory: true)
 }
 

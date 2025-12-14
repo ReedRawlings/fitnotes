@@ -1,6 +1,78 @@
 import Foundation
 import SwiftData
 
+// MARK: - GoalType Enum
+public enum GoalType: String, Codable, CaseIterable {
+    case weeklyWorkouts = "weekly_workouts"     // Target X workouts per week
+    case weeklyVolume = "weekly_volume"          // Target X volume per week
+    case specificLift = "specific_lift"          // Target X weight on a specific exercise
+
+    public var displayName: String {
+        switch self {
+        case .weeklyWorkouts: return "Weekly Workouts"
+        case .weeklyVolume: return "Weekly Volume"
+        case .specificLift: return "Lift Target"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .weeklyWorkouts: return "calendar.badge.checkmark"
+        case .weeklyVolume: return "chart.bar.fill"
+        case .specificLift: return "dumbbell.fill"
+        }
+    }
+
+    public var unitLabel: String {
+        switch self {
+        case .weeklyWorkouts: return "workouts/week"
+        case .weeklyVolume: return "kg/week"
+        case .specificLift: return ""  // Will be dynamic based on exercise
+        }
+    }
+}
+
+// MARK: - FitnessGoal Model
+@Model
+public final class FitnessGoal {
+    @Attribute(.unique) public var id: UUID
+    public var typeRaw: String              // GoalType raw value
+    public var targetValue: Double          // Target number (workouts, volume, or weight)
+    public var exerciseId: UUID?            // Only for specificLift type
+    public var exerciseName: String?        // Cached exercise name for display
+    public var weightUnit: String?          // For specificLift type (kg or lbs)
+    public var isActive: Bool
+    public var createdAt: Date
+    public var achievedAt: Date?
+
+    public var goalType: GoalType {
+        get { GoalType(rawValue: typeRaw) ?? .weeklyWorkouts }
+        set { typeRaw = newValue.rawValue }
+    }
+
+    public init(
+        id: UUID = UUID(),
+        type: GoalType,
+        targetValue: Double,
+        exerciseId: UUID? = nil,
+        exerciseName: String? = nil,
+        weightUnit: String? = nil,
+        isActive: Bool = true,
+        createdAt: Date = Date(),
+        achievedAt: Date? = nil
+    ) {
+        self.id = id
+        self.typeRaw = type.rawValue
+        self.targetValue = targetValue
+        self.exerciseId = exerciseId
+        self.exerciseName = exerciseName
+        self.weightUnit = weightUnit
+        self.isActive = isActive
+        self.createdAt = createdAt
+        self.achievedAt = achievedAt
+    }
+}
+
 // MARK: - BodyMetric Model
 @Model
 public final class BodyMetric {
