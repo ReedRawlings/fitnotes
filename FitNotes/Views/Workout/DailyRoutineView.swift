@@ -68,27 +68,41 @@ struct WorkoutView: View {
                     }
                     // Date header
                     HStack {
-                        if Calendar.current.isDateInToday(displayDate) {
-                            Text("Today")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(.textPrimary)
-                        } else {
-                            HStack(spacing: 12) {
-                                Button(action: { goToPreviousDay() }) {
-                                    Image(systemName: "chevron.left")
-                                        .font(.caption)
-                                        .foregroundColor(.textSecondary)
-                                }
+                        Spacer()
+                        
+                        // Centered date navigation
+                        HStack(spacing: 12) {
+                            Button(action: { goToPreviousDay() }) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.textSecondary)
+                                    .frame(width: 44, height: 44)
+                            }
+                            .buttonStyle(PlainButtonStyle())
 
+                            if Calendar.current.isDateInToday(displayDate) {
+                                Text("Today")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundColor(.textPrimary)
+                            } else {
                                 Text(displayDate.formatted(date: .abbreviated, time: .omitted))
                                     .font(.system(size: 22, weight: .semibold))
                                     .foregroundColor(.textPrimary)
+                            }
 
+                            // Only show right arrow if not at today
+                            if !Calendar.current.isDateInToday(displayDate) {
                                 Button(action: { goToNextDay() }) {
                                     Image(systemName: "chevron.right")
-                                        .font(.caption)
+                                        .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(.textSecondary)
+                                        .frame(width: 44, height: 44)
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                            } else {
+                                // Invisible spacer to maintain centering when at today
+                                Color.clear
+                                    .frame(width: 44, height: 44)
                             }
                         }
 
@@ -113,6 +127,10 @@ struct WorkoutView: View {
                                         .fill(Color.accentColor.opacity(0.1))
                                 )
                             }
+                        } else {
+                            // Invisible spacer to maintain centering when button is hidden
+                            Color.clear
+                                .frame(width: 120, height: 32)
                         }
                     }
                     .padding(.horizontal, 20)

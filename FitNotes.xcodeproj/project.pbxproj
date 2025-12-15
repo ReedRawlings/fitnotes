@@ -41,6 +41,11 @@
 		741C98812ECD0D9100753A52 /* ExerciseStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98702ECD0D9100753A52 /* ExerciseStatsView.swift */; };
 		741C98F82ED1194D00753A52 /* NoKeyboardTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98F72ED1194D00753A52 /* NoKeyboardTextField.swift */; };
 		741C98F92ED1194D00753A52 /* CustomNumericKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */; };
+		7423C0892EF09E2900E92CA7 /* StreakConsistencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0862EF09E2900E92CA7 /* StreakConsistencyView.swift */; };
+		7423C08A2EF09E2900E92CA7 /* YearInReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0882EF09E2900E92CA7 /* YearInReviewView.swift */; };
+		7423C08B2EF09E2900E92CA7 /* GoalsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0852EF09E2900E92CA7 /* GoalsCardView.swift */; };
+		7423C08C2EF09E2900E92CA7 /* TopExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */; };
+		7423C08E2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */; };
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
 		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
@@ -104,6 +109,11 @@
 		741C98782ECD0D9100753A52 /* SimplifiedStatsIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimplifiedStatsIndicator.swift; sourceTree = "<group>"; };
 		741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomNumericKeyboard.swift; sourceTree = "<group>"; };
 		741C98F72ED1194D00753A52 /* NoKeyboardTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoKeyboardTextField.swift; sourceTree = "<group>"; };
+		7423C0852EF09E2900E92CA7 /* GoalsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsCardView.swift; sourceTree = "<group>"; };
+		7423C0862EF09E2900E92CA7 /* StreakConsistencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakConsistencyView.swift; sourceTree = "<group>"; };
+		7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopExercisesView.swift; sourceTree = "<group>"; };
+		7423C0882EF09E2900E92CA7 /* YearInReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearInReviewView.swift; sourceTree = "<group>"; };
+		7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleRecoveryHeatmapView.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
 		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -171,6 +181,38 @@
 			path = FitNotes;
 			sourceTree = "<group>";
 		};
+		741325132E9F73400099C49A /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				741325142E9F73400099C49A /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		7413251F2E9F73400099C49A /* FitNotesTests */ = {
+			isa = PBXGroup;
+			children = (
+				741325202E9F73400099C49A /* FitNotesTests.swift */,
+			);
+			path = FitNotesTests;
+			sourceTree = "<group>";
+		};
+		741325292E9F73400099C49A /* FitNotesUITests */ = {
+			isa = PBXGroup;
+			children = (
+				7413252A2E9F73400099C49A /* FitNotesUITests.swift */,
+				7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */,
+			);
+			path = FitNotesUITests;
+			sourceTree = "<group>";
+		};
+		741C98482ECD0C1000753A52 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		741C98822ECD0D9100753A53 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -216,6 +258,26 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		741C98862ECD0D9100753A57 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				7413253D2E9F733D0099C49A /* Components.swift */,
+				741325502E9F733D0099C49A /* DesignSystem.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		741C98872ECD0D9100753A58 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */,
+				741C98F72ED1194D00753A52 /* NoKeyboardTextField.swift */,
+				4A97248D302F2B0739B2D5FB /* NumericInputField.swift */,
+				741C98772ECD0D9100753A52 /* RestTimerManager.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
 		741C98882ECD0D9100753A59 /* Exercise */ = {
 			isa = PBXGroup;
 			children = (
@@ -249,64 +311,17 @@
 		741C988B2ECD0D9100753A62 /* Insights */ = {
 			isa = PBXGroup;
 			children = (
+				7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */,
+				7423C0852EF09E2900E92CA7 /* GoalsCardView.swift */,
+				7423C0862EF09E2900E92CA7 /* StreakConsistencyView.swift */,
+				7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */,
+				7423C0882EF09E2900E92CA7 /* YearInReviewView.swift */,
 				741C98712ECD0D9100753A52 /* InsightsChartView.swift */,
 				741C98732ECD0D9100753A52 /* MuscleGroupBreakdownView.swift */,
 				741C98752ECD0D9100753A52 /* RecentPRsView.swift */,
 				741C98782ECD0D9100753A52 /* SimplifiedStatsIndicator.swift */,
 			);
 			path = Insights;
-			sourceTree = "<group>";
-		};
-		741C98862ECD0D9100753A57 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				7413253D2E9F733D0099C49A /* Components.swift */,
-				741325502E9F733D0099C49A /* DesignSystem.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		741C98872ECD0D9100753A58 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */,
-				741C98F72ED1194D00753A52 /* NoKeyboardTextField.swift */,
-				4A97248D302F2B0739B2D5FB /* NumericInputField.swift */,
-				741C98772ECD0D9100753A52 /* RestTimerManager.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		741325132E9F73400099C49A /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				741325142E9F73400099C49A /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		7413251F2E9F73400099C49A /* FitNotesTests */ = {
-			isa = PBXGroup;
-			children = (
-				741325202E9F73400099C49A /* FitNotesTests.swift */,
-			);
-			path = FitNotesTests;
-			sourceTree = "<group>";
-		};
-		741325292E9F73400099C49A /* FitNotesUITests */ = {
-			isa = PBXGroup;
-			children = (
-				7413252A2E9F73400099C49A /* FitNotesUITests.swift */,
-				7413252C2E9F73400099C49A /* FitNotesUITestsLaunchTests.swift */,
-			);
-			path = FitNotesUITests;
-			sourceTree = "<group>";
-		};
-		741C98482ECD0C1000753A52 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -469,6 +484,11 @@
 				741C987F2ECD0D9100753A52 /* ProgressionService.swift in Sources */,
 				741C98802ECD0D9100753A52 /* SimplifiedStatsIndicator.swift in Sources */,
 				741C98812ECD0D9100753A52 /* ExerciseStatsView.swift in Sources */,
+				7423C08E2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift in Sources */,
+				7423C0892EF09E2900E92CA7 /* StreakConsistencyView.swift in Sources */,
+				7423C08A2EF09E2900E92CA7 /* YearInReviewView.swift in Sources */,
+				7423C08B2EF09E2900E92CA7 /* GoalsCardView.swift in Sources */,
+				7423C08C2EF09E2900E92CA7 /* TopExercisesView.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,
 				A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */,
 			);

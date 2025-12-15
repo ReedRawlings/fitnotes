@@ -1021,10 +1021,10 @@ public final class InsightsService {
 
     /// Represents streak and consistency data
     public struct StreakData {
-        public let currentStreak: Int          // Consecutive days/weeks with workouts
-        public let bestStreak: Int             // All-time best streak
-        public let streakUnit: String          // "days" or "weeks"
-        public let isAtRisk: Bool              // True if no workout in last 2 days
+        public let currentStreak: Int          // Consecutive weeks with workouts
+        public let bestStreak: Int             // All-time best weekly streak
+        public let streakUnit: String          // "weeks"
+        public let isAtRisk: Bool              // True if no workout yet this week but recent activity exists
         public let lastWorkoutDate: Date?      // Most recent workout date
         public let weeklyConsistency: [(weekStart: Date, workoutCount: Int)]  // Last 12 weeks
     }
@@ -1048,42 +1048,48 @@ public final class InsightsService {
             // Get unique workout dates
             let workoutDates = Set(sets.map { calendar.startOfDay(for: $0.date) })
             let sortedDates = workoutDates.sorted(by: >)  // Most recent first
-
-            // Calculate current streak (consecutive days)
-            var currentStreak = 0
-            var checkDate = today
-
-            // Include today if there's a workout
-            if workoutDates.contains(today) {
-                currentStreak = 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: today)!
-            } else {
-                // Check yesterday
-                let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-                if workoutDates.contains(yesterday) {
-                    currentStreak = 1
-                    checkDate = calendar.date(byAdding: .day, value: -2, to: today)!
-                } else {
-                    currentStreak = 0
-                    checkDate = calendar.date(byAdding: .day, value: -2, to: today)!
+            
+            // Build set of active week starts (weeks with at least one workout)
+            var activeWeekStarts: Set<Date> = []
+            for date in workoutDates {
+                if let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start {
+                    activeWeekStarts.insert(weekStart)
                 }
             }
 
-            // Count consecutive days before check date
-            while workoutDates.contains(checkDate) {
-                currentStreak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            // Calculate current weekly streak (consecutive weeks with workouts, starting from this week)
+            var currentStreak = 0
+            var currentWeekInterval = calendar.dateInterval(of: .weekOfYear, for: today)
+            var foundWorkoutInWeek = true
+
+            while let week = currentWeekInterval, foundWorkoutInWeek {
+                let weekStart = week.start
+                let weekEnd = week.end
+
+                let hasWorkoutThisWeek = workoutDates.contains { $0 >= weekStart && $0 < weekEnd }
+                foundWorkoutInWeek = hasWorkoutThisWeek
+
+                if hasWorkoutThisWeek {
+                    currentStreak += 1
+
+                    if let previousWeekAnchor = calendar.date(byAdding: .day, value: -7, to: weekStart) {
+                        currentWeekInterval = calendar.dateInterval(of: .weekOfYear, for: previousWeekAnchor)
+                    } else {
+                        break
+                    }
+                }
             }
 
-            // Calculate best streak ever
-            var bestStreak = currentStreak
+            // Calculate best weekly streak ever
+            let sortedWeekStarts = activeWeekStarts.sorted()
+            var bestStreak = 0
             var tempStreak = 0
-            var previousDate: Date?
+            var previousWeekStart: Date?
 
-            for date in sortedDates.reversed() {  // Oldest first for streak calculation
-                if let prev = previousDate {
-                    let daysBetween = calendar.dateComponents([.day], from: prev, to: date).day ?? 0
-                    if daysBetween == 1 {
+            for weekStart in sortedWeekStarts {
+                if let prev = previousWeekStart {
+                    let weeksBetween = calendar.dateComponents([.weekOfYear], from: prev, to: weekStart).weekOfYear ?? 0
+                    if weeksBetween == 1 {
                         tempStreak += 1
                     } else {
                         bestStreak = max(bestStreak, tempStreak)
@@ -1092,13 +1098,16 @@ public final class InsightsService {
                 } else {
                     tempStreak = 1
                 }
-                previousDate = date
+                previousWeekStart = weekStart
             }
             bestStreak = max(bestStreak, tempStreak)
 
-            // Check if streak is at risk (no workout in last 2 days, but had a streak)
-            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-            let isAtRisk = !workoutDates.contains(today) && !workoutDates.contains(yesterday) && currentStreak > 0
+            // Check if streak is at risk: no workout yet this week, but there was at least one workout in the last 12 weeks
+            let currentWeek = calendar.dateInterval(of: .weekOfYear, for: today)!
+            let hasWorkoutThisWeek = workoutDates.contains { $0 >= currentWeek.start && $0 < currentWeek.end }
+            let twelveWeeksAgo = calendar.date(byAdding: .weekOfYear, value: -12, to: today)!
+            let hadRecentActivity = workoutDates.contains { $0 >= twelveWeeksAgo && $0 < currentWeek.end }
+            let isAtRisk = !hasWorkoutThisWeek && hadRecentActivity
 
             // Calculate weekly consistency (last 12 weeks)
             var weeklyConsistency: [(weekStart: Date, workoutCount: Int)] = []
@@ -1118,7 +1127,7 @@ public final class InsightsService {
             return StreakData(
                 currentStreak: currentStreak,
                 bestStreak: bestStreak,
-                streakUnit: "days",
+                streakUnit: "weeks",
                 isAtRisk: isAtRisk,
                 lastWorkoutDate: sortedDates.first,
                 weeklyConsistency: weeklyConsistency.reversed()

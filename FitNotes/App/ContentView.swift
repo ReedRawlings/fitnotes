@@ -867,10 +867,12 @@ struct HomeView: View {
     @Query(sort: \Routine.name) private var routines: [Routine]
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @Query private var allSets: [WorkoutSet]
+    @Query(filter: #Predicate<FitnessGoal> { $0.isActive }) private var activeGoals: [FitnessGoal]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
     @State private var cachedStats: (weeksActive: Int?, totalVolume: String?, daysSince: String?) = (nil, nil, nil)
     @State private var dismissedScheduledRoutineId: UUID? // Track if user dismissed today's prompt
+    @State private var showingAddGoal = false
 
     // Get the routine scheduled for today (if any and not already started)
     private var scheduledRoutineForToday: Routine? {
@@ -897,6 +899,10 @@ struct HomeView: View {
     
     private var daysSinceLastLiftText: String {
         StatsService.shared.getDaysSinceLastLift(workouts: workouts)
+    }
+
+    private var goalProgress: [InsightsService.GoalProgress] {
+        InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
     }
     
     var body: some View {
@@ -949,6 +955,17 @@ struct HomeView: View {
                             daysSinceLastLift: daysSinceLastLiftText
                         )
                         .padding(.horizontal, 20)
+
+                        // Goals & Targets
+                        GoalsCardView(
+                            goalProgress: goalProgress,
+                            onAddGoal: { showingAddGoal = true },
+                            onDeleteGoal: { goal in
+                                InsightsService.shared.deleteGoal(goal, modelContext: modelContext)
+                            }
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
                         
                         // Routine cards
                         LazyVStack(spacing: 0) {
@@ -1000,6 +1017,10 @@ struct HomeView: View {
         .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
+        }
+        .sheet(isPresented: $showingAddGoal) {
+            AddGoalSheet()
+                .environmentObject(appState)
         }
         .onAppear {
             // Invalidate cache on appear
@@ -2366,16 +2387,6 @@ struct InsightsView: View {
                         // Streak & Consistency
                         StreakConsistencyView(streakData: streakData)
                             .padding(.horizontal, 20)
-
-                        // Goals & Targets
-                        GoalsCardView(
-                            goalProgress: goalProgress,
-                            onAddGoal: { showingAddGoal = true },
-                            onDeleteGoal: { goal in
-                                InsightsService.shared.deleteGoal(goal, modelContext: modelContext)
-                            }
-                        )
-                        .padding(.horizontal, 20)
 
                         // Recent PRs
                         RecentPRsListView(prs: recentPRs, unit: appState.weightUnit)

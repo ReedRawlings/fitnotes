@@ -803,13 +803,13 @@ struct StatCardView: View {
     var comparison: InsightsService.PeriodComparison?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
                 Text(value)
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
                     .foregroundColor(.accentPrimary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
 
                 Spacer()
 
@@ -820,12 +820,13 @@ struct StatCardView: View {
             }
 
             Text(label)
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 11, weight: .regular))
                 .foregroundColor(.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 100)
-        .padding(16)
+        .frame(height: 70)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
         .background(Color.secondaryBg)
         .cornerRadius(16)
         .overlay(

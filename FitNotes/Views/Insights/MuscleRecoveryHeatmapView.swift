@@ -5,42 +5,12 @@ import SwiftUI
 struct MuscleRecoveryHeatmapView: View {
     let recoveryStatus: [String: InsightsService.MuscleRecoveryStatus]
     @State private var isExpanded = false
-    @State private var selectedMuscle: InsightsService.MuscleRecoveryStatus?
-
-    // Consolidated muscle groups for the body diagram
-    private var consolidatedMuscleGroups: [(name: String, status: InsightsService.MuscleRecoveryStatus)] {
-        // Consolidate related muscle groups
-        let groups: [(display: String, sources: [String])] = [
-            ("Chest", ["Chest"]),
-            ("Back", ["Back"]),
-            ("Shoulders", ["Shoulders"]),
-            ("Arms", ["Arms", "Biceps", "Triceps"]),
-            ("Legs", ["Legs", "Quads", "Hamstrings", "Glutes"]),
-            ("Core", ["Core", "Abs"])
-        ]
-
-        return groups.compactMap { group in
-            // Find the most recently trained muscle in the group
-            let relevantStatuses = group.sources.compactMap { recoveryStatus[$0] }
-            guard !relevantStatuses.isEmpty else { return nil }
-
-            // Use the muscle with the lowest recovery (most recently trained)
-            if let mostRecent = relevantStatuses.min(by: { ($0.recoveryPercentage) < ($1.recoveryPercentage) }) {
-                // Sum up all sets across the group
-                let totalSets = relevantStatuses.reduce(0) { $0 + $1.setsCompleted }
-                return (
-                    name: group.display,
-                    status: InsightsService.MuscleRecoveryStatus(
-                        muscleGroup: group.display,
-                        hoursSinceLastTrained: mostRecent.hoursSinceLastTrained,
-                        recoveryPercentage: mostRecent.recoveryPercentage,
-                        setsCompleted: totalSets,
-                        lastTrainedDate: mostRecent.lastTrainedDate
-                    )
-                )
-            }
-            return nil
-        }
+    
+    /// Ordered list of recovery statuses by how recovered they are (least recovered first)
+    private var orderedStatuses: [InsightsService.MuscleRecoveryStatus] {
+        recoveryStatus
+            .values
+            .sorted { $0.recoveryPercentage < $1.recoveryPercentage }
     }
 
     var body: some View {
@@ -71,48 +41,13 @@ struct MuscleRecoveryHeatmapView: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            // Body diagram (front view always visible)
-            HStack(spacing: 24) {
-                // Front body
-                BodyDiagramView(
-                    title: "Front",
-                    muscleGroups: frontMuscleGroups,
-                    recoveryStatus: recoveryStatus,
-                    onMuscleSelected: { status in
-                        withAnimation(.quickFeedback) {
-                            selectedMuscle = status
-                        }
+            if isExpanded {
+                VStack(spacing: 10) {
+                    ForEach(orderedStatuses, id: \.muscleGroup) { status in
+                        MuscleRecoveryTimelineRow(status: status)
                     }
-                )
-
-                // Back body (only when expanded)
-                if isExpanded {
-                    BodyDiagramView(
-                        title: "Back",
-                        muscleGroups: backMuscleGroups,
-                        recoveryStatus: recoveryStatus,
-                        onMuscleSelected: { status in
-                            withAnimation(.quickFeedback) {
-                                selectedMuscle = status
-                            }
-                        }
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                 }
-            }
-
-            // Legend
-            HStack(spacing: 16) {
-                LegendItem(color: Color(hex: "#FF4444"), label: "Recovering")
-                LegendItem(color: Color(hex: "#FFB84D"), label: "Partial")
-                LegendItem(color: Color(hex: "#00D9A3"), label: "Ready")
-            }
-            .font(.system(size: 11, weight: .medium))
-
-            // Selected muscle details
-            if let muscle = selectedMuscle {
-                MuscleDetailCard(status: muscle)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(16)
@@ -220,6 +155,100 @@ struct BodyDiagramView: View {
             setsCompleted: totalSets,
             lastTrainedDate: minStatus.lastTrainedDate
         )
+    }
+}
+
+// MARK: - MuscleRecoveryTimelineRow
+/// Gantt-style row showing time since last trained and time remaining to full recovery
+struct MuscleRecoveryTimelineRow: View {
+    let status: InsightsService.MuscleRecoveryStatus
+
+    private let fullRecoveryHours: Double = 72
+
+    private var elapsedHours: Double {
+        status.hoursSinceLastTrained ?? fullRecoveryHours
+    }
+
+    private var remainingHours: Double {
+        max(0, fullRecoveryHours - elapsedHours)
+    }
+
+    private var elapsedProgress: Double {
+        min(1, max(0, elapsedHours / fullRecoveryHours))
+    }
+
+    private var timeSinceText: String {
+        guard let hours = status.hoursSinceLastTrained else {
+            return "Not trained recently"
+        }
+
+        if hours < 1 {
+            return "Just trained"
+        } else if hours < 24 {
+            return "\(Int(hours))h ago"
+        } else {
+            let days = Int(hours / 24)
+            return days == 1 ? "1 day ago" : "\(days) days ago"
+        }
+    }
+
+    private var restRemainingText: String {
+        if remainingHours == 0 {
+            return "Fully recovered"
+        }
+
+        if remainingHours < 24 {
+            return String(format: "~%.0fh to fully recovered", remainingHours)
+        } else {
+            let days = remainingHours / 24
+            return String(format: "~%.1fd to fully recovered", days)
+        }
+    }
+
+    private var recoveryColor: Color {
+        let rgb = status.recoveryColorRGB
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(status.muscleGroup)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.textPrimary)
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(timeSinceText)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(.textSecondary)
+
+                    Text(restRemainingText)
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundColor(.textSecondary.opacity(0.8))
+                }
+            }
+
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Full 72h window
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.tertiaryBg)
+                        .frame(height: 8)
+
+                    // Elapsed recovery time
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(recoveryColor)
+                        .frame(width: geometry.size.width * elapsedProgress, height: 8)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: elapsedProgress)
+                }
+            }
+            .frame(height: 8)
+        }
+        .padding(10)
+        .background(Color.tertiaryBg.opacity(0.7))
+        .cornerRadius(12)
     }
 }
 

@@ -42,6 +42,14 @@ struct FitNotesApp: App {
 
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            
+            #if DEBUG
+            // Seed development demo data the first time if the store is empty.
+            // Use a temporary ModelContext just for seeding.
+            let devContext = ModelContext(container)
+            DevDataSeeder.seedIfNeeded(modelContext: devContext)
+            #endif
+            
             return container
         } catch {
             // If there's a schema issue, try to delete the old database and recreate
@@ -53,6 +61,12 @@ struct FitNotesApp: App {
             
             do {
                 let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+                
+                #if DEBUG
+                let devContext = ModelContext(container)
+                DevDataSeeder.seedIfNeeded(modelContext: devContext)
+                #endif
+                
                 print("Successfully recreated ModelContainer")
                 return container
             } catch {
