@@ -11,6 +11,7 @@ class RestTimerManager: ObservableObject {
     private var timerUpdateTimer: Timer?
     private var appState: AppState
     private var filterExerciseId: UUID?
+    private var lastKnownTimerId: UUID?
 
     init(appState: AppState, filterExerciseId: UUID? = nil) {
         self.appState = appState
@@ -38,15 +39,33 @@ class RestTimerManager: ObservableObject {
                 // Check if we should filter by exercise ID
                 if let filterExerciseId = self.filterExerciseId {
                     if let timer = self.appState.activeRestTimer,
-                       timer.exerciseId == filterExerciseId,
-                       timer.isCompleted && !self.showCompletionState {
-                        self.handleTimerCompletion()
+                       timer.exerciseId == filterExerciseId {
+                        // Detect if a NEW timer was started (different ID) - reset completion state
+                        if timer.id != self.lastKnownTimerId {
+                            self.lastKnownTimerId = timer.id
+                            self.showCompletionState = false
+                            self.celebrationScale = 1.0
+                        }
+
+                        // Check for completion
+                        if timer.isCompleted && !self.showCompletionState {
+                            self.handleTimerCompletion()
+                        }
                     }
                 } else {
                     // No filter - check any timer
-                    if let timer = self.appState.activeRestTimer,
-                       timer.isCompleted && !self.showCompletionState {
-                        self.handleTimerCompletion()
+                    if let timer = self.appState.activeRestTimer {
+                        // Detect if a NEW timer was started (different ID) - reset completion state
+                        if timer.id != self.lastKnownTimerId {
+                            self.lastKnownTimerId = timer.id
+                            self.showCompletionState = false
+                            self.celebrationScale = 1.0
+                        }
+
+                        // Check for completion
+                        if timer.isCompleted && !self.showCompletionState {
+                            self.handleTimerCompletion()
+                        }
                     }
                 }
             }
@@ -90,7 +109,26 @@ class RestTimerManager: ObservableObject {
         appState.cancelRestTimer()
         showCompletionState = false
         celebrationScale = 1.0
+        lastKnownTimerId = nil
         cancelNotification()
+    }
+
+    /// Handle app returning to foreground - dismiss completed timers immediately
+    func handleAppBecameActive() {
+        if let timer = appState.activeRestTimer {
+            // Check if this timer matches our filter (if any)
+            if let filterExerciseId = filterExerciseId {
+                guard timer.exerciseId == filterExerciseId else { return }
+            }
+
+            // If timer is completed, dismiss it immediately
+            if timer.isCompleted {
+                appState.cancelRestTimer()
+                showCompletionState = false
+                celebrationScale = 1.0
+                lastKnownTimerId = nil
+            }
+        }
     }
 
     // MARK: - Notification Management

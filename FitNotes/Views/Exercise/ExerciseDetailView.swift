@@ -8,8 +8,9 @@ struct ExerciseDetailView: View {
     var shouldDismissOnSave: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var appState: AppState
-    
+
     @State private var selectedTab = 0
     @State private var showSettings = false
     @StateObject private var timerManager: RestTimerManager
@@ -150,6 +151,12 @@ struct ExerciseDetailView: View {
                 } else {
                     HistoryTabView(exercise: exercise)
                 }
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // When app becomes active (e.g., from notification tap), dismiss completed timers
+                timerManager.handleAppBecameActive()
             }
         }
     }

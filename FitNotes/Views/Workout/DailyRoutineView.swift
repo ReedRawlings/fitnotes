@@ -264,6 +264,7 @@ struct WorkoutView: View {
 struct WorkoutDetailView: View {
     let workout: Workout
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var appState: AppState
     @State private var showingRoutineTemplates = false
     @State private var cachedExercises: [WorkoutExercise] = []
@@ -392,6 +393,12 @@ struct WorkoutDetailView: View {
         }
         .sheet(isPresented: $showingRoutineTemplates) {
             RoutineTemplateSelectorView(selectedDate: workout.date, existingWorkout: workout)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // When app becomes active (e.g., from notification tap), dismiss completed timers
+                timerManager.handleAppBecameActive()
+            }
         }
     }
 
