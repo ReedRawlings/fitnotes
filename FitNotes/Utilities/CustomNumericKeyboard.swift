@@ -6,6 +6,14 @@ struct CustomNumericKeyboard: View {
     @Binding var text: String
     let increment: Double
     let onDismiss: () -> Void
+    let onFillDown: (() -> Void)?
+
+    init(text: Binding<String>, increment: Double, onDismiss: @escaping () -> Void, onFillDown: (() -> Void)? = nil) {
+        self._text = text
+        self.increment = increment
+        self.onDismiss = onDismiss
+        self.onFillDown = onFillDown
+    }
 
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "CustomNumericKeyboard")
 
@@ -23,14 +31,19 @@ struct CustomNumericKeyboard: View {
                     }
                 )
 
-                // Dismiss keyboard button
+                // Fill down button (replaces dismiss button)
                 KeyboardButton(
-                    label: nil,
-                    icon: "chevron.down",
+                    label: onFillDown != nil ? "fill\ndown" : nil,
+                    icon: nil,
                     backgroundColor: Color.accentSuccess,
                     action: {
-                        logger.info("Dismiss button tapped - closing keyboard")
-                        onDismiss()
+                        if let onFillDown = onFillDown {
+                            logger.info("Fill down button tapped")
+                            onFillDown()
+                        } else {
+                            logger.info("Dismiss button tapped - closing keyboard")
+                            onDismiss()
+                        }
                     }
                 )
 
@@ -202,13 +215,28 @@ struct KeyboardButton: View {
     var body: some View {
         Button(action: action) {
             Group {
-                if let label = label {
+                if let label = label, let icon = icon {
+                    // Both label and icon: show label above icon
+                    VStack(spacing: 2) {
+                        Text(label)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.textPrimary)
+                        Image(systemName: icon)
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.textPrimary)
+                    }
+                } else if let label = label {
+                    // Label only - use larger font for numbers, smaller for multi-line text
+                    let fontSize: CGFloat = label.contains("\n") ? 14 : 28
                     Text(label)
-                        .font(.system(size: 24, weight: .medium))
+                        .font(.system(size: fontSize, weight: .medium))
                         .foregroundColor(.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                 } else if let icon = icon {
+                    // Icon only
                     Image(systemName: icon)
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.system(size: 24, weight: .medium))
                         .foregroundColor(.textPrimary)
                 }
             }

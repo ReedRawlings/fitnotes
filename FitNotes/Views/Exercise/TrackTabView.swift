@@ -31,7 +31,13 @@ struct TrackTabView: View {
                     VStack(spacing: 0) {
                     // Current Sets
                     if !sets.isEmpty {
-                        VStack(spacing: 10) {  // Reduced from 12
+                        // Header Row
+                        SetHeaderRowView(exercise: exercise)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                            .padding(.bottom, 8)
+                        
+                        VStack(spacing: 6) {  // Reduced spacing between sets
                             ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                                 SetRowView(
                                     exercise: exercise,
@@ -135,6 +141,9 @@ struct TrackTabView: View {
                             onDismiss: {
                                 logger.info("Keyboard dismiss requested from CustomNumericKeyboard")
                                 focusedInput = nil
+                            },
+                            onFillDown: {
+                                fillDownCurrentColumn()
                             }
                         )
                     }
@@ -317,6 +326,96 @@ struct TrackTabView: View {
         } else {
             return String(format: "%.1f", weight)
         }
+    }
+    
+    private func fillDownCurrentColumn() {
+        guard let focusedInput = focusedInput else {
+            logger.warning("fillDownCurrentColumn called but focusedInput is nil")
+            return
+        }
+        
+        // Get current set index
+        let currentSetId: UUID
+        switch focusedInput {
+        case .weight(let id), .reps(let id), .rpe(let id), .rir(let id):
+            currentSetId = id
+        }
+        
+        guard let currentIndex = sets.firstIndex(where: { $0.id == currentSetId }) else {
+            logger.error("Could not find current set index for fill down")
+            return
+        }
+        
+        // Get current value from text binding
+        let currentText = bindingForFocusedInput().wrappedValue
+        
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Fill down based on column type
+        switch focusedInput {
+        case .weight(let id):
+            // Parse current weight value
+            let cleaned = currentText.replacingOccurrences(of: ",", with: ".")
+            guard let currentValue = Double(cleaned) else {
+                logger.warning("Could not parse weight value for fill down: '\(currentText)'")
+                return
+            }
+            
+            // Fill all sets below current index
+            for index in (currentIndex + 1)..<sets.count {
+                sets[index].weight = currentValue
+            }
+            logger.info("Filled down weight value \(currentValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
+            
+        case .reps(let id):
+            // Parse current reps value
+            let filtered = currentText.filter { $0.isNumber }
+            guard let currentValue = Int(filtered) else {
+                logger.warning("Could not parse reps value for fill down: '\(currentText)'")
+                return
+            }
+            
+            // Fill all sets below current index
+            for index in (currentIndex + 1)..<sets.count {
+                sets[index].reps = currentValue
+            }
+            logger.info("Filled down reps value \(currentValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
+            
+        case .rpe(let id):
+            // Parse current RPE value
+            let filtered = currentText.filter { $0.isNumber }
+            guard let currentValue = Int(filtered) else {
+                logger.warning("Could not parse RPE value for fill down: '\(currentText)'")
+                return
+            }
+            let clampedValue = max(0, min(10, currentValue))
+            
+            // Fill all sets below current index
+            for index in (currentIndex + 1)..<sets.count {
+                sets[index].rpe = clampedValue
+            }
+            logger.info("Filled down RPE value \(clampedValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
+            
+        case .rir(let id):
+            // Parse current RIR value
+            let filtered = currentText.filter { $0.isNumber }
+            guard let currentValue = Int(filtered) else {
+                logger.warning("Could not parse RIR value for fill down: '\(currentText)'")
+                return
+            }
+            let clampedValue = max(0, min(10, currentValue))
+            
+            // Fill all sets below current index
+            for index in (currentIndex + 1)..<sets.count {
+                sets[index].rir = clampedValue
+            }
+            logger.info("Filled down RIR value \(clampedValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
+        }
+        
+        // Persist changes
+        persistCurrentSets()
     }
 
     private func loadSets() {
@@ -529,6 +628,48 @@ struct TrackTabView: View {
 }
 
 
+// MARK: - Set Header Row View
+struct SetHeaderRowView: View {
+    let exercise: Exercise
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            // Weight Column Header
+            HStack(spacing: 4) {
+                Text("WEIGHT")
+                    .font(.sectionHeader)
+                    .foregroundColor(.textTertiary)
+                    .kerning(0.3)
+
+                Text(exercise.unit)
+                    .font(.system(size: 10))
+                    .foregroundColor(.textTertiary.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Reps Column Header
+            Text("REPS")
+                .font(.sectionHeader)
+                .foregroundColor(.textTertiary)
+                .kerning(0.3)
+                .frame(maxWidth: .infinity)
+            
+            // RPE/RIR Column Header (conditional)
+            if exercise.rpeEnabled || exercise.rirEnabled {
+                Text(exercise.rpeEnabled ? "RPE" : "RIR")
+                    .font(.sectionHeader)
+                    .foregroundColor(.textTertiary)
+                    .kerning(0.3)
+                    .frame(maxWidth: .infinity)
+            }
+            
+            // Spacer for checkbox column
+            Spacer()
+                .frame(width: 44) // Match checkbox width
+        }
+    }
+}
+
 // MARK: - Set Row View
 struct SetRowView: View {
     let exercise: Exercise
@@ -546,91 +687,64 @@ struct SetRowView: View {
     var body: some View {
         HStack(spacing: 20) {
             // Weight Column
-            VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
-                HStack(spacing: 4) {
-                    Text("WEIGHT")
-                        .font(.sectionHeader)
-                        .foregroundColor(.textTertiary)
-                        .kerning(0.3)
-
-                    Text(exercise.unit)
-                        .font(.system(size: 10))
-                        .foregroundColor(.textTertiary.opacity(0.6))
+            NumericInputField(
+                text: Binding<String>(
+                    get: { formatWeight(weight) },
+                    set: { _ in } // No-op: editing happens through keyboard binding
+                ),
+                placeholder: "0",
+                isActive: focusedInput == TrackTabView.InputFocus.weight(set.id),
+                onTap: {
+                    logger.info("👆 WEIGHT FIELD TAPPED - Set ID: \(set.id)")
+                    logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
+                    logger.info("   Setting focusedInput to: weight(\(set.id))")
+                    focusedInput = TrackTabView.InputFocus.weight(set.id)
+                    logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
                 }
-
-                NumericInputField(
-                    text: Binding<String>(
-                        get: { formatWeight(weight) },
-                        set: { _ in } // No-op: editing happens through keyboard binding
-                    ),
-                    placeholder: "0",
-                    isActive: focusedInput == TrackTabView.InputFocus.weight(set.id),
-                    onTap: {
-                        logger.info("👆 WEIGHT FIELD TAPPED - Set ID: \(set.id)")
-                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
-                        logger.info("   Setting focusedInput to: weight(\(set.id))")
-                        focusedInput = TrackTabView.InputFocus.weight(set.id)
-                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
-                    }
-                )
-                .accessibilityLabel("Weight input")
-                .accessibilityHint("Double tap to enter weight")
-            }
+            )
+            .accessibilityLabel("Weight input")
+            .accessibilityHint("Double tap to enter weight")
             
             // Reps Column
-            VStack(alignment: .leading, spacing: 4) {  // Reduced from 8
-                Text("REPS")
-                    .font(.sectionHeader)
-                    .foregroundColor(.textTertiary)
-                    .kerning(0.3)
-
-                NumericInputField(
-                    text: Binding<String>(
-                        get: { reps.map(String.init) ?? "" },
-                        set: { _ in } // No-op: editing happens through keyboard binding
-                    ),
-                    placeholder: "0",
-                    isActive: focusedInput == TrackTabView.InputFocus.reps(set.id),
-                    onTap: {
-                        logger.info("👆 REPS FIELD TAPPED - Set ID: \(set.id)")
-                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
-                        logger.info("   Setting focusedInput to: reps(\(set.id))")
-                        focusedInput = TrackTabView.InputFocus.reps(set.id)
-                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
-                    }
-                )
-                .accessibilityLabel("Reps input")
-                .accessibilityHint("Double tap to enter reps")
-            }
+            NumericInputField(
+                text: Binding<String>(
+                    get: { reps.map(String.init) ?? "" },
+                    set: { _ in } // No-op: editing happens through keyboard binding
+                ),
+                placeholder: "0",
+                isActive: focusedInput == TrackTabView.InputFocus.reps(set.id),
+                onTap: {
+                    logger.info("👆 REPS FIELD TAPPED - Set ID: \(set.id)")
+                    logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
+                    logger.info("   Setting focusedInput to: reps(\(set.id))")
+                    focusedInput = TrackTabView.InputFocus.reps(set.id)
+                    logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
+                }
+            )
+            .accessibilityLabel("Reps input")
+            .accessibilityHint("Double tap to enter reps")
             
             // RPE/RIR Column (conditional)
             if exercise.rpeEnabled || exercise.rirEnabled {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(exercise.rpeEnabled ? "RPE" : "RIR")
-                        .font(.sectionHeader)
-                        .foregroundColor(.textTertiary)
-                        .kerning(0.3)
-
-                    NumericInputField(
-                        text: Binding<String>(
-                            get: { exercise.rpeEnabled ? (rpe.map(String.init) ?? "") : (rir.map(String.init) ?? "") },
-                            set: { _ in } // No-op: editing happens through keyboard binding
-                        ),
-                        placeholder: "0",
-                        isActive: focusedInput == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
-                        onTap: {
-                            let fieldType = exercise.rpeEnabled ? "RPE" : "RIR"
-                            logger.info("👆 \(fieldType) FIELD TAPPED - Set ID: \(set.id)")
-                            logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
-                            let newFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
-                            logger.info("   Setting focusedInput to: \(String(describing: newFocus))")
-                            focusedInput = newFocus
-                            logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
-                        }
-                    )
-                    .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
-                    .accessibilityHint("Double tap to enter \(exercise.rpeEnabled ? "RPE" : "RIR")")
-                }
+                NumericInputField(
+                    text: Binding<String>(
+                        get: { exercise.rpeEnabled ? (rpe.map(String.init) ?? "") : (rir.map(String.init) ?? "") },
+                        set: { _ in } // No-op: editing happens through keyboard binding
+                    ),
+                    placeholder: "0",
+                    isActive: focusedInput == (exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)),
+                    onTap: {
+                        let fieldType = exercise.rpeEnabled ? "RPE" : "RIR"
+                        logger.info("👆 \(fieldType) FIELD TAPPED - Set ID: \(set.id)")
+                        logger.info("   Current focusedInput BEFORE tap: \(String(describing: focusedInput))")
+                        let newFocus = exercise.rpeEnabled ? TrackTabView.InputFocus.rpe(set.id) : TrackTabView.InputFocus.rir(set.id)
+                        logger.info("   Setting focusedInput to: \(String(describing: newFocus))")
+                        focusedInput = newFocus
+                        logger.info("   focusedInput AFTER assignment: \(String(describing: focusedInput))")
+                    }
+                )
+                .accessibilityLabel(exercise.rpeEnabled ? "RPE input" : "RIR input")
+                .accessibilityHint("Double tap to enter \(exercise.rpeEnabled ? "RPE" : "RIR")")
             }
             
             // Checkbox Button

@@ -2448,7 +2448,8 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
-        .accentColor(.accentPrimary)
+        .toolbarColorScheme(.dark, for: .tabBar)
+        .tint(.accentPrimary)
         .environmentObject(appState)
         .sheet(item: $appState.selectedExercise) { exercise in
             let todaysWorkout = workouts.first { Calendar.current.isDateInToday($0.date) }

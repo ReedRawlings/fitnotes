@@ -563,7 +563,8 @@ struct ExerciseSettingsView: View {
         .sheet(isPresented: $showingTimePicker) {
             TimePickerModal(selectedSeconds: $tempSelectedSeconds, isPresented: $showingTimePicker)
                 .presentationDetents([.height(300)])
-                .presentationBackground(.clear)
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(Color.primaryBg)
                 .onDisappear {
                     // Save the selected time
                     if let setNumber = timePickerForSet {

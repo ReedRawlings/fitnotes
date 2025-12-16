@@ -577,7 +577,6 @@ struct TimePickerModal: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .colorScheme(.dark)
                 .frame(maxWidth: .infinity)
                 .onChange(of: selectedMinutes) {
                     triggerHapticFeedback()
@@ -597,7 +596,6 @@ struct TimePickerModal: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .colorScheme(.dark)
                 .frame(maxWidth: .infinity)
                 .onChange(of: selectedSecondsValue) {
                     triggerHapticFeedback()
@@ -609,10 +607,7 @@ struct TimePickerModal: View {
                     .padding(.horizontal, 8)
             }
             .frame(height: 200)
-            .colorScheme(.dark)
         }
-        .background(Color.secondaryBg)
-        .cornerRadius(20, corners: [.topLeft, .topRight])
         .onAppear {
             // Initialize picker values from selectedSeconds
             selectedMinutes = selectedSeconds / 60

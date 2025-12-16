@@ -46,6 +46,7 @@
 		7423C08B2EF09E2900E92CA7 /* GoalsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0852EF09E2900E92CA7 /* GoalsCardView.swift */; };
 		7423C08C2EF09E2900E92CA7 /* TopExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */; };
 		7423C08E2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */; };
+		7423C0942EF1198F00E92CA7 /* DevDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */; };
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
 		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
@@ -114,6 +115,7 @@
 		7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopExercisesView.swift; sourceTree = "<group>"; };
 		7423C0882EF09E2900E92CA7 /* YearInReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearInReviewView.swift; sourceTree = "<group>"; };
 		7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleRecoveryHeatmapView.swift; sourceTree = "<group>"; };
+		7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevDataSeeder.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
 		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -235,6 +237,7 @@
 		741C98842ECD0D9100753A55 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */,
 				7413253E2E9F733D0099C49A /* ExerciseService.swift */,
 				741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */,
 				25F88B33E5C5465EB1181C5B193E08F4 /* ExerciseSearchService.swift */,
@@ -388,7 +391,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					741325072E9F733D0099C49A = {
 						CreatedOnToolsVersion = 15.0;
@@ -481,6 +484,7 @@
 				744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */,
 				741C987D2ECD0D9100753A52 /* InsightsService.swift in Sources */,
 				741C987E2ECD0D9100753A52 /* RestTimerManager.swift in Sources */,
+				7423C0942EF1198F00E92CA7 /* DevDataSeeder.swift in Sources */,
 				741C987F2ECD0D9100753A52 /* ProgressionService.swift in Sources */,
 				741C98802ECD0D9100753A52 /* SimplifiedStatsIndicator.swift in Sources */,
 				741C98812ECD0D9100753A52 /* ExerciseStatsView.swift in Sources */,
@@ -562,6 +566,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -585,6 +590,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -625,6 +631,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -641,6 +648,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -655,8 +663,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -690,8 +699,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -722,7 +732,6 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -741,7 +750,6 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -759,7 +767,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesUITests";
@@ -776,7 +783,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6N75SAQ2KX;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Future-Selves.FitNotesUITests";
