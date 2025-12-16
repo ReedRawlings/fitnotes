@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import StoreKit
 
 // MARK: - Interactive Setup View (Screen 12)
 /// Guided walkthrough for setting up the first exercise
@@ -724,6 +725,11 @@ struct OnboardingEmailCaptureView: View {
 // MARK: - Paywall View (Screen 17)
 struct OnboardingPaywallView: View {
     @ObservedObject var state: OnboardingState
+    @StateObject private var storeManager = StoreKitManager.shared
+    @State private var selectedProductId: String?
+    @State private var isPurchasing: Bool = false
+    @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -758,52 +764,355 @@ struct OnboardingPaywallView: View {
 
                 // Plan Selection
                 VStack(spacing: 16) {
-                    // Premium Plan
-                    PlanOptionCard(
-                        title: "Premium",
-                        price: "$4.99/month",
-                        features: [
-                            "Unlimited exercise tracking",
-                            "Advanced analytics & insights",
-                            "Custom progression targets",
-                            "Export workout data",
-                            "Priority support"
-                        ],
-                        isSelected: state.selectedPlan == .premium,
-                        isPremium: true,
-                        onTap: {
-                            state.selectedPlan = .premium
-                        }
-                    )
+                    // Yearly Plan (Best Value)
+                    if let yearly = storeManager.yearlyProduct {
+                        StoreKitPlanCard(
+                            product: yearly,
+                            isSelected: selectedProductId == yearly.id,
+                            isPremium: true,
+                            badge: savingsBadge,
+                            monthlyEquivalent: storeManager.formattedPricePerMonth(for: yearly),
+                            features: premiumFeatures,
+                            onTap: {
+                                selectedProductId = yearly.id
+                                state.selectedPlan = .premium
+                            }
+                        )
+                    }
+
+                    // Monthly Plan
+                    if let monthly = storeManager.monthlyProduct {
+                        StoreKitPlanCard(
+                            product: monthly,
+                            isSelected: selectedProductId == monthly.id,
+                            isPremium: true,
+                            badge: nil,
+                            monthlyEquivalent: nil,
+                            features: premiumFeatures,
+                            onTap: {
+                                selectedProductId = monthly.id
+                                state.selectedPlan = .premium
+                            }
+                        )
+                    }
 
                     // Free Plan
                     PlanOptionCard(
                         title: "Free",
                         price: "Forever",
-                        features: [
-                            "Track up to 5 exercises",
-                            "Basic workout logging",
-                            "7-day history"
-                        ],
-                        isSelected: state.selectedPlan == .free,
+                        features: freeFeatures,
+                        isSelected: state.selectedPlan == .free && selectedProductId == nil,
                         isPremium: false,
                         onTap: {
+                            selectedProductId = nil
                             state.selectedPlan = .free
                         }
                     )
                 }
                 .padding(.horizontal, 20)
 
-                // Legal text
-                Text("Cancel anytime. Subscription auto-renews monthly.")
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(.textTertiary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 16)
+                // Loading indicator for products
+                if storeManager.isLoading && storeManager.products.isEmpty {
+                    ProgressView()
+                        .tint(.accentPrimary)
+                        .padding(.top, 20)
+                }
+
+                // Error message
+                if let error = storeManager.errorMessage {
+                    Text(error)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.errorRed)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 12)
+                        .padding(.horizontal, 20)
+                }
+
+                // Legal text and restore
+                VStack(spacing: 12) {
+                    Text("Cancel anytime. Subscription auto-renews.")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.textTertiary)
+                        .multilineTextAlignment(.center)
+
+                    Button(action: restorePurchases) {
+                        Text("Restore Purchases")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.textSecondary)
+                            .underline()
+                    }
+
+                    // Terms and Privacy links
+                    HStack(spacing: 16) {
+                        Button(action: { openTerms() }) {
+                            Text("Terms of Use")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                        }
+
+                        Text("•")
+                            .font(.system(size: 12))
+                            .foregroundColor(.textTertiary)
+
+                        Button(action: { openPrivacy() }) {
+                            Text("Privacy Policy")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                        }
+                    }
+                }
+                .padding(.top, 16)
 
                 Spacer()
                     .frame(height: 120)
             }
+        }
+        .overlay {
+            if isPurchasing {
+                purchasingOverlay
+            }
+        }
+        .alert("Purchase Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
+        .onAppear {
+            // Default to yearly if available
+            if let yearly = storeManager.yearlyProduct {
+                selectedProductId = yearly.id
+                state.selectedPlan = .premium
+            }
+        }
+    }
+
+    // MARK: - Premium Features
+    private var premiumFeatures: [String] {
+        [
+            "Unlimited exercise tracking",
+            "Advanced analytics & insights",
+            "Custom progression targets",
+            "Export workout data",
+            "Priority support"
+        ]
+    }
+
+    private var freeFeatures: [String] {
+        [
+            "Track up to 5 exercises",
+            "Basic workout logging",
+            "7-day history"
+        ]
+    }
+
+    private var savingsBadge: String? {
+        guard let yearly = storeManager.yearlyProduct,
+              let monthly = storeManager.monthlyProduct else {
+            return nil
+        }
+        let savings = storeManager.savingsPercentage(yearly: yearly, monthly: monthly)
+        return savings > 0 ? "Save \(savings)%" : nil
+    }
+
+    // MARK: - Purchasing Overlay
+    private var purchasingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                ProgressView()
+                    .tint(.white)
+                    .scaleEffect(1.2)
+
+                Text("Processing...")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .padding(32)
+            .background(Color.secondaryBg)
+            .cornerRadius(20)
+        }
+    }
+
+    // MARK: - Actions
+    func purchaseSelectedPlan() async {
+        guard let productId = selectedProductId,
+              let product = storeManager.products.first(where: { $0.id == productId }) else {
+            return
+        }
+
+        isPurchasing = true
+
+        do {
+            _ = try await storeManager.purchase(product)
+            isPurchasing = false
+            // Purchase successful - complete onboarding
+            state.completeOnboarding()
+        } catch StoreError.userCancelled {
+            isPurchasing = false
+            // User cancelled - do nothing
+        } catch StoreError.pending {
+            isPurchasing = false
+            errorMessage = "Your purchase is pending approval. You'll get access once it's approved."
+            showError = true
+        } catch {
+            isPurchasing = false
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func restorePurchases() {
+        Task {
+            isPurchasing = true
+            await storeManager.restorePurchases()
+            isPurchasing = false
+
+            if storeManager.isPremium {
+                state.selectedPlan = .premium
+                state.completeOnboarding()
+            }
+        }
+    }
+
+    private func openTerms() {
+        // TODO: Replace with your actual Terms URL
+        if let url = URL(string: "https://fitnotes.app/terms") {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func openPrivacy() {
+        // TODO: Replace with your actual Privacy Policy URL
+        if let url = URL(string: "https://fitnotes.app/privacy") {
+            UIApplication.shared.open(url)
+        }
+    }
+}
+
+// MARK: - StoreKit Plan Card
+struct StoreKitPlanCard: View {
+    let product: Product
+    let isSelected: Bool
+    let isPremium: Bool
+    let badge: String?
+    let monthlyEquivalent: String?
+    let features: [String]
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            onTap()
+        }) {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Text(product.displayName)
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.textPrimary)
+
+                            if isPremium {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.accentSecondary)
+                            }
+
+                            if let badge = badge {
+                                Text(badge)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.textInverse)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.accentSuccess)
+                                    .cornerRadius(6)
+                            }
+                        }
+
+                        HStack(spacing: 4) {
+                            Text(product.displayPrice)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
+
+                            Text(subscriptionPeriod)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.textSecondary)
+                        }
+
+                        if let monthly = monthlyEquivalent {
+                            Text("(\(monthly)/month)")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                        }
+                    }
+
+                    Spacer()
+
+                    // Selection indicator
+                    ZStack {
+                        Circle()
+                            .stroke(isSelected ? Color.accentPrimary : Color.textTertiary, lineWidth: 2)
+                            .frame(width: 24, height: 24)
+
+                        if isSelected {
+                            Circle()
+                                .fill(Color.accentPrimary)
+                                .frame(width: 14, height: 14)
+                        }
+                    }
+                }
+
+                // Features (only show when selected)
+                if isSelected {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(features, id: \.self) { feature in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
+
+                                Text(feature)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.textSecondary)
+                            }
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(20)
+            .background(isSelected ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        isSelected ? Color.accentPrimary : Color.white.opacity(0.06),
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            )
+            .animation(.standardSpring, value: isSelected)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private var subscriptionPeriod: String {
+        guard let subscription = product.subscription else { return "" }
+
+        switch subscription.subscriptionPeriod.unit {
+        case .month:
+            return subscription.subscriptionPeriod.value == 1 ? "/month" : "/\(subscription.subscriptionPeriod.value) months"
+        case .year:
+            return subscription.subscriptionPeriod.value == 1 ? "/year" : "/\(subscription.subscriptionPeriod.value) years"
+        case .week:
+            return "/week"
+        case .day:
+            return "/day"
+        @unknown default:
+            return ""
         }
     }
 }

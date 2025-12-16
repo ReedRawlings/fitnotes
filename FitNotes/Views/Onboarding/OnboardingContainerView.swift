@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct OnboardingContainerView: View {
     @StateObject private var state = OnboardingState()
+    @StateObject private var storeManager = StoreKitManager.shared
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -33,7 +35,7 @@ struct OnboardingContainerView: View {
                 .animation(.standardSpring, value: state.currentPageIndex)
 
                 // Bottom Navigation
-                OnboardingBottomBar(state: state)
+                OnboardingBottomBar(state: state, storeManager: storeManager)
             }
         }
         .preferredColorScheme(.dark)
@@ -100,20 +102,30 @@ struct OnboardingPageView: View {
 // MARK: - Bottom Navigation Bar
 struct OnboardingBottomBar: View {
     @ObservedObject var state: OnboardingState
+    @ObservedObject var storeManager: StoreKitManager
+    @State private var isPurchasing: Bool = false
+    @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     var body: some View {
         VStack(spacing: 12) {
             // Primary CTA
             Button(action: {
-                state.nextPage()
+                handlePrimaryAction()
             }) {
                 HStack(spacing: 8) {
-                    Text(primaryButtonTitle)
-                        .font(.buttonFont)
+                    if isPurchasing {
+                        ProgressView()
+                            .tint(.textInverse)
+                            .scaleEffect(0.9)
+                    } else {
+                        Text(primaryButtonTitle)
+                            .font(.buttonFont)
 
-                    if !state.isLastPage {
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .semibold))
+                        if !state.isLastPage {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
                     }
                 }
                 .foregroundColor(.textInverse)
@@ -140,7 +152,7 @@ struct OnboardingBottomBar: View {
                     y: 4
                 )
             }
-            .disabled(!state.canProceed)
+            .disabled(!state.canProceed || isPurchasing)
             .padding(.horizontal, 20)
 
             // Secondary Actions
@@ -179,6 +191,52 @@ struct OnboardingBottomBar: View {
             .frame(height: 32)
         }
         .padding(.bottom, 24)
+        .alert("Purchase Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func handlePrimaryAction() {
+        // If on paywall and premium is selected, initiate purchase
+        if state.currentPage.type == .paywall && state.selectedPlan == .premium {
+            Task {
+                await purchasePremium()
+            }
+        } else {
+            state.nextPage()
+        }
+    }
+
+    private func purchasePremium() async {
+        // Try yearly first, then monthly
+        guard let product = storeManager.yearlyProduct ?? storeManager.monthlyProduct else {
+            // No products available, just continue
+            state.completeOnboarding()
+            return
+        }
+
+        isPurchasing = true
+
+        do {
+            _ = try await storeManager.purchase(product)
+            isPurchasing = false
+            state.completeOnboarding()
+        } catch StoreError.userCancelled {
+            isPurchasing = false
+            // User cancelled - do nothing
+        } catch StoreError.pending {
+            isPurchasing = false
+            errorMessage = "Your purchase is pending approval. You'll get access once it's approved."
+            showError = true
+        } catch {
+            isPurchasing = false
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private var primaryButtonTitle: String {
