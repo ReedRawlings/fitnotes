@@ -260,7 +260,7 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "From the Experts",
                 subtitle: nil,
-                description: "\"Progressive overload is the number one driver of muscle growth. If you're not progressively challenging your muscles, you're leaving gains on the table. It's not optional—it's essential.\"\n\n— Greg Doucette, IFBB Pro & Fitness Coach",
+                description: "\"Train harder than last time. That's it. That's the secret. Every single workout, you need to do a little bit more than you did before. More weight, more reps, more sets—something has to improve.\"\n\n— Greg Doucette, IFBB Pro & Coach",
                 systemImage: "quote.bubble.fill",
                 order: 6
             ),
