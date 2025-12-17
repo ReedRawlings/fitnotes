@@ -17,144 +17,151 @@ struct OnboardingInteractiveSetupView: View {
     // Setup steps
     @State private var currentStep: Int = 0
     @State private var selectedExercise: PrimaryLift?
-    @State private var targetRepsMin: Int = 8
-    @State private var targetRepsMax: Int = 12
+    @State private var targetRepsMin: Int = 5
+    @State private var targetRepsMax: Int = 8
     @State private var weightIncrement: Double = 2.5
     @State private var showingExercisePicker: Bool = false
 
     private let totalSteps = 4
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 40)
-
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.accentPrimary.opacity(0.15),
-                                    Color.accentSecondary.opacity(0.05)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 100, height: 100)
-
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 40, weight: .medium))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.accentPrimary, .accentSecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+        VStack(spacing: 0) {
+            // Header with back button
+            HStack {
+                if currentStep > 0 {
+                    Button(action: previousStep) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.textPrimary)
+                            .frame(width: 44, height: 44)
+                    }
+                } else {
+                    Spacer()
+                        .frame(width: 44, height: 44)
                 }
 
                 Spacer()
-                    .frame(height: 24)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
 
-                // Title
-                Text("Let's Set Up Your First Exercise")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.textPrimary)
-                    .multilineTextAlignment(.center)
-
-                Text("We'll walk you through it")
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
-
-                Spacer()
-                    .frame(height: 32)
-
-                // Step Progress
-                HStack(spacing: 8) {
-                    ForEach(0..<totalSteps, id: \.self) { step in
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(step <= currentStep ? Color.accentPrimary : Color.tertiaryBg)
-                            .frame(height: 4)
-                    }
+            // Step Progress Bar
+            HStack(spacing: 8) {
+                ForEach(0..<totalSteps, id: \.self) { step in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(step <= currentStep ? Color.accentPrimary : Color.tertiaryBg)
+                        .frame(height: 4)
                 }
-                .padding(.horizontal, 20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
 
-                Spacer()
-                    .frame(height: 24)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: 32)
 
-                // Step Content
-                VStack(spacing: 16) {
-                    switch currentStep {
-                    case 0:
-                        exerciseSelectionStep
-                    case 1:
-                        repRangeStep
-                    case 2:
-                        weightIncrementStep
-                    case 3:
-                        confirmationStep
-                    default:
-                        EmptyView()
-                    }
-                }
-                .padding(.horizontal, 20)
-
-                Spacer()
-                    .frame(height: 24)
-
-                // Step Navigation
-                HStack(spacing: 12) {
-                    if currentStep > 0 {
-                        Button(action: previousStep) {
-                            Text("Back")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.textSecondary)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 48)
-                                .background(Color.secondaryBg)
-                                .cornerRadius(12)
-                        }
-                    }
-
-                    Button(action: nextStep) {
-                        Text(currentStep == totalSteps - 1 ? "Complete Setup" : "Next")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.textInverse)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                            .background(
-                                canProceedStep ?
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(
                                 LinearGradient(
-                                    colors: [.accentPrimary, .accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ) :
-                                LinearGradient(
-                                    colors: [Color.textTertiary.opacity(0.3), Color.textTertiary.opacity(0.3)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                                    colors: [
+                                        Color.accentPrimary.opacity(0.15),
+                                        Color.accentSecondary.opacity(0.05)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
                             )
-                            .cornerRadius(12)
-                    }
-                    .disabled(!canProceedStep)
-                }
-                .padding(.horizontal, 20)
+                            .frame(width: 100, height: 100)
 
-                Spacer()
-                    .frame(height: 120)
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 40, weight: .medium))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.accentPrimary, .accentSecondary],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+
+                    Spacer()
+                        .frame(height: 24)
+
+                    // Title
+                    Text("Let's Set Up Your First Exercise")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.textPrimary)
+                        .multilineTextAlignment(.center)
+
+                    Text("We'll walk you through it")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
+
+                    Spacer()
+                        .frame(height: 32)
+
+                    // Step Content
+                    VStack(spacing: 16) {
+                        switch currentStep {
+                        case 0:
+                            exerciseSelectionStep
+                        case 1:
+                            repRangeStep
+                        case 2:
+                            weightIncrementStep
+                        case 3:
+                            confirmationStep
+                        default:
+                            EmptyView()
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    Spacer()
+                        .frame(height: 24)
+                }
             }
+
+            // Bottom Continue Button
+            VStack(spacing: 12) {
+                Button(action: nextStep) {
+                    Text("Continue")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.textInverse)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            canProceedStep ?
+                            LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ) :
+                            LinearGradient(
+                                colors: [Color.textTertiary.opacity(0.3), Color.textTertiary.opacity(0.3)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(16)
+                }
+                .disabled(!canProceedStep)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
         }
         .onAppear {
             // Pre-select first lift from user's selection if available
             if let firstLift = state.primaryLifts.first {
                 selectedExercise = firstLift
             }
+            // Set default weight increment based on unit
+            weightIncrement = state.weightUnit == .lbs ? 5.0 : 2.5
         }
     }
 
@@ -259,7 +266,7 @@ struct OnboardingInteractiveSetupView: View {
                 label: "Increment",
                 value: $weightIncrement,
                 range: 0.5...10.0,
-                suffix: " kg",
+                suffix: " \(state.weightUnit.shortName)",
                 step: 0.5
             )
 
@@ -270,7 +277,7 @@ struct OnboardingInteractiveSetupView: View {
                     Image(systemName: "lightbulb.fill")
                         .foregroundColor(.accentSecondary)
 
-                    Text("Suggested for \(exercise.displayName): \(String(format: "%.1f", suggestion)) kg")
+                    Text("Suggested for \(exercise.displayName): \(String(format: "%.1f", suggestion)) \(state.weightUnit.shortName)")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.textSecondary)
                 }
@@ -296,7 +303,7 @@ struct OnboardingInteractiveSetupView: View {
             VStack(spacing: 12) {
                 confirmationRow(label: "Exercise", value: selectedExercise?.displayName ?? "")
                 confirmationRow(label: "Rep Range", value: "\(targetRepsMin)-\(targetRepsMax) reps")
-                confirmationRow(label: "Weight Increment", value: "\(String(format: "%.1f", weightIncrement)) kg")
+                confirmationRow(label: "Weight Increment", value: "\(String(format: "%.1f", weightIncrement)) \(state.weightUnit.shortName)")
             }
 
             // Success message
@@ -380,13 +387,25 @@ struct OnboardingInteractiveSetupView: View {
     }
 
     private func getSuggestedIncrement(for lift: PrimaryLift) -> Double {
-        switch lift {
-        case .squat, .deadlift, .legPress:
-            return 2.5
-        case .benchPress, .overheadPress, .barbellRow:
-            return 2.5
-        case .pullUp, .dip:
-            return 1.25
+        // Different suggestions based on weight unit
+        if state.weightUnit == .lbs {
+            switch lift {
+            case .squat, .deadlift, .legPress:
+                return 5.0
+            case .benchPress, .overheadPress, .barbellRow:
+                return 5.0
+            case .pullUp, .dip:
+                return 2.5
+            }
+        } else {
+            switch lift {
+            case .squat, .deadlift, .legPress:
+                return 2.5
+            case .benchPress, .overheadPress, .barbellRow:
+                return 2.5
+            case .pullUp, .dip:
+                return 1.25
+            }
         }
     }
 }

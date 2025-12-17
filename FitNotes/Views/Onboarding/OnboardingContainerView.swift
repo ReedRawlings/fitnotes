@@ -86,6 +86,8 @@ struct OnboardingPageView: View {
                 OnboardingSingleSelectView(page: page, state: state)
             case .multiSelect:
                 OnboardingMultiSelectView(page: page, state: state)
+            case .settings:
+                OnboardingSettingsView(page: page, state: state)
             case .interactive:
                 OnboardingInteractiveSetupView(state: state)
             case .conditional:
