@@ -47,6 +47,14 @@
 		7423C08C2EF09E2900E92CA7 /* TopExercisesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0872EF09E2900E92CA7 /* TopExercisesView.swift */; };
 		7423C08E2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */; };
 		7423C0942EF1198F00E92CA7 /* DevDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */; };
+		7423C7B32EF270F100E92CA7 /* OnboardingStaticPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7B12EF270F100E92CA7 /* OnboardingStaticPageView.swift */; };
+		7423C7B42EF270F100E92CA7 /* OnboardingSetupViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7B02EF270F100E92CA7 /* OnboardingSetupViews.swift */; };
+		7423C7B52EF270F100E92CA7 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7AE2EF270F100E92CA7 /* OnboardingContainerView.swift */; };
+		7423C7B62EF270F100E92CA7 /* OnboardingSelectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7AF2EF270F100E92CA7 /* OnboardingSelectionViews.swift */; };
+		7423C7B92EF270FE00E92CA7 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7B82EF270FE00E92CA7 /* StoreKitManager.swift */; };
+		7423C7BA2EF270FE00E92CA7 /* PremiumFeatureGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7B72EF270FE00E92CA7 /* PremiumFeatureGate.swift */; };
+		7423C7BD2EF271F900E92CA7 /* OnboardingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7BB2EF271F900E92CA7 /* OnboardingModels.swift */; };
+		7423C7BE2EF271F900E92CA7 /* OnboardingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C7BC2EF271F900E92CA7 /* OnboardingState.swift */; };
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
 		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
@@ -116,6 +124,14 @@
 		7423C0882EF09E2900E92CA7 /* YearInReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearInReviewView.swift; sourceTree = "<group>"; };
 		7423C08D2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleRecoveryHeatmapView.swift; sourceTree = "<group>"; };
 		7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevDataSeeder.swift; sourceTree = "<group>"; };
+		7423C7AE2EF270F100E92CA7 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
+		7423C7AF2EF270F100E92CA7 /* OnboardingSelectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSelectionViews.swift; sourceTree = "<group>"; };
+		7423C7B02EF270F100E92CA7 /* OnboardingSetupViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSetupViews.swift; sourceTree = "<group>"; };
+		7423C7B12EF270F100E92CA7 /* OnboardingStaticPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStaticPageView.swift; sourceTree = "<group>"; };
+		7423C7B72EF270FE00E92CA7 /* PremiumFeatureGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumFeatureGate.swift; sourceTree = "<group>"; };
+		7423C7B82EF270FE00E92CA7 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		7423C7BB2EF271F900E92CA7 /* OnboardingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModels.swift; sourceTree = "<group>"; };
+		7423C7BC2EF271F900E92CA7 /* OnboardingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingState.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
 		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -227,6 +243,8 @@
 		741C98832ECD0D9100753A54 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				7423C7BB2EF271F900E92CA7 /* OnboardingModels.swift */,
+				7423C7BC2EF271F900E92CA7 /* OnboardingState.swift */,
 				7413252E2E9F733D0099C49A /* Models.swift */,
 				741325312E9F733D0099C49A /* Exercise.swift */,
 				741325332E9F733D0099C49A /* DailyRoutine.swift */,
@@ -237,6 +255,8 @@
 		741C98842ECD0D9100753A55 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				7423C7B72EF270FE00E92CA7 /* PremiumFeatureGate.swift */,
+				7423C7B82EF270FE00E92CA7 /* StoreKitManager.swift */,
 				7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */,
 				7413253E2E9F733D0099C49A /* ExerciseService.swift */,
 				741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */,
@@ -253,6 +273,7 @@
 		741C98852ECD0D9100753A56 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				7423C7B22EF270F100E92CA7 /* Onboarding */,
 				741C98882ECD0D9100753A59 /* Exercise */,
 				741C98892ECD0D9100753A60 /* Workout */,
 				741C988A2ECD0D9100753A61 /* Routine */,
@@ -325,6 +346,17 @@
 				741C98782ECD0D9100753A52 /* SimplifiedStatsIndicator.swift */,
 			);
 			path = Insights;
+			sourceTree = "<group>";
+		};
+		7423C7B22EF270F100E92CA7 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				7423C7AE2EF270F100E92CA7 /* OnboardingContainerView.swift */,
+				7423C7AF2EF270F100E92CA7 /* OnboardingSelectionViews.swift */,
+				7423C7B02EF270F100E92CA7 /* OnboardingSetupViews.swift */,
+				7423C7B12EF270F100E92CA7 /* OnboardingStaticPageView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -487,10 +519,18 @@
 				7423C0942EF1198F00E92CA7 /* DevDataSeeder.swift in Sources */,
 				741C987F2ECD0D9100753A52 /* ProgressionService.swift in Sources */,
 				741C98802ECD0D9100753A52 /* SimplifiedStatsIndicator.swift in Sources */,
+				7423C7B32EF270F100E92CA7 /* OnboardingStaticPageView.swift in Sources */,
+				7423C7B42EF270F100E92CA7 /* OnboardingSetupViews.swift in Sources */,
+				7423C7B52EF270F100E92CA7 /* OnboardingContainerView.swift in Sources */,
+				7423C7B62EF270F100E92CA7 /* OnboardingSelectionViews.swift in Sources */,
 				741C98812ECD0D9100753A52 /* ExerciseStatsView.swift in Sources */,
 				7423C08E2EF09E4700E92CA7 /* MuscleRecoveryHeatmapView.swift in Sources */,
 				7423C0892EF09E2900E92CA7 /* StreakConsistencyView.swift in Sources */,
 				7423C08A2EF09E2900E92CA7 /* YearInReviewView.swift in Sources */,
+				7423C7B92EF270FE00E92CA7 /* StoreKitManager.swift in Sources */,
+				7423C7BA2EF270FE00E92CA7 /* PremiumFeatureGate.swift in Sources */,
+				7423C7BD2EF271F900E92CA7 /* OnboardingModels.swift in Sources */,
+				7423C7BE2EF271F900E92CA7 /* OnboardingState.swift in Sources */,
 				7423C08B2EF09E2900E92CA7 /* GoalsCardView.swift in Sources */,
 				7423C08C2EF09E2900E92CA7 /* TopExercisesView.swift in Sources */,
 				7413250C2E9F733D0099C49A /* FitNotesApp.swift in Sources */,

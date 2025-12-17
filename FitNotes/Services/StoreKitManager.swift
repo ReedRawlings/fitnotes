@@ -292,7 +292,7 @@ class StoreKitManager: ObservableObject {
         let yearlyTotal = yearly.price
         let monthlyTotal = monthly.price * 12
         let savings = (monthlyTotal - yearlyTotal) / monthlyTotal * 100
-        return Int(savings.rounded())
+        return Int(NSDecimalNumber(decimal: savings).doubleValue.rounded())
     }
 }
 

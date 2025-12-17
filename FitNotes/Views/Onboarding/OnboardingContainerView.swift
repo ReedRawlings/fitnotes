@@ -251,6 +251,8 @@ struct OnboardingBottomBar: View {
             return "Continue"
         case .singleSelect, .multiSelect:
             return state.canProceed ? "Continue" : "Select to Continue"
+        case .settings:
+            return "Continue"
         case .interactive:
             return state.hasCompletedSetup ? "Continue" : "Complete Setup"
         case .conditional:
