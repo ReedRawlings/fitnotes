@@ -10,8 +10,8 @@ import SwiftData
 
 @main
 struct FitNotesApp: App {
-    
-    
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Exercise.self,
@@ -72,8 +72,22 @@ struct FitNotesApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingContainerView()
+                    .onReceive(NotificationCenter.default.publisher(for: .onboardingCompleted)) { _ in
+                        withAnimation(.standardSpring) {
+                            hasCompletedOnboarding = true
+                        }
+                    }
+            }
         }
         .modelContainer(sharedModelContainer)
     }
+}
+
+// MARK: - Notification for onboarding completion
+extension Notification.Name {
+    static let onboardingCompleted = Notification.Name("onboardingCompleted")
 }
