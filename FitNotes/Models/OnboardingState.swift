@@ -20,7 +20,10 @@ class OnboardingState: ObservableObject {
     @Published var experienceLevel: ExperienceLevel?
     @Published var fitnessGoal: OnboardingFitnessGoal?
     @Published var primaryLifts: Set<PrimaryLift> = []
-    @Published var healthGoals: Set<HealthGoal> = []
+
+    // MARK: - Settings State (Phase 2.5)
+    @Published var weightUnit: WeightUnit = .lbs
+    @Published var defaultRestTimer: Int = 90  // seconds
 
     // MARK: - Setup State (Phase 3)
     @Published var selectedSetupExercise: PrimaryLift?
@@ -38,7 +41,8 @@ class OnboardingState: ObservableObject {
         static let experienceLevel = "onboarding_experienceLevel"
         static let fitnessGoal = "onboarding_fitnessGoal"
         static let primaryLifts = "onboarding_primaryLifts"
-        static let healthGoals = "onboarding_healthGoals"
+        static let weightUnit = "onboarding_weightUnit"
+        static let defaultRestTimer = "onboarding_defaultRestTimer"
         static let email = "onboarding_email"
         static let selectedPlan = "onboarding_selectedPlan"
     }
@@ -59,6 +63,8 @@ class OnboardingState: ObservableObject {
             return hasMadeRequiredSelection
         case .multiSelect:
             return !currentPage.isRequired || hasMadeRequiredSelection
+        case .settings:
+            return true // Unit and timer always have defaults
         case .interactive:
             return hasCompletedSetup
         case .conditional:
@@ -90,7 +96,7 @@ class OnboardingState: ObservableObject {
             return fitnessGoal != nil
         case 10: // Primary Lifts
             return !primaryLifts.isEmpty
-        case 11: // Health Goals (optional)
+        case 11: // Settings (unit/timer)
             return true
         default:
             return true
@@ -145,12 +151,12 @@ class OnboardingState: ObservableObject {
         }
     }
 
-    func toggleHealthGoal(_ goal: HealthGoal) {
-        if healthGoals.contains(goal) {
-            healthGoals.remove(goal)
-        } else {
-            healthGoals.insert(goal)
-        }
+    func setWeightUnit(_ unit: WeightUnit) {
+        weightUnit = unit
+    }
+
+    func setDefaultRestTimer(_ seconds: Int) {
+        defaultRestTimer = seconds
     }
 
     // MARK: - Completion
@@ -176,8 +182,8 @@ class OnboardingState: ObservableObject {
         let liftValues = primaryLifts.map { $0.rawValue }
         UserDefaults.standard.set(liftValues, forKey: StorageKeys.primaryLifts)
 
-        let healthValues = healthGoals.map { $0.rawValue }
-        UserDefaults.standard.set(healthValues, forKey: StorageKeys.healthGoals)
+        UserDefaults.standard.set(weightUnit.rawValue, forKey: StorageKeys.weightUnit)
+        UserDefaults.standard.set(defaultRestTimer, forKey: StorageKeys.defaultRestTimer)
 
         if !email.isEmpty {
             UserDefaults.standard.set(email, forKey: StorageKeys.email)
@@ -195,7 +201,8 @@ class OnboardingState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: StorageKeys.experienceLevel)
         UserDefaults.standard.removeObject(forKey: StorageKeys.fitnessGoal)
         UserDefaults.standard.removeObject(forKey: StorageKeys.primaryLifts)
-        UserDefaults.standard.removeObject(forKey: StorageKeys.healthGoals)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.weightUnit)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.defaultRestTimer)
         UserDefaults.standard.removeObject(forKey: StorageKeys.email)
         UserDefaults.standard.removeObject(forKey: StorageKeys.selectedPlan)
     }
@@ -328,21 +335,13 @@ class OnboardingState: ObservableObject {
                 order: 10
             ),
 
-            // Screen 11: Health Goals (Optional)
+            // Screen 11: Settings (Unit and Timer)
             OnboardingPage(
-                type: .multiSelect,
-                title: "Any Other Goals?",
-                subtitle: "Optional—select any that apply",
+                type: .settings,
+                title: "Your Preferences",
+                subtitle: "Set your defaults for tracking",
                 description: nil,
-                systemImage: "heart.text.square.fill",
-                options: HealthGoal.allCases.map { goal in
-                    OnboardingOption(
-                        title: goal.displayName,
-                        subtitle: nil,
-                        value: goal.rawValue
-                    )
-                },
-                isRequired: false,
+                systemImage: "gearshape.2.fill",
                 order: 11
             ),
 

@@ -12,11 +12,30 @@ import Foundation
 enum OnboardingPageType: String, Codable {
     case `static`       // Screens 1-7, 13, 14 - Informational only
     case singleSelect   // Screens 8, 9 - Pick one option
-    case multiSelect    // Screens 10, 11 - Pick multiple options
+    case multiSelect    // Screen 10 - Pick multiple options
+    case settings       // Screen 11 - Unit and timer preferences
     case interactive    // Screen 12 - Guided setup walkthrough
     case conditional    // Screen 15 - Content varies based on previous answers
     case emailCapture   // Screen 16 - Email input
     case paywall        // Screen 17 - Subscription options
+}
+
+// MARK: - WeightUnit
+/// User's preferred weight unit
+enum WeightUnit: String, Codable, CaseIterable {
+    case kg = "kg"
+    case lbs = "lbs"
+
+    var displayName: String {
+        switch self {
+        case .kg: return "Kilograms (kg)"
+        case .lbs: return "Pounds (lbs)"
+        }
+    }
+
+    var shortName: String {
+        rawValue
+    }
 }
 
 // MARK: - OnboardingOption
