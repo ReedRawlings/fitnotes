@@ -36,12 +36,14 @@ public final class ExerciseDatabaseService {
     
     public func createDefaultExercises(modelContext: ModelContext) {
         let defaultExercises = getDefaultExercises()
-        
+
         // Get global defaults from preferences
         let defaultUnit = PreferencesService.shared.getDefaultWeightUnit(modelContext: modelContext)
         let defaultRestSeconds = PreferencesService.shared.getDefaultRestSeconds(modelContext: modelContext)
         let defaultStatsDisplay = PreferencesService.shared.getDefaultStatsDisplayPreference(modelContext: modelContext)
-        
+        // Enable rest timer by default if user set a non-zero rest time during onboarding
+        let enableRestTimer = PreferencesService.shared.shouldEnableRestTimerByDefault(modelContext: modelContext)
+
         for exerciseData in defaultExercises {
             let exercise = Exercise(
                 name: exerciseData.name,
@@ -53,7 +55,7 @@ public final class ExerciseDatabaseService {
                 isCustom: false,
                 rpeEnabled: false,
                 rirEnabled: false,
-                useRestTimer: false,
+                useRestTimer: enableRestTimer,
                 defaultRestSeconds: defaultRestSeconds,
                 useAdvancedRest: false,
                 customRestSeconds: [:],
@@ -68,7 +70,7 @@ public final class ExerciseDatabaseService {
             )
             modelContext.insert(exercise)
         }
-        
+
         try? modelContext.save()
     }
     
