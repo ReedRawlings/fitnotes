@@ -34,8 +34,10 @@ struct OnboardingContainerView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.standardSpring, value: state.currentPageIndex)
 
-                // Bottom Navigation
-                OnboardingBottomBar(state: state, storeManager: storeManager)
+                // Bottom Navigation (hidden for interactive setup which has its own navigation)
+                if state.currentPage.type != .interactive {
+                    OnboardingBottomBar(state: state, storeManager: storeManager)
+                }
             }
         }
         .preferredColorScheme(.dark)
