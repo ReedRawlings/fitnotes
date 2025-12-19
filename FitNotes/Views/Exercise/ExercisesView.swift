@@ -269,7 +269,9 @@ struct AddExerciseView: View {
         // Get global defaults from preferences
         let defaultRestSeconds = PreferencesService.shared.getDefaultRestSeconds(modelContext: modelContext)
         let defaultStatsDisplay = PreferencesService.shared.getDefaultStatsDisplayPreference(modelContext: modelContext)
-        
+        // Enable rest timer by default if user set a non-zero rest time during onboarding
+        let enableRestTimer = PreferencesService.shared.shouldEnableRestTimerByDefault(modelContext: modelContext)
+
         let exercise = Exercise(
             name: name,
             primaryCategory: selectedCategory,
@@ -280,7 +282,7 @@ struct AddExerciseView: View {
             isCustom: true,
             rpeEnabled: false,
             rirEnabled: false,
-            useRestTimer: false,
+            useRestTimer: enableRestTimer,
             defaultRestSeconds: defaultRestSeconds,
             useAdvancedRest: false,
             customRestSeconds: [:],
@@ -293,9 +295,9 @@ struct AddExerciseView: View {
             createdAt: Date(),
             updatedAt: Date()
         )
-        
+
         modelContext.insert(exercise)
-        
+
         do {
             try modelContext.save()
             dismiss()

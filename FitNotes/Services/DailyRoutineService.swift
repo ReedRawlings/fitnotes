@@ -129,24 +129,35 @@ public final class WorkoutService {
         workoutExercise: WorkoutExercise,
         modelContext: ModelContext
     ) {
+        // Store references before deletion
+        let exerciseId = workoutExercise.exerciseId
+        let workoutDate = workoutExercise.workout?.date ?? Date()
+
         // Remove from workout's exercises array first
         if let workout = workoutExercise.workout {
             workout.exercises.removeAll { $0.id == workoutExercise.id }
         }
-        
+
         // Delete the workout exercise
         modelContext.delete(workoutExercise)
-        
+
+        // Delete all WorkoutSet records for this exercise on this date
+        ExerciseService.shared.deleteSetsForExerciseOnDate(
+            exerciseId: exerciseId,
+            date: workoutDate,
+            modelContext: modelContext
+        )
+
         // Reorder remaining exercises
         if let workout = workoutExercise.workout {
             let remainingExercises = workout.exercises
                 .sorted { $0.order < $1.order }
-            
+
             for (index, exercise) in remainingExercises.enumerated() {
                 exercise.order = index + 1
             }
         }
-        
+
         do {
             try modelContext.save()
         } catch {
