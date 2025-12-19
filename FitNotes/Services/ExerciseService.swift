@@ -217,7 +217,8 @@ public final class ExerciseService {
     
     // MARK: - Save Sets
     
-    /// Saves sets for an exercise on a specific date, replacing any existing sets
+    /// Saves sets for an exercise on a specific date, replacing any existing sets.
+    /// Only completed sets (isCompleted == true) are persisted to history.
     public func saveSets(
         exerciseId: UUID,
         date: Date,
@@ -231,10 +232,12 @@ public final class ExerciseService {
             for set in existingSets {
                 modelContext.delete(set)
             }
-            
-            // Create new sets
-            for (index, setData) in sets.enumerated() {
-                let completedAt: Date? = setData.isCompleted ? date : nil
+
+            // Only save completed sets to history
+            let completedSets = sets.filter { $0.isCompleted }
+
+            // Create new sets (only for completed ones)
+            for (index, setData) in completedSets.enumerated() {
                 let newSet = WorkoutSet(
                     exerciseId: exerciseId,
                     order: index + 1,
@@ -242,15 +245,15 @@ public final class ExerciseService {
                     weight: setData.weight,
                     unit: unit,
                     notes: nil,
-                    isCompleted: setData.isCompleted,
-                    completedAt: completedAt,
+                    isCompleted: true,
+                    completedAt: date,
                     date: date,
                     rpe: setData.rpe,
                     rir: setData.rir
                 )
                 modelContext.insert(newSet)
             }
-            
+
             try modelContext.save()
             return true
         } catch {
@@ -291,7 +294,7 @@ public final class ExerciseService {
     }
     
     // MARK: - Delete Set
-    
+
     /// Deletes a specific set
     public func deleteSet(
         setId: UUID,
@@ -302,17 +305,38 @@ public final class ExerciseService {
                 workoutSet.id == setId
             }
         )
-        
+
         do {
             let sets = try modelContext.fetch(descriptor)
             guard let set = sets.first else { return false }
-            
+
             modelContext.delete(set)
             try modelContext.save()
             return true
         } catch {
             print("Error deleting set: \(error)")
             return false
+        }
+    }
+
+    // MARK: - Delete Sets for Exercise on Date
+
+    /// Deletes all sets for a specific exercise on a specific date.
+    /// Used when removing an exercise from a workout.
+    public func deleteSetsForExerciseOnDate(
+        exerciseId: UUID,
+        date: Date,
+        modelContext: ModelContext
+    ) {
+        let existingSets = getSetsByDate(exerciseId: exerciseId, date: date, modelContext: modelContext)
+        for set in existingSets {
+            modelContext.delete(set)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error deleting sets for exercise on date: \(error)")
         }
     }
 }
