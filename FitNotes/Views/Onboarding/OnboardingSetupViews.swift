@@ -10,7 +10,7 @@ import SwiftUI
 import StoreKit
 
 // MARK: - Interactive Setup View (Screen 12)
-/// Guided walkthrough for setting up the first exercise
+/// Guided walkthrough for setting up the first exercise with progressive overload
 struct OnboardingInteractiveSetupView: View {
     @ObservedObject var state: OnboardingState
 
@@ -45,21 +45,10 @@ struct OnboardingInteractiveSetupView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
 
-            // Step Progress Bar
-            HStack(spacing: 8) {
-                ForEach(0..<totalSteps, id: \.self) { step in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(step <= currentStep ? Color.accentPrimary : Color.tertiaryBg)
-                        .frame(height: 4)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     Spacer()
-                        .frame(height: 32)
+                        .frame(height: 40)
 
                     // Icon
                     ZStack {
@@ -76,8 +65,8 @@ struct OnboardingInteractiveSetupView: View {
                             )
                             .frame(width: 100, height: 100)
 
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 40, weight: .medium))
+                        Image(systemName: "arrow.up.forward.circle.fill")
+                            .font(.system(size: 44, weight: .medium))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [.accentPrimary, .accentSecondary],
@@ -88,25 +77,27 @@ struct OnboardingInteractiveSetupView: View {
                     }
 
                     Spacer()
-                        .frame(height: 24)
+                        .frame(height: 28)
 
                     // Title
-                    Text("Let's Set Up Your First Exercise")
+                    Text("Configure Progressive Overload")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.textPrimary)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
 
-                    Text("We'll walk you through it")
-                        .font(.system(size: 15, weight: .regular))
+                    Text("Set up your first lift to track strength gains")
+                        .font(.system(size: 16, weight: .regular))
                         .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
-                        .padding(.top, 8)
+                        .padding(.top, 10)
+                        .padding(.horizontal, 20)
 
                     Spacer()
-                        .frame(height: 32)
+                        .frame(height: 36)
 
                     // Step Content
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         switch currentStep {
                         case 0:
                             exerciseSelectionStep
@@ -123,12 +114,23 @@ struct OnboardingInteractiveSetupView: View {
                     .padding(.horizontal, 20)
 
                     Spacer()
-                        .frame(height: 24)
+                        .frame(height: 32)
                 }
             }
 
-            // Bottom Continue Button
-            VStack(spacing: 12) {
+            // Bottom Section: Step Progress + Continue Button
+            VStack(spacing: 20) {
+                // Step Progress Indicators (moved below content)
+                HStack(spacing: 8) {
+                    ForEach(0..<totalSteps, id: \.self) { step in
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(step <= currentStep ? Color.accentPrimary : Color.tertiaryBg)
+                            .frame(height: 6)
+                            .animation(.standardSpring, value: currentStep)
+                    }
+                }
+                .padding(.horizontal, 20)
+
                 Button(action: nextStep) {
                     Text("Continue")
                         .font(.system(size: 17, weight: .semibold))
@@ -149,11 +151,17 @@ struct OnboardingInteractiveSetupView: View {
                             )
                         )
                         .cornerRadius(16)
+                        .shadow(
+                            color: canProceedStep ? .accentPrimary.opacity(0.3) : .clear,
+                            radius: 16,
+                            x: 0,
+                            y: 4
+                        )
                 }
                 .disabled(!canProceedStep)
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.bottom, 28)
         }
         .onAppear {
             // Pre-select first lift from user's selection if available
@@ -168,17 +176,20 @@ struct OnboardingInteractiveSetupView: View {
     // MARK: - Step Views
 
     private var exerciseSelectionStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 1: Choose an Exercise")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.textPrimary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step 1: Choose Your Lift")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.textPrimary)
 
-            Text("Select one of your key lifts to set up first")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.textSecondary)
+                Text("Select a compound lift to track with progressive overload")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             // Show user's selected lifts
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 ForEach(Array(state.primaryLifts), id: \.self) { lift in
                     Button(action: {
                         selectedExercise = lift
@@ -194,14 +205,20 @@ struct OnboardingInteractiveSetupView: View {
 
                             if selectedExercise == lift {
                                 Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 22))
                                     .foregroundColor(.accentPrimary)
+                            } else {
+                                Circle()
+                                    .stroke(Color.textTertiary, lineWidth: 1.5)
+                                    .frame(width: 22, height: 22)
                             }
                         }
-                        .padding(16)
-                        .background(selectedExercise == lift ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg)
-                        .cornerRadius(12)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 16)
+                        .background(selectedExercise == lift ? Color.accentPrimary.opacity(0.1) : Color.tertiaryBg)
+                        .cornerRadius(14)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: 14)
                                 .stroke(selectedExercise == lift ? Color.accentPrimary : Color.white.opacity(0.06), lineWidth: selectedExercise == lift ? 2 : 1)
                         )
                     }
@@ -209,21 +226,29 @@ struct OnboardingInteractiveSetupView: View {
                 }
             }
         }
-        .cardStyle()
-        .padding(.horizontal, 0)
+        .padding(20)
+        .background(Color.secondaryBg)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private var repRangeStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 2: Set Your Rep Range")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.textPrimary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step 2: Set Your Rep Range")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.textPrimary)
 
-            Text("When you hit the top of your range, it's time to increase weight")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.textSecondary)
+                Text("When you hit the top of your range, we'll prompt you to add weight")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-            VStack(spacing: 16) {
+            VStack(spacing: 14) {
                 StepperRow(
                     label: "Minimum Reps",
                     value: $targetRepsMin,
@@ -238,29 +263,42 @@ struct OnboardingInteractiveSetupView: View {
             }
 
             // Visual representation
-            HStack {
-                Text("Target: \(targetRepsMin)-\(targetRepsMax) reps")
-                    .font(.system(size: 15, weight: .medium))
+            HStack(spacing: 8) {
+                Image(systemName: "target")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.accentPrimary)
+
+                Text("Target: \(targetRepsMin)-\(targetRepsMax) reps per set")
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.accentPrimary)
             }
             .frame(maxWidth: .infinity)
-            .padding(12)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
             .background(Color.accentPrimary.opacity(0.1))
-            .cornerRadius(8)
+            .cornerRadius(12)
         }
-        .cardStyle()
-        .padding(.horizontal, 0)
+        .padding(20)
+        .background(Color.secondaryBg)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private var weightIncrementStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 3: Weight Increment")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.textPrimary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step 3: Weight Increment")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.textPrimary)
 
-            Text("How much weight will you add when progressing?")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.textSecondary)
+                Text("How much weight will you add each time you progress?")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             DoubleStepperRow(
                 label: "Increment",
@@ -273,77 +311,111 @@ struct OnboardingInteractiveSetupView: View {
             // Suggestion based on exercise
             if let exercise = selectedExercise {
                 let suggestion = getSuggestedIncrement(for: exercise)
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Image(systemName: "lightbulb.fill")
+                        .font(.system(size: 16))
                         .foregroundColor(.accentSecondary)
 
                     Text("Suggested for \(exercise.displayName): \(String(format: "%.1f", suggestion)) \(state.weightUnit.shortName)")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.textSecondary)
                 }
-                .padding(12)
-                .background(Color.secondaryBg)
-                .cornerRadius(8)
+                .padding(.vertical, 14)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.tertiaryBg)
+                .cornerRadius(12)
             }
         }
-        .cardStyle()
-        .padding(.horizontal, 0)
+        .padding(20)
+        .background(Color.secondaryBg)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private var confirmationStep: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Step 4: Confirm Your Setup")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.textPrimary)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step 4: Review Your Setup")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.textPrimary)
 
-            Text("Here's what we'll track for you")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.textSecondary)
-
-            VStack(spacing: 12) {
-                confirmationRow(label: "Exercise", value: selectedExercise?.displayName ?? "")
-                confirmationRow(label: "Rep Range", value: "\(targetRepsMin)-\(targetRepsMax) reps")
-                confirmationRow(label: "Weight Increment", value: "\(String(format: "%.1f", weightIncrement)) \(state.weightUnit.shortName)")
+                Text("Your progressive overload configuration")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
             }
+
+            VStack(spacing: 0) {
+                confirmationRow(label: "Exercise", value: selectedExercise?.displayName ?? "")
+                Divider()
+                    .background(Color.white.opacity(0.06))
+                confirmationRow(label: "Rep Range", value: "\(targetRepsMin)-\(targetRepsMax) reps")
+                Divider()
+                    .background(Color.white.opacity(0.06))
+                confirmationRow(label: "Weight Increment", value: "+\(String(format: "%.1f", weightIncrement)) \(state.weightUnit.shortName)")
+            }
+            .padding(.vertical, 4)
+            .background(Color.tertiaryBg)
+            .cornerRadius(14)
 
             // Success message
-            HStack(spacing: 12) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.accentSuccess)
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentSuccess.opacity(0.15))
+                        .frame(width: 44, height: 44)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Progressive Overload Enabled")
-                        .font(.system(size: 15, weight: .semibold))
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentSuccess)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Progressive Overload Active")
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.textPrimary)
 
-                    Text("We'll notify you when it's time to level up")
-                        .font(.system(size: 13, weight: .regular))
+                    Text("We'll notify you when it's time to increase weight")
+                        .font(.system(size: 14, weight: .regular))
                         .foregroundColor(.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(16)
+            .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.accentSuccess.opacity(0.1))
-            .cornerRadius(12)
+            .background(Color.accentSuccess.opacity(0.08))
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.accentSuccess.opacity(0.2), lineWidth: 1)
+            )
         }
-        .cardStyle()
-        .padding(.horizontal, 0)
+        .padding(20)
+        .background(Color.secondaryBg)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private func confirmationRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundColor(.textSecondary)
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 15, weight: .medium))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.textPrimary)
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     // MARK: - Helpers
