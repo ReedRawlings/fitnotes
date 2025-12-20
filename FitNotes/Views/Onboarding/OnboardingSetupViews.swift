@@ -261,22 +261,6 @@ struct OnboardingInteractiveSetupView: View {
                     range: 1...30
                 )
             }
-
-            // Visual representation
-            HStack(spacing: 8) {
-                Image(systemName: "target")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.accentPrimary)
-
-                Text("Target: \(targetRepsMin)-\(targetRepsMax) reps per set")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.accentPrimary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
-            .background(Color.accentPrimary.opacity(0.1))
-            .cornerRadius(12)
         }
         .padding(20)
         .background(Color.secondaryBg)

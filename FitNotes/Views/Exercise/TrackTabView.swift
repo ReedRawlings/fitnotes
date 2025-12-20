@@ -356,7 +356,7 @@ struct TrackTabView: View {
         
         // Fill down based on column type
         switch focusedInput {
-        case .weight(let id):
+        case .weight:
             // Parse current weight value
             let cleaned = currentText.replacingOccurrences(of: ",", with: ".")
             guard let currentValue = Double(cleaned) else {
@@ -370,7 +370,7 @@ struct TrackTabView: View {
             }
             logger.info("Filled down weight value \(currentValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
             
-        case .reps(let id):
+        case .reps:
             // Parse current reps value
             let filtered = currentText.filter { $0.isNumber }
             guard let currentValue = Int(filtered) else {
@@ -384,7 +384,7 @@ struct TrackTabView: View {
             }
             logger.info("Filled down reps value \(currentValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
             
-        case .rpe(let id):
+        case .rpe:
             // Parse current RPE value
             let filtered = currentText.filter { $0.isNumber }
             guard let currentValue = Int(filtered) else {
@@ -399,7 +399,7 @@ struct TrackTabView: View {
             }
             logger.info("Filled down RPE value \(clampedValue) from row \(currentIndex) to rows \(currentIndex + 1)..<\(sets.count)")
             
-        case .rir(let id):
+        case .rir:
             // Parse current RIR value
             let filtered = currentText.filter { $0.isNumber }
             guard let currentValue = Int(filtered) else {

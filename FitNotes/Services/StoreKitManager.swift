@@ -227,11 +227,7 @@ class StoreKitManager: ObservableObject {
                     let transaction = try await self.checkVerified(result)
 
                     // Update subscription status on main actor
-                    await MainActor.run {
-                        Task {
-                            await self.updateSubscriptionStatus()
-                        }
-                    }
+                    await self.updateSubscriptionStatus()
 
                     // Finish the transaction
                     await transaction.finish()

@@ -44,6 +44,7 @@ public class AppState: ObservableObject {
     @Published var selectedTab: Int = 0
     @Published var weightUnit: String = "kg" // Global unit preference for set history display
     @Published var activeRestTimer: RestTimer?
+    @Published var navigateToHistoryDate: Date? // Date to navigate to in WorkoutView
 
     // Rest timer manager for notification support
     lazy var restTimerManager: RestTimerManager = {
@@ -759,6 +760,7 @@ struct DayDetailSheet: View {
 
                         // View Full Workout Button
                         Button(action: {
+                            appState.navigateToHistoryDate = date // Set the date to navigate to
                             appState.selectedTab = 2 // Switch to Workout tab
                             dismiss()
                         }) {
@@ -2448,7 +2450,6 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
-        .toolbarColorScheme(.dark, for: .tabBar)
         .tint(.accentPrimary)
         .environmentObject(appState)
         .sheet(item: $appState.selectedExercise) { exercise in

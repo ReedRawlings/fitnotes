@@ -87,7 +87,7 @@ struct SessionSummary {
         }
 
         // Check if target reps were hit (all working sets meet minimum, exceeding max is OK)
-        if let minReps = targetRepMin, let maxReps = targetRepMax {
+        if let minReps = targetRepMin, targetRepMax != nil {
             self.hitTargetReps = setsForCalculation.allSatisfy { set in
                 guard let reps = set.reps, set.isCompleted else { return false }
                 // Hitting minimum is sufficient - exceeding max indicates readiness to progress

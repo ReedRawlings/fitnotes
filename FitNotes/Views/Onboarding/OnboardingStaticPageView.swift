@@ -228,13 +228,50 @@ struct OnboardingResearchView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Top navigation with back chevron and progress bar
+            HStack(spacing: 12) {
+                // Back chevron
+                Button(action: {
+                    state.previousPage()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.textSecondary)
+                        .frame(width: 32, height: 32)
+                }
+
+                // Progress bar showing total screens
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.tertiaryBg)
+                            .frame(height: 4)
+
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.accentPrimary, .accentSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * state.progress, height: 4)
+                            .animation(.standardSpring, value: state.progress)
+                    }
+                }
+                .frame(height: 4)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 32) {
+                VStack(spacing: 20) {
                     Spacer()
-                        .frame(height: 20)
+                        .frame(height: 12)
 
                     // Header
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         Text("The Science Behind It")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.textPrimary)
@@ -261,9 +298,9 @@ struct OnboardingResearchView: View {
 
                     // Quotes Section Header
                     Text("From the Experts")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.textPrimary)
-                        .padding(.top, 16)
+                        .padding(.top, 8)
 
                     // Quote 1 - Greg Doucette
                     QuoteCard(
@@ -280,55 +317,38 @@ struct OnboardingResearchView: View {
                     )
 
                     Spacer()
-                        .frame(height: 24)
+                        .frame(height: 16)
                 }
                 .padding(.horizontal, 24)
                 .opacity(contentOpacity)
             }
 
-            // Bottom Continue Button (not floating)
-            VStack(spacing: 12) {
-                Button(action: {
-                    state.nextPage()
-                }) {
-                    HStack(spacing: 8) {
-                        Text("Continue")
-                            .font(.system(size: 17, weight: .semibold))
+            // Bottom Continue Button
+            Button(action: {
+                state.nextPage()
+            }) {
+                HStack(spacing: 8) {
+                    Text("Continue")
+                        .font(.system(size: 17, weight: .semibold))
 
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(.textInverse)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: [.accentPrimary, .accentSecondary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.textInverse)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    LinearGradient(
+                        colors: [.accentPrimary, .accentSecondary],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .cornerRadius(16)
-                    .shadow(color: .accentPrimary.opacity(0.3), radius: 16, x: 0, y: 4)
-                }
-                .padding(.horizontal, 20)
-
-                // Back button
-                Button(action: {
-                    state.previousPage()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 12, weight: .medium))
-                        Text("Back")
-                            .font(.system(size: 15, weight: .medium))
-                    }
-                    .foregroundColor(.textSecondary)
-                }
-                .frame(height: 32)
+                )
+                .cornerRadius(16)
+                .shadow(color: .accentPrimary.opacity(0.3), radius: 16, x: 0, y: 4)
             }
+            .padding(.horizontal, 20)
             .padding(.bottom, 24)
-            .background(Color.primaryBg)
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.4).delay(0.1)) {

@@ -212,6 +212,13 @@ struct WorkoutView: View {
                 selectedDate = Date()
             }
         }
+        .onChange(of: appState.navigateToHistoryDate) { _, newDate in
+            // Navigate to the specified history date when set
+            if let date = newDate {
+                selectedDate = date
+                appState.navigateToHistoryDate = nil // Reset after navigating
+            }
+        }
     }
     
     private func goToPreviousDay() {

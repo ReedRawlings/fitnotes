@@ -581,42 +581,7 @@ struct StatHighlight: View {
 
 // MARK: - Preview
 #Preview {
-    let sampleData = InsightsService.YearInReviewData(
-        year: 2024,
-        totalWorkouts: 156,
-        totalSets: 2340,
-        totalVolume: 485000,
-        uniqueExercises: 42,
-        favoriteExercise: (name: "Bench Press", count: 312),
-        mostTrainedMuscle: (name: "Chest", percentage: 28.5),
-        personalRecords: 24,
-        longestStreak: 14,
-        activeWeeks: 48,
-        avgWorkoutsPerWeek: 3.0,
-        monthlyWorkouts: [
-            (month: 1, count: 12),
-            (month: 2, count: 14),
-            (month: 3, count: 16),
-            (month: 4, count: 13),
-            (month: 5, count: 15),
-            (month: 6, count: 10),
-            (month: 7, count: 8),
-            (month: 8, count: 12),
-            (month: 9, count: 14),
-            (month: 10, count: 16),
-            (month: 11, count: 14),
-            (month: 12, count: 12)
-        ],
-        topThreeExercises: [
-            (name: "Bench Press", count: 312),
-            (name: "Squat", count: 256),
-            (name: "Deadlift", count: 198)
-        ],
-        volumeGrowth: 23.5,
-        bestMonth: (month: 10, workouts: 16)
-    )
-
-    return ZStack {
+    ZStack {
         Color.primaryBg
             .ignoresSafeArea()
 
