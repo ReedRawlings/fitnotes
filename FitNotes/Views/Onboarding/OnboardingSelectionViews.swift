@@ -99,10 +99,8 @@ struct OnboardingSingleSelectView: View {
 
     private func isOptionSelected(_ option: OnboardingOption) -> Bool {
         switch page.order {
-        case 8: // Experience Level
+        case 6: // Experience Level
             return state.experienceLevel?.rawValue == option.value
-        case 9: // Goals
-            return state.fitnessGoal?.rawValue == option.value
         default:
             return false
         }
@@ -114,13 +112,9 @@ struct OnboardingSingleSelectView: View {
 
         withAnimation(.standardSpring) {
             switch page.order {
-            case 8: // Experience Level
+            case 6: // Experience Level
                 if let level = ExperienceLevel(rawValue: option.value) {
                     state.selectExperienceLevel(level)
-                }
-            case 9: // Goals
-                if let goal = OnboardingFitnessGoal(rawValue: option.value) {
-                    state.selectFitnessGoal(goal)
                 }
             default:
                 break
@@ -300,7 +294,7 @@ struct OnboardingMultiSelectView: View {
     private var selectionCountText: String {
         let count = selectedCount
         switch page.order {
-        case 10:
+        case 8:
             return count == 0 ? "Select at least one lift" : "\(count) lift\(count == 1 ? "" : "s") selected"
         default:
             return ""
@@ -309,7 +303,7 @@ struct OnboardingMultiSelectView: View {
 
     private var selectedCount: Int {
         switch page.order {
-        case 10:
+        case 8:
             return state.primaryLifts.count
         default:
             return 0
@@ -318,7 +312,7 @@ struct OnboardingMultiSelectView: View {
 
     private func isOptionSelected(_ option: OnboardingOption) -> Bool {
         switch page.order {
-        case 10: // Primary Lifts
+        case 8: // Primary Lifts
             if let lift = PrimaryLift(rawValue: option.value) {
                 return state.primaryLifts.contains(lift)
             }
@@ -334,7 +328,7 @@ struct OnboardingMultiSelectView: View {
 
         withAnimation(.standardSpring) {
             switch page.order {
-            case 10: // Primary Lifts
+            case 8: // Primary Lifts
                 if let lift = PrimaryLift(rawValue: option.value) {
                     state.togglePrimaryLift(lift)
                 }
@@ -397,7 +391,7 @@ struct MultiSelectOptionButton: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 100)
+            .frame(height: 72)
             .background(isSelected ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg)
             .cornerRadius(16)
             .overlay(

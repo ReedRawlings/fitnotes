@@ -16,6 +16,7 @@ struct ExerciseSettingsView: View {
     // Expandable section states
     @State private var isRestTimerExpanded = false
     @State private var isProgressiveOverloadExpanded = false
+    @State private var isWarmUpSetExpanded = false
     @State private var isRPERIRExpanded = false
     @State private var isWeightUnitExpanded = false
     @State private var isKeyboardIncrementExpanded = false
@@ -277,9 +278,109 @@ struct ExerciseSettingsView: View {
                                         .padding(.top, 4)
                                 }
                             }
+
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.vertical, 4)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Number of Sets")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.textSecondary)
+
+                                HStack {
+                                    Text("Use first")
+                                        .font(.bodyFont)
+                                        .foregroundColor(.textPrimary)
+
+                                    Spacer()
+
+                                    HStack(spacing: 12) {
+                                        Button(action: {
+                                            if let current = exercise.progressionSetCount, current > 1 {
+                                                exercise.progressionSetCount = current - 1
+                                                saveExercise()
+                                            }
+                                        }) {
+                                            Image(systemName: "minus.circle.fill")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(exercise.progressionSetCount != nil && exercise.progressionSetCount! > 1 ? .accentPrimary : .textTertiary)
+                                        }
+
+                                        Text(exercise.progressionSetCount.map { "\($0)" } ?? "All")
+                                            .font(.system(size: 20, weight: .medium, design: .monospaced))
+                                            .foregroundColor(.textPrimary)
+                                            .frame(minWidth: 40)
+
+                                        Button(action: {
+                                            if let current = exercise.progressionSetCount {
+                                                exercise.progressionSetCount = current + 1
+                                            } else {
+                                                exercise.progressionSetCount = 1
+                                            }
+                                            saveExercise()
+                                        }) {
+                                            Image(systemName: "plus.circle.fill")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(.accentPrimary)
+                                        }
+                                    }
+
+                                    Text("sets")
+                                        .font(.bodyFont)
+                                        .foregroundColor(.textPrimary)
+                                }
+
+                                if exercise.progressionSetCount != nil {
+                                    Button(action: {
+                                        exercise.progressionSetCount = nil
+                                        saveExercise()
+                                    }) {
+                                        Text("Reset to All Sets")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.accentPrimary)
+                                    }
+                                    .padding(.top, 4)
+                                }
+
+                                Text("Only these sets will be used to calculate progression. Warm up sets are always excluded.")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.textTertiary)
+                                    .padding(.top, 4)
+                            }
                         }
                     }
-                    
+
+                    // Warm Up Set Section
+                    ExpandableSettingsSection(
+                        title: "Warm Up Set",
+                        isExpanded: isWarmUpSetExpanded,
+                        onToggle: { isWarmUpSetExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("Enable Warm Up Set")
+                                    .font(.bodyFont)
+                                    .foregroundColor(.textPrimary)
+
+                                Spacer()
+
+                                Toggle("", isOn: $exercise.useWarmupSet)
+                                    .tint(.accentPrimary)
+                                    .labelsHidden()
+                            }
+                            .onChange(of: exercise.useWarmupSet) { _, _ in
+                                saveExercise()
+                            }
+
+                            Text("When enabled, your first set will be marked as a warm up and won't count toward progression recommendations.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+
                     // RPE/RIR Tracking Section
                     ExpandableSettingsSection(
                         title: "RPE/RIR",

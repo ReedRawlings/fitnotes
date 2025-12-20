@@ -34,8 +34,8 @@ struct OnboardingContainerView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.standardSpring, value: state.currentPageIndex)
 
-                // Bottom Navigation (hidden for interactive setup which has its own navigation)
-                if state.currentPage.type != .interactive {
+                // Bottom Navigation (hidden for pages with their own navigation)
+                if state.currentPage.type != .interactive && state.currentPage.type != .research {
                     OnboardingBottomBar(state: state, storeManager: storeManager)
                 }
             }
@@ -98,6 +98,8 @@ struct OnboardingPageView: View {
                 OnboardingEmailCaptureView(page: page, state: state)
             case .paywall:
                 OnboardingPaywallView(state: state)
+            case .research:
+                OnboardingResearchView(state: state)
             }
         }
     }
@@ -263,6 +265,8 @@ struct OnboardingBottomBar: View {
             return state.email.isEmpty ? "Continue" : "Send Guide"
         case .paywall:
             return state.selectedPlan == .premium ? "Start Premium" : "Continue Free"
+        case .research:
+            return "Continue" // Has its own continue button
         }
     }
 }

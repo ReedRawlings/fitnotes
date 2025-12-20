@@ -37,28 +37,47 @@ struct SessionSummary {
     let hitTargetReps: Bool
     let typicalReps: Int? // Most common reps in completed sets (for progression recommendations)
 
-    init(date: Date, sets: [WorkoutSet], targetRepMin: Int?, targetRepMax: Int?) {
+    init(date: Date, sets: [WorkoutSet], targetRepMin: Int?, targetRepMax: Int?, useWarmupSet: Bool = false, progressionSetCount: Int? = nil) {
         self.date = date
         self.sets = sets
 
-        // Calculate top weight
-        self.topWeight = sets.compactMap { $0.weight }.max() ?? 0
+        // Sort sets by order for consistent processing
+        let sortedSets = sets.sorted { $0.order < $1.order }
 
-        // Calculate total volume (convert to kg for consistency)
-        self.totalVolume = sets.reduce(0.0) { sum, set in
+        // Filter out warm up set (first set by order) when calculating progression metrics
+        var workingSets: [WorkoutSet]
+        if useWarmupSet && !sortedSets.isEmpty {
+            workingSets = Array(sortedSets.dropFirst())
+        } else {
+            workingSets = sortedSets
+        }
+
+        // Limit to first N sets if progressionSetCount is specified
+        let setsForCalculation: [WorkoutSet]
+        if let count = progressionSetCount, count > 0 {
+            setsForCalculation = Array(workingSets.prefix(count))
+        } else {
+            setsForCalculation = workingSets
+        }
+
+        // Calculate top weight (from working sets only)
+        self.topWeight = setsForCalculation.compactMap { $0.weight }.max() ?? 0
+
+        // Calculate total volume (convert to kg for consistency, from working sets only)
+        self.totalVolume = setsForCalculation.reduce(0.0) { sum, set in
             guard let weight = set.weight, let reps = set.reps else { return sum }
             return sum + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
 
-        // Calculate E1RM from first set (before fatigue)
-        self.estimatedOneRepMax = E1RMCalculator.fromSession(sets)
+        // Calculate E1RM from first working set (before fatigue)
+        self.estimatedOneRepMax = E1RMCalculator.fromSession(setsForCalculation)
 
-        // Get typical reps (most common reps value in completed sets)
-        let completedSetsReps = sets.compactMap { set -> Int? in
+        // Get typical reps (most common reps value in completed working sets)
+        let completedSetsReps = setsForCalculation.compactMap { set -> Int? in
             guard set.isCompleted, let reps = set.reps else { return nil }
             return reps
         }
-        
+
         if !completedSetsReps.isEmpty {
             // Find the most common reps value (mode)
             let repsCounts = Dictionary(grouping: completedSetsReps) { $0 }.mapValues { $0.count }
@@ -67,9 +86,9 @@ struct SessionSummary {
             self.typicalReps = nil
         }
 
-        // Check if target reps were hit (all sets meet minimum, exceeding max is OK)
+        // Check if target reps were hit (all working sets meet minimum, exceeding max is OK)
         if let minReps = targetRepMin, let maxReps = targetRepMax {
-            self.hitTargetReps = sets.allSatisfy { set in
+            self.hitTargetReps = setsForCalculation.allSatisfy { set in
                 guard let reps = set.reps, set.isCompleted else { return false }
                 // Hitting minimum is sufficient - exceeding max indicates readiness to progress
                 return reps >= minReps
@@ -164,6 +183,8 @@ class ProgressionService {
             count: sessionsToAnalyze,
             targetRepMin: exercise.targetRepMin,
             targetRepMax: exercise.targetRepMax,
+            useWarmupSet: exercise.useWarmupSet,
+            progressionSetCount: exercise.progressionSetCount,
             modelContext: modelContext
         )
 
@@ -214,6 +235,8 @@ class ProgressionService {
         count: Int,
         targetRepMin: Int?,
         targetRepMax: Int?,
+        useWarmupSet: Bool,
+        progressionSetCount: Int?,
         modelContext: ModelContext
     ) -> [SessionSummary] {
         // Fetch all sets for this exercise (including incomplete sets for current session)
@@ -242,7 +265,9 @@ class ProgressionService {
                 date: date,
                 sets: sets,
                 targetRepMin: targetRepMin,
-                targetRepMax: targetRepMax
+                targetRepMax: targetRepMax,
+                useWarmupSet: useWarmupSet,
+                progressionSetCount: progressionSetCount
             )
         }
     }

@@ -42,6 +42,7 @@ struct TrackTabView: View {
                                 SetRowView(
                                     exercise: exercise,
                                     set: set,
+                                    setIndex: index,
                                     weight: Binding<Double?>(
                                         get: { sets[index].weight },
                                         set: { newVal in
@@ -674,6 +675,7 @@ struct SetHeaderRowView: View {
 struct SetRowView: View {
     let exercise: Exercise
     let set: (id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)
+    let setIndex: Int
     @Binding var weight: Double?
     @Binding var reps: Int?
     @Binding var rpe: Int?
@@ -684,8 +686,25 @@ struct SetRowView: View {
 
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "SetRowView")
 
+    private var isWarmupSet: Bool {
+        exercise.useWarmupSet && setIndex == 0
+    }
+
     var body: some View {
         HStack(spacing: 20) {
+            // Warm up badge for first set
+            if isWarmupSet {
+                Text("W")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.textTertiary)
+                    .frame(width: 20, height: 20)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                    )
+                    .padding(.trailing, -12)
+            }
+
             // Weight Column
             NumericInputField(
                 text: Binding<String>(

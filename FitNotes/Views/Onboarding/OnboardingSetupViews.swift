@@ -372,9 +372,10 @@ struct OnboardingInteractiveSetupView: View {
                 currentStep += 1
             }
         } else {
-            // Complete setup
+            // Complete setup and advance to next onboarding page
             state.selectedSetupExercise = selectedExercise
             state.hasCompletedSetup = true
+            state.nextPage()
         }
     }
 

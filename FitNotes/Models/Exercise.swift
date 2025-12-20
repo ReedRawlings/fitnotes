@@ -35,6 +35,7 @@ public final class Exercise {
     public var useRestTimer: Bool = false
     public var defaultRestSeconds: Int = 90  // Standard mode default
     public var useAdvancedRest: Bool = false
+    public var useWarmupSet: Bool = false  // First set treated as warm up, excluded from progression
 
     // Persistent storage - uses JSON String for reliable SwiftData serialization
     @Attribute public var customRestSecondsRaw: String = "{}"
@@ -59,6 +60,7 @@ public final class Exercise {
     // Progressive overload tracking
     public var targetRepMin: Int? = nil  // Bottom of target range (e.g., 5 in "5-8 reps")
     public var targetRepMax: Int? = nil  // Top of target range (e.g., 8 in "5-8 reps")
+    public var progressionSetCount: Int? = nil  // Number of sets to use for progression (nil = all sets)
     public var lastProgressionDate: Date? = nil  // When weight was last increased
     public var incrementValue: Double = 5.0  // Default increment for +/- buttons on custom keyboard (range: 1-100)
 
@@ -94,9 +96,11 @@ public final class Exercise {
         useRestTimer: Bool = false,
         defaultRestSeconds: Int = 90,
         useAdvancedRest: Bool = false,
+        useWarmupSet: Bool = false,
         customRestSeconds: [Int: Int] = [:],
         targetRepMin: Int? = nil,
         targetRepMax: Int? = nil,
+        progressionSetCount: Int? = nil,
         lastProgressionDate: Date? = nil,
         incrementValue: Double = 5.0,
         statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState,
@@ -123,6 +127,7 @@ public final class Exercise {
         self.useRestTimer = useRestTimer
         self.defaultRestSeconds = defaultRestSeconds
         self.useAdvancedRest = useAdvancedRest
+        self.useWarmupSet = useWarmupSet
         // Encode customRestSeconds to JSON string
         if let data = try? JSONEncoder().encode(customRestSeconds),
            let string = String(data: data, encoding: .utf8) {
@@ -132,6 +137,7 @@ public final class Exercise {
         }
         self.targetRepMin = targetRepMin
         self.targetRepMax = targetRepMax
+        self.progressionSetCount = progressionSetCount
         self.lastProgressionDate = lastProgressionDate
         self.incrementValue = incrementValue
         self.statsDisplayPreferenceRaw = statsDisplayPreference.rawValue

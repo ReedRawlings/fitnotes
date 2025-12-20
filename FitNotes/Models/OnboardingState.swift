@@ -73,6 +73,8 @@ class OnboardingState: ObservableObject {
             return true // Skip is allowed
         case .paywall:
             return true
+        case .research:
+            return true // Has its own continue button
         }
     }
 
@@ -90,14 +92,12 @@ class OnboardingState: ObservableObject {
 
     private var hasMadeRequiredSelection: Bool {
         switch currentPage.order {
-        case 8: // Experience Level
+        case 6: // Experience Level
             return experienceLevel != nil
-        case 9: // Goals
-            return fitnessGoal != nil
-        case 10: // Primary Lifts
-            return !primaryLifts.isEmpty
-        case 11: // Settings (unit/timer)
+        case 7: // Settings (unit/timer)
             return true
+        case 8: // Primary Lifts
+            return !primaryLifts.isEmpty
         default:
             return true
         }
@@ -217,7 +217,7 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "Welcome to FitNotes",
                 subtitle: "Your journey starts here",
-                description: "Every great transformation begins with a single step. You're not just downloading an app—you're investing in a stronger, more capable version of yourself. We're here to guide you every rep of the way.",
+                description: "Every great transformation begins with incremental improvement. By downloading this app you're investing in a stronger, more capable version of yourself. We're here to guide you every rep of the way.",
                 systemImage: "figure.walk",
                 order: 1
             ),
@@ -227,7 +227,7 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "The Secret to Real Progress",
                 subtitle: "Progressive Overload",
-                description: "Progressive overload means gradually increasing the demands on your muscles over time. It's simple: lift a little more weight, do one more rep, or add one more set. Small improvements compound into massive results.",
+                description: "Progressive overload means gradually increasing the demands on your muscles over time.\n It's simple: lift a little more weight, do one more rep, or add one more set. Small improvements compound into massive results over time.",
                 systemImage: "chart.line.uptrend.xyaxis",
                 order: 2
             ),
@@ -247,44 +247,24 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "Picture Yourself in 12 Months",
                 subtitle: "Real, achievable progress",
-                description: "Imagine lifting 50% more than you can today. Imagine looking in the mirror and seeing the definition you've been working toward. With progressive overload, these aren't dreams—they're milestones you'll hit.",
+                description: "Imagine lifting 50% more than you can today. Imagine looking in the mirror and seeing the definition you've been working toward. Progressive overload along with your determination are the difference between massive gains and a plateau.",
                 systemImage: "calendar",
                 order: 4
             ),
 
-            // Screen 5: Science-Backed Benefit
+            // Screen 5: Combined Research & Quotes (scrolling page with bottom continue)
             OnboardingPage(
-                type: .static,
-                title: "Backed by Science",
-                subtitle: "Research proves it works",
-                description: "A study in the Journal of Strength and Conditioning Research found that lifters who followed progressive overload principles gained 25% more strength over 12 weeks compared to those who trained without a structured progression plan.",
+                type: .research,
+                title: "The Science Behind It",
+                subtitle: "Research-backed results",
+                description: nil,
                 systemImage: "brain.head.profile",
                 order: 5
             ),
 
-            // Screen 6: Expert Quote
-            OnboardingPage(
-                type: .static,
-                title: "From the Experts",
-                subtitle: nil,
-                description: "\"Train harder than last time.\"\n\n— Greg Doucette, IFBB Pro & Coach",
-                systemImage: "quote.bubble.fill",
-                order: 6
-            ),
+            // MARK: Phase 2 - Personalization (Screens 6-9)
 
-            // Screen 7: Final Research Point
-            OnboardingPage(
-                type: .static,
-                title: "Built for Longevity",
-                subtitle: "Train smarter, not just harder",
-                description: "Research from the American College of Sports Medicine shows that progressive resistance training not only builds strength but also reduces injury risk by 30% and improves joint health over time.",
-                systemImage: "checkmark.seal.fill",
-                order: 7
-            ),
-
-            // MARK: Phase 2 - Personalization (Screens 8-11)
-
-            // Screen 8: Experience Level
+            // Screen 6: Experience Level
             OnboardingPage(
                 type: .singleSelect,
                 title: "Where Are You Starting?",
@@ -298,27 +278,20 @@ class OnboardingState: ObservableObject {
                         value: level.rawValue
                     )
                 },
-                order: 8
+                order: 6
             ),
 
-            // Screen 9: Goals
+            // Screen 7: Settings (Unit and Timer)
             OnboardingPage(
-                type: .singleSelect,
-                title: "What's Your Goal?",
-                subtitle: "We'll tailor your tracking to match",
+                type: .settings,
+                title: "Your Preferences",
+                subtitle: "Set your defaults for tracking",
                 description: nil,
-                systemImage: "target",
-                options: OnboardingFitnessGoal.allCases.map { goal in
-                    OnboardingOption(
-                        title: goal.displayName,
-                        subtitle: goal.description,
-                        value: goal.rawValue
-                    )
-                },
-                order: 9
+                systemImage: "gearshape.2.fill",
+                order: 7
             ),
 
-            // Screen 10: Primary Lifts
+            // Screen 8: Primary Lifts
             OnboardingPage(
                 type: .multiSelect,
                 title: "Your Key Lifts",
@@ -332,62 +305,52 @@ class OnboardingState: ObservableObject {
                         value: lift.rawValue
                     )
                 },
-                order: 10
+                order: 8
             ),
 
-            // Screen 11: Settings (Unit and Timer)
-            OnboardingPage(
-                type: .settings,
-                title: "Your Preferences",
-                subtitle: "Set your defaults for tracking",
-                description: nil,
-                systemImage: "gearshape.2.fill",
-                order: 11
-            ),
+            // MARK: Phase 3 - Setup & Conversion (Screens 9-13)
 
-            // MARK: Phase 3 - Setup & Conversion (Screens 12-17)
-
-            // Screen 12: Guided Setup Walkthrough
+            // Screen 9: Guided Setup Walkthrough
             OnboardingPage(
                 type: .interactive,
                 title: "Let's Set Up Your First Exercise",
                 subtitle: "We'll walk you through it",
                 description: nil,
                 systemImage: "gearshape.fill",
-                order: 12
+                order: 9
             ),
 
-            // Screen 13: Progress Demonstration
+            // Screen 10: Progress Demonstration
             OnboardingPage(
                 type: .static,
                 title: "Watch Your Progress Grow",
                 subtitle: "We'll keep you moving forward",
                 description: "FitNotes tracks every rep and automatically suggests when it's time to increase weight. You'll get gentle nudges to push harder—and celebrate every PR along the way.",
                 systemImage: "arrow.up.forward.circle.fill",
-                order: 13
+                order: 10
             ),
 
-            // Screen 14: Analytics Preview
+            // Screen 11: Analytics Preview
             OnboardingPage(
                 type: .static,
                 title: "Insights That Matter",
                 subtitle: "Data-driven progress",
                 description: "Track your volume trends, monitor muscle balance, and see your PRs at a glance. The more you log, the smarter your insights become.",
                 systemImage: "chart.xyaxis.line",
-                order: 14
+                order: 11
             ),
 
-            // Screen 15: Experience-Based Guidance
+            // Screen 12: Experience-Based Guidance
             OnboardingPage(
                 type: .conditional,
                 title: "Your Next Steps",
                 subtitle: nil,
                 description: nil,
                 systemImage: "list.bullet.rectangle",
-                order: 15
+                order: 12
             ),
 
-            // Screen 16: Email Capture
+            // Screen 13: Email Capture
             OnboardingPage(
                 type: .emailCapture,
                 title: "Get Our Free Guide",
@@ -395,17 +358,17 @@ class OnboardingState: ObservableObject {
                 description: "Learn the science, history, and practical strategies behind progressive overload. Enter your email and we'll send it straight to your inbox.",
                 systemImage: "book.fill",
                 isRequired: false,
-                order: 16
+                order: 13
             ),
 
-            // Screen 17: Commitment + Paywall
+            // Screen 14: Commitment + Paywall
             OnboardingPage(
                 type: .paywall,
                 title: "Ready to Commit?",
                 subtitle: "Are you ready to become the most fit you've ever been?",
                 description: nil,
                 systemImage: "checkmark.circle.fill",
-                order: 17
+                order: 14
             )
         ]
     }
