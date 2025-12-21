@@ -105,9 +105,8 @@ enum ProgressionStatus {
     case readyToIncreaseReps(recommendedReps: Int)  // Increase reps at current weight
     case readyToIncreaseWeight(recommendedWeight: Double, resetReps: Int)  // Increase weight, reset to min reps
     case progressingTowardTarget
-    case maintainingBelowTarget
-    case decliningPerformance(percentDrop: Double)
-    case recentlyRegressed
+    case belowTarget  // Reps below minimum - suggest lowering weight or adjusting range
+    case needsRest  // Weight decreased - suggest taking rest days
     case insufficientData
 
     var title: String {
@@ -115,9 +114,8 @@ enum ProgressionStatus {
         case .readyToIncreaseReps: return "Ready to Progress!"
         case .readyToIncreaseWeight: return "Ready to Progress!"
         case .progressingTowardTarget: return "Progressing Toward Target"
-        case .maintainingBelowTarget: return "Maintaining Below Target"
-        case .decliningPerformance: return "Performance Declining"
-        case .recentlyRegressed: return "Building Confidence"
+        case .belowTarget: return "Below Target Range"
+        case .needsRest: return "Consider Resting"
         case .insufficientData: return "Insufficient Data"
         }
     }
@@ -135,12 +133,10 @@ enum ProgressionStatus {
             return "You've hit the top of your range! Increase weight to \(weightStr)\(unit) and reset reps to \(reps)."
         case .progressingTowardTarget:
             return "You're getting closer! Keep at this weight until you hit all target reps."
-        case .maintainingBelowTarget:
-            return "Focus on hitting your target rep range consistently."
-        case .decliningPerformance(let percent):
-            return "Volume dropped \(String(format: "%.0f", abs(percent)))%. Focus on recovery - sleep, nutrition, and stress management."
-        case .recentlyRegressed:
-            return "Keep building confidence at this weight for another week before progressing."
+        case .belowTarget:
+            return "Reps are below your target range. Consider lowering the weight or adjusting your rep range in settings."
+        case .needsRest:
+            return "You're lifting less than last session. Consider taking a few days rest to recover."
         case .insufficientData:
             return "Complete a few more sessions to get progression recommendations."
         }
@@ -150,9 +146,8 @@ enum ProgressionStatus {
         switch self {
         case .readyToIncreaseReps, .readyToIncreaseWeight: return "green"
         case .progressingTowardTarget: return "blue"
-        case .maintainingBelowTarget: return "gray"
-        case .decliningPerformance: return "orange"
-        case .recentlyRegressed: return "yellow"
+        case .belowTarget: return "orange"
+        case .needsRest: return "yellow"
         case .insufficientData: return "gray"
         }
     }
@@ -199,17 +194,10 @@ class ProgressionService {
         }
 
         let latestSession = sessions[0]
-        let previousSession = sessions[1]
-
-        // Check for declining performance (volume drop)
-        if isVolumeDeclined(current: latestSession, previous: previousSession) {
-            let percentDrop = ((latestSession.totalVolume - previousSession.totalVolume) / previousSession.totalVolume) * 100
-            return .decliningPerformance(percentDrop: percentDrop)
-        }
 
         // Check if recently regressed from higher weight
         if didRecentlyRegress(sessions: sessions) {
-            return .recentlyRegressed
+            return .needsRest
         }
 
         // Check if ready to progress (rep increase or weight increase)
@@ -225,8 +213,8 @@ class ProgressionService {
             return .progressingTowardTarget
         }
 
-        // Default: maintaining below target
-        return .maintainingBelowTarget
+        // Default: below target
+        return .belowTarget
     }
 
     /// Gets recent workout sessions for an exercise
@@ -239,9 +227,9 @@ class ProgressionService {
         progressionSetCount: Int?,
         modelContext: ModelContext
     ) -> [SessionSummary] {
-        // Fetch all sets for this exercise (including incomplete sets for current session)
+        // Fetch only completed sets for progression analysis
         let descriptor = FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate { $0.exerciseId == exerciseId },
+            predicate: #Predicate { $0.exerciseId == exerciseId && $0.isCompleted == true },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
 
@@ -358,7 +346,7 @@ class ProgressionService {
         // Determine increment based on exercise category and unit
         let increment: Double
         let upperBodyCategories = ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]
-        
+
         if unit.lowercased() == "lbs" {
             // For lbs: upper body gets 5 lbs, lower body gets 10 lbs
             increment = upperBodyCategories.contains(exercise.primaryCategory) ? 5.0 : 10.0
@@ -368,5 +356,173 @@ class ProgressionService {
         }
 
         return currentWeight + increment
+    }
+
+    // MARK: - Live Progression Analysis
+
+    /// Analyzes progression based on current (uncommitted) sets vs historical completed sets.
+    /// This allows showing progression recommendations BEFORE sets are checked off.
+    static func analyzeLiveProgression(
+        exercise: Exercise,
+        currentSets: [(weight: Double?, reps: Int?)],
+        modelContext: ModelContext
+    ) -> ProgressionStatus {
+        // Must have target rep range configured
+        guard let minReps = exercise.targetRepMin,
+              let maxReps = exercise.targetRepMax else {
+            return .insufficientData
+        }
+
+        // Filter current sets based on exercise settings
+        var workingSets = currentSets
+
+        // Skip warm up set if enabled
+        if exercise.useWarmupSet && !workingSets.isEmpty {
+            workingSets = Array(workingSets.dropFirst())
+        }
+
+        // Limit to progression set count if configured
+        if let setCount = exercise.progressionSetCount, setCount > 0 {
+            workingSets = Array(workingSets.prefix(setCount))
+        }
+
+        // Need at least one working set with data
+        let setsWithData = workingSets.filter { $0.weight != nil && $0.reps != nil }
+        guard !setsWithData.isEmpty else {
+            return .insufficientData
+        }
+
+        // Get the last completed session (excluding today)
+        let lastSession = getLastCompletedSession(
+            exerciseId: exercise.id,
+            targetRepMin: minReps,
+            targetRepMax: maxReps,
+            useWarmupSet: exercise.useWarmupSet,
+            progressionSetCount: exercise.progressionSetCount,
+            modelContext: modelContext
+        )
+
+        // Calculate current session metrics from input
+        let currentWeight = setsWithData.compactMap { $0.weight }.max() ?? 0
+        let currentReps = setsWithData.compactMap { $0.reps }
+
+        // Get typical reps (mode) from current input
+        guard !currentReps.isEmpty else {
+            return .insufficientData
+        }
+        let repsCounts = Dictionary(grouping: currentReps) { $0 }.mapValues { $0.count }
+        let typicalReps = repsCounts.max(by: { $0.value < $1.value })?.key ?? currentReps[0]
+
+        // Check if all current sets hit minimum target reps
+        let allHitMinimum = setsWithData.allSatisfy { set in
+            guard let reps = set.reps else { return false }
+            return reps >= minReps
+        }
+
+        // If no previous session, check if current input meets targets
+        guard let lastSession = lastSession else {
+            if allHitMinimum && typicalReps >= maxReps {
+                // First session and already at max reps - suggest this is a good starting point
+                return .insufficientData // Not enough history to recommend weight increase
+            } else if allHitMinimum {
+                return .progressingTowardTarget
+            }
+            return .insufficientData
+        }
+
+        // Compare current input against last session
+        let lastWeight = lastSession.topWeight
+        let lastTypicalReps = lastSession.typicalReps ?? minReps
+
+        // Check if user increased weight
+        let weightIncreased = currentWeight > lastWeight + weightTolerance
+
+        // Check if user is at same weight
+        let sameWeight = abs(currentWeight - lastWeight) <= weightTolerance
+
+        // If weight increased, check if they reset reps appropriately
+        if weightIncreased {
+            if allHitMinimum {
+                // Good! They increased weight and are hitting minimum reps
+                return .progressingTowardTarget
+            } else {
+                // Weight went up but reps dropped below minimum - might be too aggressive
+                return .belowTarget
+            }
+        }
+
+        // If at same weight, check rep progression
+        if sameWeight {
+            if typicalReps >= maxReps && allHitMinimum {
+                // At top of rep range - ready to increase weight!
+                let nextWeight = calculateNextWeight(currentWeight: currentWeight, unit: exercise.unit, exercise: exercise)
+                return .readyToIncreaseWeight(recommendedWeight: nextWeight, resetReps: minReps)
+            } else if typicalReps > lastTypicalReps && allHitMinimum {
+                // Reps increased - progressing!
+                if typicalReps < maxReps {
+                    return .readyToIncreaseReps(recommendedReps: typicalReps + 1)
+                }
+                return .progressingTowardTarget
+            } else if allHitMinimum {
+                // Maintaining at same weight/reps
+                return .progressingTowardTarget
+            } else {
+                // Same weight but reps below minimum
+                return .belowTarget
+            }
+        }
+
+        // Weight decreased from last session
+        if currentWeight < lastWeight - weightTolerance {
+            return .needsRest
+        }
+
+        return .belowTarget
+    }
+
+    /// Gets the most recent completed session (excluding today) for comparison
+    private static func getLastCompletedSession(
+        exerciseId: UUID,
+        targetRepMin: Int,
+        targetRepMax: Int,
+        useWarmupSet: Bool,
+        progressionSetCount: Int?,
+        modelContext: ModelContext
+    ) -> SessionSummary? {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+
+        // Fetch completed sets from before today
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate {
+                $0.exerciseId == exerciseId &&
+                $0.isCompleted == true &&
+                $0.date < startOfToday
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+
+        guard let allSets = try? modelContext.fetch(descriptor), !allSets.isEmpty else {
+            return nil
+        }
+
+        // Group by date and get most recent
+        let groupedByDate = Dictionary(grouping: allSets) { set in
+            calendar.startOfDay(for: set.date)
+        }
+
+        guard let mostRecentDate = groupedByDate.keys.max(),
+              let sets = groupedByDate[mostRecentDate] else {
+            return nil
+        }
+
+        return SessionSummary(
+            date: mostRecentDate,
+            sets: sets,
+            targetRepMin: targetRepMin,
+            targetRepMax: targetRepMax,
+            useWarmupSet: useWarmupSet,
+            progressionSetCount: progressionSetCount
+        )
     }
 }

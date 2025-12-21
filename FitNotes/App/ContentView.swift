@@ -889,16 +889,16 @@ struct HomeView: View {
 
         return scheduled
     }
-    
+
     private var weeksActive: Int {
         StatsService.shared.getWeeksActiveStreak(workouts: workouts)
     }
-    
+
     private var totalVolumeFormatted: String {
         let volume = StatsService.shared.getTotalVolume(allSets: allSets)
         return StatsService.shared.formatVolume(volume)
     }
-    
+
     private var daysSinceLastLiftText: String {
         StatsService.shared.getDaysSinceLastLift(workouts: workouts)
     }
@@ -906,117 +906,119 @@ struct HomeView: View {
     private var goalProgress: [InsightsService.GoalProgress] {
         InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
     }
-    
+
     var body: some View {
-        ZStack {
-            // Dark theme background
-            Color.primaryBg
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // TODO: Missed days should trigger something here to remind users they may need to shift a routine
-                        // This could show a banner like "You missed your scheduled workout yesterday. Would you like to shift your schedule?"
+        NavigationStack {
+            ZStack {
+                // Dark theme background
+                Color.primaryBg
+                    .ignoresSafeArea()
 
-                        // Scheduled routine prompt (if applicable)
-                        if let scheduledRoutine = scheduledRoutineForToday {
-                            ScheduledRoutinePromptView(
-                                routine: scheduledRoutine,
-                                onStart: {
-                                    // Start workout from the scheduled routine
-                                    let workout = RoutineService.shared.createWorkoutFromTemplate(
-                                        routine: scheduledRoutine,
-                                        modelContext: modelContext
-                                    )
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            // TODO: Missed days should trigger something here to remind users they may need to shift a routine
+                            // This could show a banner like "You missed your scheduled workout yesterday. Would you like to shift your schedule?"
 
-                                    appState.startWorkoutAndNavigate(
-                                        workoutId: workout.id,
-                                        routineId: scheduledRoutine.id,
-                                        totalExercises: scheduledRoutine.exercises.count
-                                    )
-                                },
-                                onSkip: {
-                                    // Dismiss the prompt for today
-                                    dismissedScheduledRoutineId = scheduledRoutine.id
+                            // Scheduled routine prompt (if applicable)
+                            if let scheduledRoutine = scheduledRoutineForToday {
+                                ScheduledRoutinePromptView(
+                                    routine: scheduledRoutine,
+                                    onStart: {
+                                        // Start workout from the scheduled routine
+                                        let workout = RoutineService.shared.createWorkoutFromTemplate(
+                                            routine: scheduledRoutine,
+                                            modelContext: modelContext
+                                        )
+
+                                        appState.startWorkoutAndNavigate(
+                                            workoutId: workout.id,
+                                            routineId: scheduledRoutine.id,
+                                            totalExercises: scheduledRoutine.exercises.count
+                                        )
+                                    },
+                                    onSkip: {
+                                        // Dismiss the prompt for today
+                                        dismissedScheduledRoutineId = scheduledRoutine.id
+                                    }
+                                )
+                                .padding(.horizontal, 20)
+                                .padding(.top, 12)
+                            }
+
+                            // Monthly Calendar
+                            MonthlyCalendarView()
+                                .padding(.horizontal, 20)
+                                .padding(.top, scheduledRoutineForToday == nil ? 12 : 0)
+
+                            // Stats header
+                            StatsHeaderView(
+                                weeksActive: weeksActive,
+                                totalVolume: totalVolumeFormatted,
+                                daysSinceLastLift: daysSinceLastLiftText
+                            )
+                            .padding(.horizontal, 20)
+
+                            // Goals & Targets
+                            GoalsCardView(
+                                goalProgress: goalProgress,
+                                onAddGoal: { showingAddGoal = true },
+                                onDeleteGoal: { goal in
+                                    InsightsService.shared.deleteGoal(goal, modelContext: modelContext)
                                 }
                             )
                             .padding(.horizontal, 20)
-                            .padding(.top, 12)
-                        }
+                            .padding(.top, 4)
 
-                        // Monthly Calendar
-                        MonthlyCalendarView()
-                            .padding(.horizontal, 20)
-                            .padding(.top, scheduledRoutineForToday == nil ? 12 : 0)
-
-                        // Stats header
-                        StatsHeaderView(
-                            weeksActive: weeksActive,
-                            totalVolume: totalVolumeFormatted,
-                            daysSinceLastLift: daysSinceLastLiftText
-                        )
-                        .padding(.horizontal, 20)
-
-                        // Goals & Targets
-                        GoalsCardView(
-                            goalProgress: goalProgress,
-                            onAddGoal: { showingAddGoal = true },
-                            onDeleteGoal: { goal in
-                                InsightsService.shared.deleteGoal(goal, modelContext: modelContext)
-                            }
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
-                        
-                        // Routine cards
-                        LazyVStack(spacing: 0) {
-                            ForEach(routines) { routine in
-                                RoutineCardView(
-                                    routine: routine,
-                                    isExpanded: expandedRoutineId == routine.id,
-                                    isActiveWorkout: appState.activeWorkout != nil,
-                                    lastDoneText: RoutineService.shared.getDaysSinceLastUsed(
-                                        for: routine,
-                                        modelContext: modelContext
-                                    ),
-                                    onTap: {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            if expandedRoutineId == routine.id {
-                                                expandedRoutineId = nil
-                                            } else {
-                                                expandedRoutineId = routine.id
-                                            }
-                                        }
-                                    },
-                                    onView: {
-                                        showingRoutineDetail = routine
-                                    },
-                                    onStart: {
-                                        // Start workout directly from routine
-                                        let workout = RoutineService.shared.createWorkoutFromTemplate(
-                                            routine: routine,
+                            // Routine cards
+                            LazyVStack(spacing: 0) {
+                                ForEach(routines) { routine in
+                                    RoutineCardView(
+                                        routine: routine,
+                                        isExpanded: expandedRoutineId == routine.id,
+                                        isActiveWorkout: appState.activeWorkout != nil,
+                                        lastDoneText: RoutineService.shared.getDaysSinceLastUsed(
+                                            for: routine,
                                             modelContext: modelContext
-                                        )
-                                        
-                                        appState.startWorkoutAndNavigate(
-                                            workoutId: workout.id,
-                                            routineId: routine.id,
-                                            totalExercises: routine.exercises.count
-                                        )
-                                    }
-                                )
+                                        ),
+                                        onTap: {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                if expandedRoutineId == routine.id {
+                                                    expandedRoutineId = nil
+                                                } else {
+                                                    expandedRoutineId = routine.id
+                                                }
+                                            }
+                                        },
+                                        onView: {
+                                            showingRoutineDetail = routine
+                                        },
+                                        onStart: {
+                                            // Start workout directly from routine
+                                            let workout = RoutineService.shared.createWorkoutFromTemplate(
+                                                routine: routine,
+                                                modelContext: modelContext
+                                            )
+
+                                            appState.startWorkoutAndNavigate(
+                                                workoutId: workout.id,
+                                                routineId: routine.id,
+                                                totalExercises: routine.exercises.count
+                                            )
+                                        }
+                                    )
+                                }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+
+                            Spacer(minLength: 100) // Space for tab bar
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        
-                        Spacer(minLength: 100) // Space for tab bar
                     }
                 }
             }
+            .navigationBarHidden(true)
         }
-        .navigationBarHidden(true)
         .sheet(item: $showingRoutineDetail) { routine in
             RoutineDetailView(routine: routine)
         }
@@ -1029,7 +1031,7 @@ struct HomeView: View {
             cachedStats = (nil, nil, nil)
         }
     }
-    
+
 }
 
 // MARK: - UnifiedCardView Component
@@ -1874,14 +1876,23 @@ struct AddExerciseToRoutineTemplateView: View {
 // MARK: - SettingsView
 struct SettingsView: View {
     @State private var selectedTab = 0
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.primaryBg
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
+                    // Custom header to match other tabs
+                    Text("Settings")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
+
                     // Custom Segmented Control for Settings Sections
                     HStack(spacing: 0) {
                         // Preferences Tab
@@ -1903,7 +1914,7 @@ struct SettingsView: View {
                                 .animation(.easeInOut(duration: 0.15), value: selectedTab)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        
+
                         // Routines Tab
                         Button(action: {
                             withAnimation(.standardSpring) {
@@ -1923,7 +1934,7 @@ struct SettingsView: View {
                                 .animation(.easeInOut(duration: 0.15), value: selectedTab)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        
+
                         // Exercises Tab
                         Button(action: {
                             withAnimation(.standardSpring) {
@@ -1947,11 +1958,12 @@ struct SettingsView: View {
                     .padding(4)
                     .background(Color.secondaryBg)
                     .cornerRadius(12)
-                    .padding()
-                    
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+
                     Divider()
                         .background(Color.white.opacity(0.06))
-                    
+
                     // Content based on selected tab
                     if selectedTab == 0 {
                         PreferencesView()
@@ -1962,8 +1974,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarHidden(true)
         }
     }
 }
@@ -2328,84 +2339,87 @@ struct InsightsView: View {
     }
 
     var body: some View {
-        ZStack {
-            // Dark theme background
-            Color.primaryBg
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                // Dark theme background
+                Color.primaryBg
+                    .ignoresSafeArea()
 
-            if workouts.isEmpty {
-                // Empty state
-                EmptyStateView(
-                    icon: "chart.line.uptrend.xyaxis",
-                    title: "No workouts yet",
-                    subtitle: "Complete your first workout to see insights",
-                    actionTitle: nil,
-                    onAction: nil
-                )
-            } else {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Year in Review Card
-                        YearInReviewCard(
-                            currentYear: currentYear,
-                            hasData: hasYearData,
-                            onTap: { showingYearInReview = true }
-                        )
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                if workouts.isEmpty {
+                    // Empty state
+                    EmptyStateView(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: "No workouts yet",
+                        subtitle: "Complete your first workout to see insights",
+                        actionTitle: nil,
+                        onAction: nil
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            // Year in Review Card
+                            YearInReviewCard(
+                                currentYear: currentYear,
+                                hasData: hasYearData,
+                                onTap: { showingYearInReview = true }
+                            )
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
 
-                        // Period Selector
-                        InsightsPeriodSelector(selectedPeriod: $selectedPeriod)
+                            // Period Selector
+                            InsightsPeriodSelector(selectedPeriod: $selectedPeriod)
 
-                        // Muscle Recovery Heatmap
-                        MuscleRecoveryHeatmapView(recoveryStatus: muscleRecoveryStatus)
+                            // Muscle Recovery Heatmap
+                            MuscleRecoveryHeatmapView(recoveryStatus: muscleRecoveryStatus)
+                                .padding(.horizontal, 20)
+
+                            // Volume Chart
+                            VolumeChartView(data: volumeData, periodType: chartPeriodType)
+                                .padding(.horizontal, 20)
+
+                            // Stat Cards Grid with comparison data
+                            StatCardsGridView(
+                                workouts: workoutCount,
+                                sets: setCount,
+                                totalVolume: totalVolume,
+                                prCount: prCount,
+                                workoutsComparison: isAllTime ? nil : comparisonStats.workouts,
+                                setsComparison: isAllTime ? nil : comparisonStats.sets,
+                                volumeComparison: isAllTime ? nil : comparisonStats.volume,
+                                prsComparison: isAllTime ? nil : comparisonStats.prs
+                            )
                             .padding(.horizontal, 20)
 
-                        // Volume Chart
-                        VolumeChartView(data: volumeData, periodType: chartPeriodType)
-                            .padding(.horizontal, 20)
+                            // Muscle Group Breakdown
+                            MuscleGroupBreakdownView(breakdown: muscleBreakdown)
+                                .padding(.horizontal, 20)
 
-                        // Stat Cards Grid with comparison data
-                        StatCardsGridView(
-                            workouts: workoutCount,
-                            sets: setCount,
-                            totalVolume: totalVolume,
-                            prCount: prCount,
-                            workoutsComparison: isAllTime ? nil : comparisonStats.workouts,
-                            setsComparison: isAllTime ? nil : comparisonStats.sets,
-                            volumeComparison: isAllTime ? nil : comparisonStats.volume,
-                            prsComparison: isAllTime ? nil : comparisonStats.prs
-                        )
-                        .padding(.horizontal, 20)
+                            // Top Exercises
+                            TopExercisesView(topExercises: topExercises)
+                                .padding(.horizontal, 20)
 
-                        // Muscle Group Breakdown
-                        MuscleGroupBreakdownView(breakdown: muscleBreakdown)
-                            .padding(.horizontal, 20)
+                            // Streak & Consistency
+                            StreakConsistencyView(streakData: streakData)
+                                .padding(.horizontal, 20)
 
-                        // Top Exercises
-                        TopExercisesView(topExercises: topExercises)
-                            .padding(.horizontal, 20)
+                            // Recent PRs
+                            RecentPRsListView(prs: recentPRs, unit: appState.weightUnit)
+                                .padding(.horizontal, 20)
 
-                        // Streak & Consistency
-                        StreakConsistencyView(streakData: streakData)
-                            .padding(.horizontal, 20)
-
-                        // Recent PRs
-                        RecentPRsListView(prs: recentPRs, unit: appState.weightUnit)
-                            .padding(.horizontal, 20)
-
-                        Spacer(minLength: 100) // Space for tab bar
+                            Spacer(minLength: 100) // Space for tab bar
+                        }
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom, 20)
-                }
-                .sheet(isPresented: $showingAddGoal) {
-                    AddGoalSheet()
-                        .environmentObject(appState)
-                }
-                .fullScreenCover(isPresented: $showingYearInReview) {
-                    YearInReviewSheet(data: yearInReviewData)
+                    .sheet(isPresented: $showingAddGoal) {
+                        AddGoalSheet()
+                            .environmentObject(appState)
+                    }
+                    .fullScreenCover(isPresented: $showingYearInReview) {
+                        YearInReviewSheet(data: yearInReviewData)
+                    }
                 }
             }
+            .navigationBarHidden(true)
         }
     }
 }

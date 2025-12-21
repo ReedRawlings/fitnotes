@@ -11,10 +11,29 @@ struct HistoryTabView: View {
         // Filter sets for this exercise (client-side filtering)
         allSets.filter { $0.exerciseId == exercise.id }
     }
-    
+
     private var groupedSets: [(Date, [WorkoutSet])] {
-        let grouped = Dictionary(grouping: filteredSets) { Calendar.current.startOfDay(for: $0.date) }
-        return grouped.sorted { $0.key > $1.key }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        let grouped = Dictionary(grouping: filteredSets) { calendar.startOfDay(for: $0.date) }
+
+        // For each date group, filter appropriately:
+        // - Today: show all sets (including incomplete, for current workout tracking)
+        // - Past days: only show completed sets
+        let filteredGroups = grouped.compactMapValues { sets -> [WorkoutSet]? in
+            let dateOfSets = calendar.startOfDay(for: sets.first?.date ?? Date())
+            if dateOfSets == today {
+                // Today: show all sets
+                return sets
+            } else {
+                // Past days: only completed sets
+                let completedSets = sets.filter { $0.isCompleted }
+                return completedSets.isEmpty ? nil : completedSets
+            }
+        }
+
+        return filteredGroups.sorted { $0.key > $1.key }
     }
     
     var body: some View {

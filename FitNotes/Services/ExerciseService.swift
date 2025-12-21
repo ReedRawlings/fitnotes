@@ -58,6 +58,7 @@ public final class ExerciseService {
 
     /// Returns the most recent session for this exercise, excluding a specific date.
     /// Used for volume comparison during active workouts.
+    /// Only returns completed sets for accurate historical comparison.
     public func getLastSessionForExerciseExcludingDate(
         exerciseId: UUID,
         excludeDate: Date,
@@ -69,6 +70,7 @@ public final class ExerciseService {
         let descriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate<WorkoutSet> { workoutSet in
                 workoutSet.exerciseId == exerciseId &&
+                workoutSet.isCompleted == true &&
                 (workoutSet.date < startOfExcludedDay || workoutSet.date >= endOfExcludedDay)
             },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
@@ -218,7 +220,8 @@ public final class ExerciseService {
     // MARK: - Save Sets
     
     /// Saves sets for an exercise on a specific date, replacing any existing sets.
-    /// Only completed sets (isCompleted == true) are persisted to history.
+    /// All sets are persisted (both completed and incomplete) to support mid-workout state.
+    /// When calculating history/progression, filter for isCompleted == true at read time.
     public func saveSets(
         exerciseId: UUID,
         date: Date,
@@ -233,11 +236,8 @@ public final class ExerciseService {
                 modelContext.delete(set)
             }
 
-            // Only save completed sets to history
-            let completedSets = sets.filter { $0.isCompleted }
-
-            // Create new sets (only for completed ones)
-            for (index, setData) in completedSets.enumerated() {
+            // Save all sets (both completed and incomplete) to preserve workout state
+            for (index, setData) in sets.enumerated() {
                 let newSet = WorkoutSet(
                     exerciseId: exerciseId,
                     order: index + 1,
@@ -245,8 +245,8 @@ public final class ExerciseService {
                     weight: setData.weight,
                     unit: unit,
                     notes: nil,
-                    isCompleted: true,
-                    completedAt: date,
+                    isCompleted: setData.isCompleted,
+                    completedAt: setData.isCompleted ? date : nil,
                     date: date,
                     rpe: setData.rpe,
                     rir: setData.rir
