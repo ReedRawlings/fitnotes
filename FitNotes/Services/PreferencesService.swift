@@ -9,6 +9,7 @@ public final class PreferencesService {
     private enum OnboardingKeys {
         static let weightUnit = "onboarding_weightUnit"
         static let defaultRestTimer = "onboarding_defaultRestTimer"
+        static let autoProgress = "onboarding_autoProgress"
     }
 
     /// Gets or creates the single UserPreferences record.
@@ -28,10 +29,15 @@ public final class PreferencesService {
                 let restSeconds = UserDefaults.standard.object(forKey: OnboardingKeys.defaultRestTimer) != nil
                     ? onboardingRestSeconds
                     : 90
+                // Read autoProgress from onboarding, default to true if not set
+                let onboardingAutoProgress = UserDefaults.standard.object(forKey: OnboardingKeys.autoProgress) != nil
+                    ? UserDefaults.standard.bool(forKey: OnboardingKeys.autoProgress)
+                    : true
 
                 let newPreferences = UserPreferences(
                     defaultWeightUnit: onboardingUnit,
-                    defaultRestSeconds: restSeconds
+                    defaultRestSeconds: restSeconds,
+                    autoProgress: onboardingAutoProgress
                 )
                 modelContext.insert(newPreferences)
                 try modelContext.save()
@@ -88,6 +94,12 @@ public final class PreferencesService {
     public func getUseWarmupSets(modelContext: ModelContext) -> Bool {
         let preferences = getOrCreatePreferences(modelContext: modelContext)
         return preferences.useWarmupSets
+    }
+
+    /// Gets the global auto progress preference
+    public func getAutoProgress(modelContext: ModelContext) -> Bool {
+        let preferences = getOrCreatePreferences(modelContext: modelContext)
+        return preferences.autoProgress
     }
 
     /// Gets whether user has viewed the 2024 year in review

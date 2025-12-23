@@ -63,6 +63,7 @@ public final class Exercise {
     public var progressionSetCount: Int? = nil  // Number of sets to use for progression (nil = all sets)
     public var lastProgressionDate: Date? = nil  // When weight was last increased
     public var incrementValue: Double = 5.0  // Default increment for +/- buttons on custom keyboard (range: 1-100)
+    public var autoProgress: Bool = false  // Automatically apply progression recommendations when loading sets
 
     // Stats display preferences
     // Persistent storage - uses String for reliable SwiftData serialization
@@ -103,6 +104,7 @@ public final class Exercise {
         progressionSetCount: Int? = nil,
         lastProgressionDate: Date? = nil,
         incrementValue: Double = 5.0,
+        autoProgress: Bool = false,
         statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState,
         statsIsExpanded: Bool = false,
         createdAt: Date = Date(),
@@ -140,6 +142,7 @@ public final class Exercise {
         self.progressionSetCount = progressionSetCount
         self.lastProgressionDate = lastProgressionDate
         self.incrementValue = incrementValue
+        self.autoProgress = autoProgress
         self.statsDisplayPreferenceRaw = statsDisplayPreference.rawValue
         self.statsIsExpanded = statsIsExpanded
         self.createdAt = createdAt

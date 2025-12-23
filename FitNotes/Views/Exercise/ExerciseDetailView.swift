@@ -238,13 +238,22 @@ struct RestTimerBannerView: View {
             }
         }
         .onAppear {
-            timeRemaining = timer.timeRemaining
-            updateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                timeRemaining = timer.timeRemaining
-            }
+            startLocalTimer()
         }
         .onDisappear {
             updateTimer?.invalidate()
+        }
+        .onChange(of: timer.id) { _, _ in
+            // Timer was restarted - reset local state
+            startLocalTimer()
+        }
+    }
+
+    private func startLocalTimer() {
+        updateTimer?.invalidate()
+        timeRemaining = timer.timeRemaining
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            timeRemaining = timer.timeRemaining
         }
     }
     

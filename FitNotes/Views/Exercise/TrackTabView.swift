@@ -455,16 +455,51 @@ struct TrackTabView: View {
             }
             return
         }
-        
+
         let lastSession = ExerciseService.shared.getLastSessionForExercise(
             exerciseId: exercise.id,
             modelContext: modelContext
         )
-        
+
         if let lastSession = lastSession, !lastSession.isEmpty {
-            // Pre-populate with last session data
+            // Check if we should apply automatic progression
+            var prefillWeight: Double? = nil
+            var prefillReps: Int? = nil
+
+            // Check if auto progress is enabled (either global or exercise-level)
+            let globalAutoProgress = PreferencesService.shared.getAutoProgress(modelContext: modelContext)
+            let shouldAutoProgress = (exercise.autoProgress || globalAutoProgress) && exercise.targetRepMin != nil && exercise.targetRepMax != nil
+
+            // Apply progression if auto progress is enabled and progressive overload is configured
+            if shouldAutoProgress {
+                let progressionStatus = ProgressionService.analyzeProgressionStatus(
+                    exercise: exercise,
+                    modelContext: modelContext
+                )
+
+                switch progressionStatus {
+                case .readyToIncreaseReps(let recommendedReps):
+                    // Keep same weight, increase reps
+                    prefillReps = recommendedReps
+                    logger.info("📈 Auto-progression: increasing reps to \(recommendedReps)")
+                case .readyToIncreaseWeight(let recommendedWeight, let resetReps):
+                    // Increase weight, reset reps to minimum
+                    prefillWeight = recommendedWeight
+                    prefillReps = resetReps
+                    logger.info("📈 Auto-progression: increasing weight to \(recommendedWeight), resetting reps to \(resetReps)")
+                default:
+                    break
+                }
+            }
+
+            // Pre-populate with (potentially progressed) data
             sets = lastSession.map { set in
-                (id: UUID(), weight: set.weight, reps: set.reps, rpe: nil, rir: nil, isChecked: false)
+                (id: UUID(),
+                 weight: prefillWeight ?? set.weight,
+                 reps: prefillReps ?? set.reps,
+                 rpe: nil,
+                 rir: nil,
+                 isChecked: false)
             }
         } else {
             // No history, start with one empty set

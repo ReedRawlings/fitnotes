@@ -118,30 +118,6 @@ enum ExperienceLevel: String, Codable, CaseIterable {
     }
 }
 
-// MARK: - FitnessGoalType (Onboarding)
-/// User's primary fitness goal for onboarding
-enum OnboardingFitnessGoal: String, Codable, CaseIterable {
-    case buildMuscle = "build_muscle"
-    case buildStrength = "build_strength"
-    case combination = "combination"
-
-    var displayName: String {
-        switch self {
-        case .buildMuscle: return "Build Muscle"
-        case .buildStrength: return "Build Strength"
-        case .combination: return "Combination"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .buildMuscle: return "Bulk/hypertrophy focus"
-        case .buildStrength: return "Powerlifting focus"
-        case .combination: return "Balanced approach"
-        }
-    }
-}
-
 // MARK: - PrimaryLift
 /// Common compound lifts for selection
 enum PrimaryLift: String, Codable, CaseIterable {

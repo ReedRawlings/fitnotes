@@ -348,6 +348,32 @@ struct ExerciseSettingsView: View {
                                     .foregroundColor(.textTertiary)
                                     .padding(.top, 4)
                             }
+
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.vertical, 4)
+
+                            // Auto Progress Toggle
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Auto Progress")
+                                        .font(.bodyFont)
+                                        .foregroundColor(.textPrimary)
+
+                                    Spacer()
+
+                                    Toggle("", isOn: $exercise.autoProgress)
+                                        .tint(.accentPrimary)
+                                        .labelsHidden()
+                                }
+                                .onChange(of: exercise.autoProgress) { _, _ in
+                                    saveExercise()
+                                }
+
+                                Text("When enabled, your next session will automatically start with the recommended weight and reps based on your previous performance.")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.textTertiary)
+                            }
                         }
                     }
 

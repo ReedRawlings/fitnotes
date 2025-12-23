@@ -110,6 +110,7 @@ public final class UserPreferences {
     public var keepCurrentRoutineView: Bool
     public var keepCurrentWorkoutView: Bool
     public var useWarmupSets: Bool
+    public var autoProgress: Bool  // Global setting to auto-apply progression recommendations
     public var hasViewedYearInReview2024: Bool
     public var createdAt: Date
     public var updatedAt: Date
@@ -132,6 +133,7 @@ public final class UserPreferences {
         keepCurrentRoutineView: Bool = false,
         keepCurrentWorkoutView: Bool = false,
         useWarmupSets: Bool = false,
+        autoProgress: Bool = false,
         hasViewedYearInReview2024: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -143,6 +145,7 @@ public final class UserPreferences {
         self.keepCurrentRoutineView = keepCurrentRoutineView
         self.keepCurrentWorkoutView = keepCurrentWorkoutView
         self.useWarmupSets = useWarmupSets
+        self.autoProgress = autoProgress
         self.hasViewedYearInReview2024 = hasViewedYearInReview2024
         self.createdAt = createdAt
         self.updatedAt = updatedAt

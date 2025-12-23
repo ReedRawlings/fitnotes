@@ -2,13 +2,13 @@
 
 ## Overview
 
-The onboarding flow is 17 screens divided into three phases: Education (screens 1-7), Personalization (screens 8-11), and Setup & Conversion (screens 12-17). The flow builds understanding of progressive overload, collects user preferences, then guides them through their first setup.
+The onboarding flow is 14 screens divided into three phases: Education (screens 1-5), Personalization (screens 6-8), and Setup & Conversion (screens 9-14). The flow builds understanding of progressive overload, collects user preferences, then guides them through their first setup.
 
 ---
 
-## Phase 1: Education (Screens 1-7)
+## Phase 1: Education (Screens 1-5)
 
-These screens establish the value of progressive overload before asking anything from the user.
+These screens establish the value of progressive overload before asking anything from the user. Screens 5-7 from the original spec (research points and expert quotes) have been combined into a single scrolling research page.
 
 ### Screen 1: Welcome
 
@@ -104,11 +104,11 @@ These screens establish the value of progressive overload before asking anything
 
 ---
 
-## Phase 2: Personalization (Screens 8-11)
+## Phase 2: Personalization (Screens 6-8)
 
 These screens collect user information to customize the experience.
 
-### Screen 8: Experience Level
+### Screen 6: Experience Level
 
 **Purpose:** Understand where the user is starting
 
@@ -120,28 +120,27 @@ These screens collect user information to customize the experience.
 - Intermediate (regular lifting, 6+ months)
 - Advanced (years of consistent training)
 
-**Data Usage:** Determines Screen 14 content (routines vs. settings guidance)
+**Data Usage:** Determines Screen 12 content (routines vs. settings guidance)
 
 **SF Symbol:** `figure.strengthtraining.traditional`
 
 ---
 
-### Screen 9: Goals
+### Screen 7: Settings (Unit & Rest Timer)
 
-**Purpose:** What the user wants to accomplish
+**Purpose:** Set user's preferred defaults
 
-**Input Type:** Single-select or multi-select
+**Input Type:** Segmented control for unit, picker for rest timer
 
 **Options:**
-- Build Muscle (bulk/hypertrophy focus)
-- Build Strength (powerlifting focus)
-- Combination (balanced approach)
+- Weight Unit: kg / lbs
+- Default Rest Timer: 0:30 - 5:00 (default 1:30)
 
-**SF Symbol:** `target` or `flag.fill`
+**SF Symbol:** `gearshape.2.fill`
 
 ---
 
-### Screen 10: Primary Lifts
+### Screen 8: Primary Lifts
 
 **Purpose:** Which lifts they're focused on
 
@@ -149,40 +148,26 @@ These screens collect user information to customize the experience.
 
 **Options:** Common compound lifts (bench press, squat, deadlift, overhead press, barbell row, etc.) plus option to add custom
 
-**Data Usage:** 
-- Screen 12 will use one of their selections for the walkthrough
+**Data Usage:**
+- Screen 9 will use one of their selections for the walkthrough
 - Informs default routine suggestions
 
 **SF Symbol:** `dumbbell.fill`
 
 ---
 
-### Screen 11: Health Goals
-
-**Purpose:** Additional context beyond lifting
-
-**Input Type:** Multi-select (optional)
-
-**Options:** Weight loss, cardiovascular health, flexibility, injury recovery, general wellness, etc.
-
-**Note:** This screen should feel optional—allow skip
-
-**SF Symbol:** `heart.text.square.fill`
-
----
-
-## Phase 3: Setup & Conversion (Screens 12-17)
+## Phase 3: Setup & Conversion (Screens 9-14)
 
 These screens teach app usage and convert to paying users.
 
-### Screen 12: Guided Setup Walkthrough
+### Screen 9: Guided Setup Walkthrough
 
-**Purpose:** Hands-on tutorial using one of their selected lifts from Screen 10
+**Purpose:** Hands-on tutorial using one of their selected lifts from Screen 8
 
 **Interaction:** Interactive—user must complete setup
 
 **Flow:**
-1. Take one lift from their Screen 10 selections
+1. Take one lift from their Screen 8 selections
 2. Walk through ALL available settings for that exercise in detail
 3. Have them set up a progressive overload target (this step is mandatory)
 4. Other settings are optional but shown
@@ -193,7 +178,7 @@ These screens teach app usage and convert to paying users.
 
 ---
 
-### Screen 13: Progress Demonstration
+### Screen 10: Progress Demonstration
 
 **Purpose:** Show how the app pushes them forward
 
@@ -208,7 +193,7 @@ These screens teach app usage and convert to paying users.
 
 ---
 
-### Screen 14: Analytics Preview
+### Screen 11: Analytics Preview
 
 **Purpose:** Overview of tracking and insights features
 
@@ -221,9 +206,9 @@ These screens teach app usage and convert to paying users.
 
 ---
 
-### Screen 15: Experience-Based Guidance
+### Screen 12: Experience-Based Guidance
 
-**Purpose:** Tailored next steps based on Screen 8 answer
+**Purpose:** Tailored next steps based on Screen 6 answer
 
 **Conditional Content:**
 
@@ -241,7 +226,7 @@ These screens teach app usage and convert to paying users.
 
 ---
 
-### Screen 16: Email Capture
+### Screen 13: Email Capture
 
 **Purpose:** Lead generation with value exchange
 
@@ -257,7 +242,7 @@ These screens teach app usage and convert to paying users.
 
 ---
 
-### Screen 17: Commitment + Paywall
+### Screen 14: Commitment + Paywall
 
 **Purpose:** Emotional commitment moment + monetization
 
@@ -285,12 +270,12 @@ These screens teach app usage and convert to paying users.
 
 ### Data Model
 
-Extend the existing `OnboardingPage` model to support interactive screens:
+The `OnboardingPage` model supports various screen types:
 
 ```swift
 struct OnboardingPage {
     let id: UUID
-    let type: OnboardingPageType  // .static, .singleSelect, .multiSelect, .interactive, .emailCapture, .paywall
+    let type: OnboardingPageType
     let title: String
     let subtitle: String?
     let description: String?
@@ -301,13 +286,15 @@ struct OnboardingPage {
 }
 
 enum OnboardingPageType {
-    case static           // Screens 1-7, 13, 14
-    case singleSelect     // Screens 8, 9
-    case multiSelect      // Screens 10, 11
-    case interactive      // Screen 12
-    case conditional      // Screen 15
-    case emailCapture     // Screen 16
-    case paywall          // Screen 17
+    case static           // Screens 1-4, 10, 11
+    case research         // Screen 5 (combined research/quotes)
+    case singleSelect     // Screen 6
+    case settings         // Screen 7
+    case multiSelect      // Screen 8
+    case interactive      // Screen 9
+    case conditional      // Screen 12
+    case emailCapture     // Screen 13
+    case paywall          // Screen 14
 }
 ```
 
@@ -316,22 +303,24 @@ enum OnboardingPageType {
 Store collected data in `AppStorage` or a dedicated `OnboardingState` object:
 
 - `experienceLevel`: String (brand_new, beginner, intermediate, advanced)
-- `goals`: [String]
 - `primaryLifts`: [UUID] (exercise IDs)
-- `healthGoals`: [String]
+- `weightUnit`: String (kg, lbs)
+- `defaultRestTimer`: Int (seconds)
 - `emailCaptured`: Bool
 - `selectedPlan`: String (free, premium)
 - `hasCompletedOnboarding`: Bool
 
 ### Navigation Behavior
 
-- Screens 1-7: Linear flow, swipe or Next button
-- Screens 8-11: Must make selection to proceed (except 11 which allows skip)
-- Screen 12: Must complete required setup step
-- Screens 13-14: Linear, informational
-- Screen 15: Content changes based on Screen 8 answer
-- Screen 16: Allow skip
-- Screen 17: Terminal screen—completes onboarding
+- Screens 1-5: Linear flow, swipe or Next button
+- Screen 6: Must make selection to proceed
+- Screen 7: Settings with defaults, can proceed immediately
+- Screen 8: Must select at least one lift
+- Screen 9: Must complete required setup step
+- Screens 10-11: Linear, informational
+- Screen 12: Content changes based on Screen 6 answer
+- Screen 13: Allow skip
+- Screen 14: Terminal screen—completes onboarding
 
 ### Design System Compliance
 
@@ -354,9 +343,7 @@ Before implementation, copywriting team needs to provide:
 2. Progressive overload definition copy (Screen 2)
 3. Benefits list copy (Screen 3)
 4. 6-12 month vision copy (Screen 4)
-5. Research statistic with source (Screen 5)
-6. Expert quote with attribution (Screen 6)
-7. Second research point with source (Screen 7)
-8. Email guide description copy (Screen 16)
-9. Commitment question final copy (Screen 17)
-10. Free vs. Premium feature list (Screen 17)
+5. Research statistics and expert quotes (Screen 5)
+6. Email guide description copy (Screen 13)
+7. Commitment question final copy (Screen 14)
+8. Free vs. Premium feature list (Screen 14)

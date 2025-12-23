@@ -20,8 +20,9 @@ struct OnboardingInteractiveSetupView: View {
     @State private var targetRepsMin: Int = 5
     @State private var targetRepsMax: Int = 8
     @State private var weightIncrement: Double = 2.5
-    @State private var progressionSetCount: Int = 3
+    @State private var progressionSetCount: Int = 4
     @State private var useWarmupSet: Bool = false
+    @State private var autoProgress: Bool = true
     @State private var showingExercisePicker: Bool = false
 
     private let totalSteps = 5
@@ -50,36 +51,38 @@ struct OnboardingInteractiveSetupView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     Spacer()
-                        .frame(height: 40)
+                        .frame(height: currentStep >= 2 ? 20 : 40)
 
-                    // Icon
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.accentPrimary.opacity(0.15),
-                                        Color.accentSecondary.opacity(0.05)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                    // Icon - hidden on steps 3, 4, 5 (indices 2, 3, 4) to give more space for content
+                    if currentStep < 2 {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.accentPrimary.opacity(0.15),
+                                            Color.accentSecondary.opacity(0.05)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
-                            .frame(width: 100, height: 100)
+                                .frame(width: 100, height: 100)
 
-                        Image(systemName: "arrow.up.forward.circle.fill")
-                            .font(.system(size: 44, weight: .medium))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.accentPrimary, .accentSecondary],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                            Image(systemName: "arrow.up.forward.circle.fill")
+                                .font(.system(size: 44, weight: .medium))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.accentPrimary, .accentSecondary],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
+                        }
+
+                        Spacer()
+                            .frame(height: 28)
                     }
-
-                    Spacer()
-                        .frame(height: 28)
 
                     // Title
                     Text("Configure Progressive Overload")
@@ -317,6 +320,29 @@ struct OnboardingInteractiveSetupView: View {
                 .padding(.vertical, 14)
                 .background(Color.tertiaryBg)
                 .cornerRadius(12)
+
+                // Auto Progress toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Auto Progress")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.textPrimary)
+
+                        Text("Automatically apply progression recommendations")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $autoProgress)
+                        .labelsHidden()
+                        .tint(.accentPrimary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color.tertiaryBg)
+                .cornerRadius(12)
             }
 
             // Explanation
@@ -364,25 +390,6 @@ struct OnboardingInteractiveSetupView: View {
                 suffix: " \(state.weightUnit.shortName)",
                 step: 0.5
             )
-
-            // Suggestion based on exercise
-            if let exercise = selectedExercise {
-                let suggestion = getSuggestedIncrement(for: exercise)
-                HStack(spacing: 10) {
-                    Image(systemName: "lightbulb.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.accentSecondary)
-
-                    Text("Suggested for \(exercise.displayName): \(String(format: "%.1f", suggestion)) \(state.weightUnit.shortName)")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.textSecondary)
-                }
-                .padding(.vertical, 14)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.tertiaryBg)
-                .cornerRadius(12)
-            }
         }
         .padding(20)
         .background(Color.secondaryBg)
@@ -416,6 +423,9 @@ struct OnboardingInteractiveSetupView: View {
                 Divider()
                     .background(Color.white.opacity(0.06))
                 confirmationRow(label: "Warm-up Set", value: useWarmupSet ? "Yes (excluded)" : "No")
+                Divider()
+                    .background(Color.white.opacity(0.06))
+                confirmationRow(label: "Auto Progress", value: autoProgress ? "On" : "Off")
                 Divider()
                     .background(Color.white.opacity(0.06))
                 confirmationRow(label: "Weight Increment", value: "+\(String(format: "%.1f", weightIncrement)) \(state.weightUnit.shortName)")
@@ -511,6 +521,7 @@ struct OnboardingInteractiveSetupView: View {
         } else {
             // Complete setup and advance to next onboarding page
             state.selectedSetupExercise = selectedExercise
+            state.autoProgress = autoProgress
             state.hasCompletedSetup = true
             state.nextPage()
         }
@@ -520,29 +531,6 @@ struct OnboardingInteractiveSetupView: View {
         if currentStep > 0 {
             withAnimation(.standardSpring) {
                 currentStep -= 1
-            }
-        }
-    }
-
-    private func getSuggestedIncrement(for lift: PrimaryLift) -> Double {
-        // Different suggestions based on weight unit
-        if state.weightUnit == .lbs {
-            switch lift {
-            case .squat, .deadlift, .legPress:
-                return 5.0
-            case .benchPress, .overheadPress, .barbellRow:
-                return 5.0
-            case .pullUp, .dip:
-                return 2.5
-            }
-        } else {
-            switch lift {
-            case .squat, .deadlift, .legPress:
-                return 2.5
-            case .benchPress, .overheadPress, .barbellRow:
-                return 2.5
-            case .pullUp, .dip:
-                return 1.25
             }
         }
     }

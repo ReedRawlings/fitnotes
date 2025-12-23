@@ -18,12 +18,12 @@ class OnboardingState: ObservableObject {
 
     // MARK: - User Selections (Phase 2)
     @Published var experienceLevel: ExperienceLevel?
-    @Published var fitnessGoal: OnboardingFitnessGoal?
     @Published var primaryLifts: Set<PrimaryLift> = []
 
     // MARK: - Settings State (Phase 2.5)
     @Published var weightUnit: WeightUnit = .lbs
     @Published var defaultRestTimer: Int = 90  // seconds
+    @Published var autoProgress: Bool = true  // Auto-apply progression recommendations
 
     // MARK: - Setup State (Phase 3)
     @Published var selectedSetupExercise: PrimaryLift?
@@ -43,10 +43,10 @@ class OnboardingState: ObservableObject {
     private enum StorageKeys {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let experienceLevel = "onboarding_experienceLevel"
-        static let fitnessGoal = "onboarding_fitnessGoal"
         static let primaryLifts = "onboarding_primaryLifts"
         static let weightUnit = "onboarding_weightUnit"
         static let defaultRestTimer = "onboarding_defaultRestTimer"
+        static let autoProgress = "onboarding_autoProgress"
         static let email = "onboarding_email"
         static let selectedPlan = "onboarding_selectedPlan"
     }
@@ -83,7 +83,21 @@ class OnboardingState: ObservableObject {
     }
 
     var progress: Double {
-        Double(currentPageIndex + 1) / Double(pages.count)
+        // When showing email capture early to beginners, show progress as if still in normal flow
+        // This prevents the jarring jump from ~40% to ~93%
+        if returnToPageAfterEmailCapture != nil && currentPage.type == .emailCapture {
+            // Show progress as if we're at the return page (where we'll go after email capture)
+            return Double(returnToPageAfterEmailCapture! + 1) / Double(pages.count)
+        }
+        return Double(currentPageIndex + 1) / Double(pages.count)
+    }
+
+    /// Visual page index for display purposes (accounts for early email redirect)
+    var visualPageIndex: Int {
+        if returnToPageAfterEmailCapture != nil && currentPage.type == .emailCapture {
+            return returnToPageAfterEmailCapture!
+        }
+        return currentPageIndex
     }
 
     var isFirstPage: Bool {
@@ -210,10 +224,6 @@ class OnboardingState: ObservableObject {
         experienceLevel = level
     }
 
-    func selectFitnessGoal(_ goal: OnboardingFitnessGoal) {
-        fitnessGoal = goal
-    }
-
     func togglePrimaryLift(_ lift: PrimaryLift) {
         if primaryLifts.contains(lift) {
             primaryLifts.remove(lift)
@@ -246,15 +256,13 @@ class OnboardingState: ObservableObject {
         if let level = experienceLevel {
             UserDefaults.standard.set(level.rawValue, forKey: StorageKeys.experienceLevel)
         }
-        if let goal = fitnessGoal {
-            UserDefaults.standard.set(goal.rawValue, forKey: StorageKeys.fitnessGoal)
-        }
 
         let liftValues = primaryLifts.map { $0.rawValue }
         UserDefaults.standard.set(liftValues, forKey: StorageKeys.primaryLifts)
 
         UserDefaults.standard.set(weightUnit.rawValue, forKey: StorageKeys.weightUnit)
         UserDefaults.standard.set(defaultRestTimer, forKey: StorageKeys.defaultRestTimer)
+        UserDefaults.standard.set(autoProgress, forKey: StorageKeys.autoProgress)
 
         if !email.isEmpty {
             UserDefaults.standard.set(email, forKey: StorageKeys.email)
@@ -270,10 +278,10 @@ class OnboardingState: ObservableObject {
     static func resetOnboarding() {
         UserDefaults.standard.removeObject(forKey: StorageKeys.hasCompletedOnboarding)
         UserDefaults.standard.removeObject(forKey: StorageKeys.experienceLevel)
-        UserDefaults.standard.removeObject(forKey: StorageKeys.fitnessGoal)
         UserDefaults.standard.removeObject(forKey: StorageKeys.primaryLifts)
         UserDefaults.standard.removeObject(forKey: StorageKeys.weightUnit)
         UserDefaults.standard.removeObject(forKey: StorageKeys.defaultRestTimer)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.autoProgress)
         UserDefaults.standard.removeObject(forKey: StorageKeys.email)
         UserDefaults.standard.removeObject(forKey: StorageKeys.selectedPlan)
     }

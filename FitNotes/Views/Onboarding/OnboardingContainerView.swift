@@ -23,7 +23,7 @@ struct OnboardingContainerView: View {
                 // Progress Bar with Back Button
                 OnboardingProgressBar(
                     progress: state.progress,
-                    currentPage: state.currentPageIndex + 1,
+                    currentPage: state.visualPageIndex + 1,
                     totalPages: state.pages.count,
                     isFirstPage: state.isFirstPage,
                     onBack: { state.previousPage() }
