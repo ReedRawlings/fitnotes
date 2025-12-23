@@ -1984,14 +1984,16 @@ struct PreferencesView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query private var preferencesQuery: [UserPreferences]
-    
+
     @State private var showingTimePicker = false
     @State private var tempSelectedSeconds: Int = 90
-    
+    @State private var showingYearInReview = false
+
     // Expandable section states
     @State private var isWeightUnitExpanded = false
     @State private var isRestTimerExpanded = false
     @State private var isStatsDisplayExpanded = false
+    @State private var isWarmUpSetsExpanded = false
     
     private var preferences: UserPreferences {
         if let existing = preferencesQuery.first {
@@ -2002,7 +2004,27 @@ struct PreferencesView: View {
             return newPrefs
         }
     }
-    
+
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: Date())
+    }
+
+    private var yearInReviewData: InsightsService.YearInReviewData {
+        InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
+    }
+
+    private var hasYearData: Bool {
+        yearInReviewData.totalWorkouts > 0
+    }
+
+    private var hasViewedYearInReview: Bool {
+        preferences.hasViewedYearInReview2024
+    }
+
+    private var shouldShowYearInReviewInSettings: Bool {
+        hasYearData && hasViewedYearInReview
+    }
+
     var body: some View {
         ZStack {
             Color.primaryBg
@@ -2010,6 +2032,17 @@ struct PreferencesView: View {
             
             ScrollView {
                 VStack(spacing: 12) {
+                    // Year in Review Card (only show after user has viewed it once)
+                    if shouldShowYearInReviewInSettings {
+                        YearInReviewCard(
+                            currentYear: currentYear,
+                            hasData: hasYearData,
+                            onTap: { showingYearInReview = true }
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    }
+
                     // Weight Unit Section
                     ExpandableSettingsSection(
                         title: "Lbs or KGs",
@@ -2201,7 +2234,52 @@ struct PreferencesView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    
+
+                    // Warm Up Sets Section
+                    ExpandableSettingsSection(
+                        title: "Warm Up Sets",
+                        isExpanded: isWarmUpSetsExpanded,
+                        onToggle: { isWarmUpSetsExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Enable Warm Up Sets")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.textPrimary)
+
+                                    Text("First set marked as warm up")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.textTertiary)
+                                }
+
+                                Spacer()
+
+                                Toggle("", isOn: Binding(
+                                    get: { preferences.useWarmupSets },
+                                    set: { newValue in
+                                        withAnimation(.standardSpring) {
+                                            preferences.useWarmupSets = newValue
+                                            savePreferences()
+                                        }
+                                    }
+                                ))
+                                .tint(.accentPrimary)
+                                .labelsHidden()
+                            }
+                            .padding(12)
+                            .background(Color.tertiaryBg)
+                            .cornerRadius(10)
+
+                            Text("When enabled, the first set of each exercise will be treated as a warm up and excluded from progression calculations. Individual exercises can override this.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
                     Spacer(minLength: 100)
                 }
             }
@@ -2215,8 +2293,11 @@ struct PreferencesView: View {
                     savePreferences()
                 }
         }
+        .fullScreenCover(isPresented: $showingYearInReview) {
+            YearInReviewSheet(data: yearInReviewData)
+        }
     }
-    
+
     private func savePreferences() {
         PreferencesService.shared.savePreferences(preferences, modelContext: modelContext)
     }
@@ -2329,6 +2410,14 @@ struct InsightsView: View {
         yearInReviewData.totalWorkouts > 0
     }
 
+    private var hasViewedYearInReview: Bool {
+        PreferencesService.shared.getHasViewedYearInReview2024(modelContext: modelContext)
+    }
+
+    private var shouldShowYearInReviewCard: Bool {
+        hasYearData && !hasViewedYearInReview
+    }
+
     private var comparisonStats: (
         workouts: InsightsService.PeriodComparison,
         sets: InsightsService.PeriodComparison,
@@ -2357,14 +2446,16 @@ struct InsightsView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 12) {
-                            // Year in Review Card
-                            YearInReviewCard(
-                                currentYear: currentYear,
-                                hasData: hasYearData,
-                                onTap: { showingYearInReview = true }
-                            )
-                            .padding(.horizontal, 20)
-                            .padding(.top, 8)
+                            // Year in Review Card (only show if not yet viewed)
+                            if shouldShowYearInReviewCard {
+                                YearInReviewCard(
+                                    currentYear: currentYear,
+                                    hasData: hasYearData,
+                                    onTap: { showingYearInReview = true }
+                                )
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                            }
 
                             // Period Selector
                             InsightsPeriodSelector(selectedPeriod: $selectedPeriod)
@@ -2415,7 +2506,9 @@ struct InsightsView: View {
                             .environmentObject(appState)
                     }
                     .fullScreenCover(isPresented: $showingYearInReview) {
-                        YearInReviewSheet(data: yearInReviewData)
+                        YearInReviewSheet(data: yearInReviewData) {
+                            PreferencesService.shared.markYearInReview2024AsViewed(modelContext: modelContext)
+                        }
                     }
                 }
             }

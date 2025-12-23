@@ -35,6 +35,10 @@ class OnboardingState: ObservableObject {
     @Published var selectedPlan: SubscriptionPlan = .free
     @Published var hasCommitted: Bool = false
 
+    // MARK: - Navigation State (Early Email Capture for Beginners)
+    @Published var showedEarlyEmailCapture: Bool = false
+    private var returnToPageAfterEmailCapture: Int?
+
     // MARK: - Persistence Keys
     private enum StorageKeys {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
@@ -109,21 +113,88 @@ class OnboardingState: ObservableObject {
             completeOnboarding()
             return
         }
+
+        // Check if returning from early email capture for beginners
+        if let returnPage = returnToPageAfterEmailCapture, currentPage.type == .emailCapture {
+            returnToPageAfterEmailCapture = nil
+            withAnimation(.standardSpring) {
+                currentPageIndex = returnPage
+            }
+            return
+        }
+
+        // Check if on experience level page with beginner/brand new selected
+        // Redirect to email capture (Free Guide) immediately
+        if currentPage.order == 6,
+           let level = experienceLevel,
+           (level == .brandNew || level == .beginner),
+           !showedEarlyEmailCapture {
+            showedEarlyEmailCapture = true
+            // Find the email capture page index (order 13)
+            if let emailCaptureIndex = pages.firstIndex(where: { $0.order == 13 }) {
+                returnToPageAfterEmailCapture = currentPageIndex + 1  // Return to settings (order 7)
+                withAnimation(.standardSpring) {
+                    currentPageIndex = emailCaptureIndex
+                }
+                return
+            }
+        }
+
+        // Move to next page
+        var nextIndex = currentPageIndex + 1
+
+        // Skip email capture if already shown early to beginners
+        if showedEarlyEmailCapture && nextIndex < pages.count && pages[nextIndex].order == 13 {
+            nextIndex += 1
+        }
+
         withAnimation(.standardSpring) {
-            currentPageIndex += 1
+            currentPageIndex = min(nextIndex, pages.count - 1)
         }
     }
 
     func previousPage() {
         guard currentPageIndex > 0 else { return }
+
+        // If we're on email capture and came from early redirect, go back to experience level
+        if returnToPageAfterEmailCapture != nil, currentPage.type == .emailCapture {
+            showedEarlyEmailCapture = false  // Allow showing again if they go forward
+            returnToPageAfterEmailCapture = nil
+            // Go back to experience level page (order 6)
+            if let experiencePageIndex = pages.firstIndex(where: { $0.order == 6 }) {
+                withAnimation(.standardSpring) {
+                    currentPageIndex = experiencePageIndex
+                }
+                return
+            }
+        }
+
+        // Move to previous page
+        var prevIndex = currentPageIndex - 1
+
+        // Skip email capture if already shown early to beginners
+        if showedEarlyEmailCapture && prevIndex >= 0 && pages[prevIndex].order == 13 {
+            prevIndex -= 1
+        }
+
         withAnimation(.standardSpring) {
-            currentPageIndex -= 1
+            currentPageIndex = max(prevIndex, 0)
         }
     }
 
     func skipPage() {
         // Only allowed for non-required pages
         guard !currentPage.isRequired else { return }
+
+        // If skipping early email capture, return to where we were
+        if let returnPage = returnToPageAfterEmailCapture, currentPage.type == .emailCapture {
+            returnToPageAfterEmailCapture = nil
+            withAnimation(.standardSpring) {
+                currentPageIndex = returnPage
+            }
+            return
+        }
+
         nextPage()
     }
 
@@ -215,9 +286,9 @@ class OnboardingState: ObservableObject {
             // Screen 1: Welcome
             OnboardingPage(
                 type: .static,
-                title: "Welcome to FitNotes",
-                subtitle: "Your journey starts here",
-                description: "Every great transformation begins with incremental improvement. By downloading this app you're investing in a stronger, more capable version of yourself. We're here to guide you every rep of the way.",
+                title: "Welcome to LiftLog",
+                subtitle: "A Progressive Overload Training App",
+                description: "Every great transformation begins with incremental improvement. By downloading this app you're investing in a stronger, more capable version of yourself. \n\n We're here to guide you every rep of the way.",
                 systemImage: "figure.walk",
                 order: 1
             ),
@@ -227,7 +298,7 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "The Secret to Real Progress",
                 subtitle: "Progressive Overload",
-                description: "Progressive overload means gradually increasing the demands on your muscles over time.\n It's simple: lift a little more weight, do one more rep, or add one more set. Small improvements compound into massive results over time.",
+                description: "Progressive overload means gradually increasing the demands on your muscles over time.\n It's simple: lift a little more weight, do one more rep, add another set, or reduce the time you rest. Small improvements compound into massive results over time.",
                 systemImage: "chart.line.uptrend.xyaxis",
                 order: 2
             ),

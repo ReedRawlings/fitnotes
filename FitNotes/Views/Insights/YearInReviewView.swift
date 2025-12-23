@@ -68,9 +68,11 @@ struct YearInReviewCard: View {
 /// Full year in review presentation (Spotify Wrapped style)
 struct YearInReviewSheet: View {
     let data: InsightsService.YearInReviewData
+    var onComplete: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var currentPage = 0
     @State private var animateContent = false
+    @State private var hasMarkedComplete = false
 
     private let totalPages = 6
 
@@ -156,10 +158,15 @@ struct YearInReviewSheet: View {
                 animateContent = true
             }
         }
-        .onChange(of: currentPage) { _, _ in
+        .onChange(of: currentPage) { _, newPage in
             animateContent = false
             withAnimation(.easeOut(duration: 0.4)) {
                 animateContent = true
+            }
+            // Mark as complete when user reaches the last page
+            if newPage == totalPages - 1 && !hasMarkedComplete {
+                hasMarkedComplete = true
+                onComplete?()
             }
         }
     }

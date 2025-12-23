@@ -23,7 +23,11 @@ struct TrackTabView: View {
     @State private var focusedInput: InputFocus?
 
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "TrackTabView")
-    
+
+    private var globalUseWarmupSets: Bool {
+        PreferencesService.shared.getUseWarmupSets(modelContext: modelContext)
+    }
+
     // Live progression status based on current (uncommitted) sets
     private var liveProgressionStatus: ProgressionStatus {
         let currentSetsData = sets.map { (weight: $0.weight, reps: $0.reps) }
@@ -61,6 +65,7 @@ struct TrackTabView: View {
                                     exercise: exercise,
                                     set: set,
                                     setIndex: index,
+                                    globalUseWarmupSets: globalUseWarmupSets,
                                     weight: Binding<Double?>(
                                         get: { sets[index].weight },
                                         set: { newVal in
@@ -694,6 +699,7 @@ struct SetRowView: View {
     let exercise: Exercise
     let set: (id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)
     let setIndex: Int
+    let globalUseWarmupSets: Bool
     @Binding var weight: Double?
     @Binding var reps: Int?
     @Binding var rpe: Int?
@@ -705,7 +711,9 @@ struct SetRowView: View {
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "SetRowView")
 
     private var isWarmupSet: Bool {
-        exercise.useWarmupSet && setIndex == 0
+        // Use exercise-specific setting if set, otherwise use global preference
+        let useWarmup = exercise.useWarmupSet || globalUseWarmupSets
+        return useWarmup && setIndex == 0
     }
 
     var body: some View {

@@ -109,6 +109,8 @@ public final class UserPreferences {
     public var defaultStatsDisplayPreferenceRaw: String
     public var keepCurrentRoutineView: Bool
     public var keepCurrentWorkoutView: Bool
+    public var useWarmupSets: Bool
+    public var hasViewedYearInReview2024: Bool
     public var createdAt: Date
     public var updatedAt: Date
     
@@ -129,6 +131,8 @@ public final class UserPreferences {
         defaultStatsDisplayPreference: StatsDisplayPreference = .rememberLastState,
         keepCurrentRoutineView: Bool = false,
         keepCurrentWorkoutView: Bool = false,
+        useWarmupSets: Bool = false,
+        hasViewedYearInReview2024: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -138,6 +142,8 @@ public final class UserPreferences {
         self.defaultStatsDisplayPreferenceRaw = defaultStatsDisplayPreference.rawValue
         self.keepCurrentRoutineView = keepCurrentRoutineView
         self.keepCurrentWorkoutView = keepCurrentWorkoutView
+        self.useWarmupSets = useWarmupSets
+        self.hasViewedYearInReview2024 = hasViewedYearInReview2024
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

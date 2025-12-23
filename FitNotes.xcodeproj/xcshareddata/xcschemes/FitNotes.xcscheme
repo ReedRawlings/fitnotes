@@ -29,7 +29,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "741C98522ECD0C6800753A52"
+               BlueprintIdentifier = "7423C86C2EF6862600E92CA7"
                BuildableName = "RestTimerWidgetExtension.appex"
                BlueprintName = "RestTimerWidgetExtension"
                ReferencedContainer = "container:FitNotes.xcodeproj">

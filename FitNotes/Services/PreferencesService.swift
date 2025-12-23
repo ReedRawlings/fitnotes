@@ -84,6 +84,25 @@ public final class PreferencesService {
         return preferences.keepCurrentWorkoutView
     }
 
+    /// Gets the global warm up sets preference
+    public func getUseWarmupSets(modelContext: ModelContext) -> Bool {
+        let preferences = getOrCreatePreferences(modelContext: modelContext)
+        return preferences.useWarmupSets
+    }
+
+    /// Gets whether user has viewed the 2024 year in review
+    public func getHasViewedYearInReview2024(modelContext: ModelContext) -> Bool {
+        let preferences = getOrCreatePreferences(modelContext: modelContext)
+        return preferences.hasViewedYearInReview2024
+    }
+
+    /// Marks the 2024 year in review as viewed
+    public func markYearInReview2024AsViewed(modelContext: ModelContext) {
+        let preferences = getOrCreatePreferences(modelContext: modelContext)
+        preferences.hasViewedYearInReview2024 = true
+        savePreferences(preferences, modelContext: modelContext)
+    }
+
     /// Saves preferences changes
     public func savePreferences(_ preferences: UserPreferences, modelContext: ModelContext) {
         preferences.updatedAt = Date()

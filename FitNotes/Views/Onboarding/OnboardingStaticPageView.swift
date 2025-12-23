@@ -228,43 +228,6 @@ struct OnboardingResearchView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top navigation with back chevron and progress bar
-            HStack(spacing: 12) {
-                // Back chevron
-                Button(action: {
-                    state.previousPage()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.textSecondary)
-                        .frame(width: 32, height: 32)
-                }
-
-                // Progress bar showing total screens
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.tertiaryBg)
-                            .frame(height: 4)
-
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.accentPrimary, .accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * state.progress, height: 4)
-                            .animation(.standardSpring, value: state.progress)
-                    }
-                }
-                .frame(height: 4)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
                     Spacer()

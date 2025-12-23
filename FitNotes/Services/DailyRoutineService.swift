@@ -679,32 +679,26 @@ public final class RoutineService {
             modelContext: modelContext
         )
 
-        var setCount: Int
-        var baseReps: Int?
-        var baseWeight: Double?
+        // Build sets array from last session or defaults
+        let setsData: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)]
 
         if let last = lastSession, !last.isEmpty {
-            // Use last session data
-            setCount = last.count
-            if let first = last.first {
-                baseReps = first.reps
-                baseWeight = first.weight
+            // Use each set's individual values from last session
+            setsData = last.map { set in
+                (weight: set.weight, reps: set.reps, rpe: nil, rir: nil, isCompleted: false)
             }
         } else {
             // No history - use defaults based on exercise type
-            setCount = 3
+            let setCount = 3
             if exercise?.equipment == "Body" || exercise?.primaryCategory == "Cardio" {
-                baseReps = nil
-                baseWeight = nil
+                setsData = (0..<setCount).map { _ in
+                    (weight: nil, reps: nil, rpe: nil, rir: nil, isCompleted: false)
+                }
             } else {
-                baseReps = 10
-                baseWeight = 0
+                setsData = (0..<setCount).map { _ in
+                    (weight: 0, reps: 10, rpe: nil, rir: nil, isCompleted: false)
+                }
             }
-        }
-
-        // Build sets array (all not completed initially)
-        let setsData: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)] = (0..<setCount).map { _ in
-            (weight: baseWeight, reps: baseReps, rpe: nil, rir: nil, isCompleted: false)
         }
 
         _ = ExerciseService.shared.saveSets(

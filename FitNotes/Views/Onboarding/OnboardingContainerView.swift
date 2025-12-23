@@ -20,9 +20,15 @@ struct OnboardingContainerView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Progress Bar
-                OnboardingProgressBar(progress: state.progress)
-                    .padding(.top, 8)
+                // Progress Bar with Back Button
+                OnboardingProgressBar(
+                    progress: state.progress,
+                    currentPage: state.currentPageIndex + 1,
+                    totalPages: state.pages.count,
+                    isFirstPage: state.isFirstPage,
+                    onBack: { state.previousPage() }
+                )
+                .padding(.top, 8)
 
                 // Page Content
                 TabView(selection: $state.currentPageIndex) {
@@ -44,32 +50,59 @@ struct OnboardingContainerView: View {
     }
 }
 
-// MARK: - Progress Bar
+// MARK: - Progress Bar with Back Button
 struct OnboardingProgressBar: View {
     let progress: Double
+    let currentPage: Int
+    let totalPages: Int
+    let isFirstPage: Bool
+    let onBack: () -> Void
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background track
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.tertiaryBg)
-                    .frame(height: 4)
-
-                // Progress fill
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(
-                        LinearGradient(
-                            colors: [.accentPrimary, .accentSecondary],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geometry.size.width * progress, height: 4)
-                    .animation(.standardSpring, value: progress)
+        HStack(spacing: 12) {
+            // Back chevron (hidden on first page)
+            if !isFirstPage {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.textSecondary)
+                        .frame(width: 32, height: 32)
+                }
+            } else {
+                // Spacer to maintain layout when no back button
+                Spacer()
+                    .frame(width: 32, height: 32)
             }
+
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background track
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.tertiaryBg)
+                        .frame(height: 4)
+
+                    // Progress fill
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(
+                            LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * progress, height: 4)
+                        .animation(.standardSpring, value: progress)
+                }
+            }
+            .frame(height: 4)
+
+            // Page count
+            Text("\(currentPage)/\(totalPages)")
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundColor(.textTertiary)
+                .frame(width: 36, alignment: .trailing)
         }
-        .frame(height: 4)
         .padding(.horizontal, 20)
     }
 }
@@ -161,29 +194,10 @@ struct OnboardingBottomBar: View {
             .disabled(!state.canProceed || isPurchasing)
             .padding(.horizontal, 20)
 
-            // Secondary Actions
-            HStack {
-                // Back button (hidden on first page)
-                if !state.isFirstPage {
-                    Button(action: {
-                        state.previousPage()
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 12, weight: .medium))
-                            Text("Back")
-                                .font(.system(size: 15, weight: .medium))
-                        }
-                        .foregroundColor(.textSecondary)
-                    }
-                } else {
+            // Secondary Actions (Skip button only - back is now in progress bar)
+            if !state.currentPage.isRequired && !state.isLastPage {
+                HStack {
                     Spacer()
-                }
-
-                Spacer()
-
-                // Skip button (for optional pages)
-                if !state.currentPage.isRequired && !state.isLastPage {
                     Button(action: {
                         state.skipPage()
                     }) {
@@ -192,9 +206,9 @@ struct OnboardingBottomBar: View {
                             .foregroundColor(.textSecondary)
                     }
                 }
+                .padding(.horizontal, 24)
+                .frame(height: 32)
             }
-            .padding(.horizontal, 24)
-            .frame(height: 32)
         }
         .padding(.bottom, 24)
         .alert("Purchase Error", isPresented: $showError) {

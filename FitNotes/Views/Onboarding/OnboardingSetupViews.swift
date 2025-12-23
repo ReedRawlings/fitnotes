@@ -20,9 +20,11 @@ struct OnboardingInteractiveSetupView: View {
     @State private var targetRepsMin: Int = 5
     @State private var targetRepsMax: Int = 8
     @State private var weightIncrement: Double = 2.5
+    @State private var progressionSetCount: Int = 3
+    @State private var useWarmupSet: Bool = false
     @State private var showingExercisePicker: Bool = false
 
-    private let totalSteps = 4
+    private let totalSteps = 5
 
     var body: some View {
         VStack(spacing: 0) {
@@ -104,8 +106,10 @@ struct OnboardingInteractiveSetupView: View {
                         case 1:
                             repRangeStep
                         case 2:
-                            weightIncrementStep
+                            setTrackingStep
                         case 3:
+                            weightIncrementStep
+                        case 4:
                             confirmationStep
                         default:
                             EmptyView()
@@ -271,10 +275,79 @@ struct OnboardingInteractiveSetupView: View {
         )
     }
 
+    private var setTrackingStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Step 3: Set Tracking")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.textPrimary)
+
+                Text("Configure which sets count toward your progression")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: 14) {
+                StepperRow(
+                    label: "Working Sets to Track",
+                    value: $progressionSetCount,
+                    range: 1...10
+                )
+
+                // Warm-up set toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("First Set is Warm-up")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.textPrimary)
+
+                        Text("Exclude first set from progression tracking")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $useWarmupSet)
+                        .labelsHidden()
+                        .tint(.accentPrimary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color.tertiaryBg)
+                .cornerRadius(12)
+            }
+
+            // Explanation
+            HStack(spacing: 10) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.accentPrimary)
+
+                Text("Only these sets will be used to calculate your progression recommendations")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(Color.tertiaryBg)
+            .cornerRadius(12)
+        }
+        .padding(20)
+        .background(Color.secondaryBg)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+
     private var weightIncrementStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Step 3: Weight Increment")
+                Text("Step 4: Weight Increment")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.textPrimary)
 
@@ -323,7 +396,7 @@ struct OnboardingInteractiveSetupView: View {
     private var confirmationStep: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Step 4: Review Your Setup")
+                Text("Step 5: Review Your Setup")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.textPrimary)
 
@@ -337,6 +410,12 @@ struct OnboardingInteractiveSetupView: View {
                 Divider()
                     .background(Color.white.opacity(0.06))
                 confirmationRow(label: "Rep Range", value: "\(targetRepsMin)-\(targetRepsMax) reps")
+                Divider()
+                    .background(Color.white.opacity(0.06))
+                confirmationRow(label: "Sets to Track", value: "\(progressionSetCount) sets")
+                Divider()
+                    .background(Color.white.opacity(0.06))
+                confirmationRow(label: "Warm-up Set", value: useWarmupSet ? "Yes (excluded)" : "No")
                 Divider()
                     .background(Color.white.opacity(0.06))
                 confirmationRow(label: "Weight Increment", value: "+\(String(format: "%.1f", weightIncrement)) \(state.weightUnit.shortName)")
@@ -411,8 +490,10 @@ struct OnboardingInteractiveSetupView: View {
         case 1:
             return targetRepsMin < targetRepsMax
         case 2:
-            return weightIncrement > 0
+            return progressionSetCount > 0
         case 3:
+            return weightIncrement > 0
+        case 4:
             return true
         default:
             return true
