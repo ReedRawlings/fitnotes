@@ -199,9 +199,7 @@ struct WorkoutView: View {
                 isPresented: $showingSaveRoutineDialog,
                 workout: getWorkoutForDate(displayDate),
                 modelContext: modelContext,
-                onSave: { name, description in
-                    saveWorkoutAsRoutine(name: name, description: description)
-                }
+                onComplete: { }
             )
         }
         .onAppear {
@@ -236,35 +234,6 @@ struct WorkoutView: View {
         }
     }
 
-    private func saveWorkoutAsRoutine(name: String, description: String?) {
-        guard let workout = getWorkoutForDate(displayDate) else { return }
-
-        // Create the routine
-        let routine = RoutineService.shared.createRoutine(
-            name: name,
-            description: description,
-            modelContext: modelContext
-        )
-
-        // Copy exercises from workout to routine
-        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
-        for workoutExercise in sortedExercises {
-            // Add exercise to routine (weight/reps will be pulled from last session when workout is created)
-            _ = RoutineService.shared.addExerciseToRoutine(
-                routine: routine,
-                exerciseId: workoutExercise.exerciseId,
-                notes: workoutExercise.notes,
-                modelContext: modelContext
-            )
-        }
-
-        // Save to database
-        do {
-            try modelContext.save()
-        } catch {
-            print("Error saving routine: \(error)")
-        }
-    }
 }
 
 // MARK: - WorkoutDetailView
@@ -1053,12 +1022,19 @@ struct SaveWorkoutAsRoutineView: View {
     @Binding var isPresented: Bool
     let workout: Workout?
     let modelContext: ModelContext
-    let onSave: (String, String?) -> Void
+    let onComplete: () -> Void
 
     @State private var routineName = ""
     @State private var routineDescription = ""
     @FocusState private var isNameFieldFocused: Bool
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
+
+    // Schedule configuration state
+    @State private var selectedColor: RoutineColor = .teal
+    @State private var selectedScheduleType: RoutineScheduleType = .none
+    @State private var selectedDays: Set<Int> = []
+    @State private var intervalDays: Int = 2
+    @State private var startDate: Date = Date()
 
     var body: some View {
         NavigationStack {
@@ -1066,96 +1042,174 @@ struct SaveWorkoutAsRoutineView: View {
                 Color.primaryBg
                     .ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Routine Name")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.textSecondary)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Routine Details Card
+                        FormSectionCard(title: "Routine Details") {
+                            LabeledTextInput(
+                                label: "Routine Name",
+                                placeholder: "e.g., Push Day, Leg Day",
+                                text: $routineName
+                            )
 
-                        TextField("e.g., Push Day, Leg Day", text: $routineName)
-                            .textFieldStyle(.plain)
-                            .padding(12)
-                            .background(Color.secondaryBg)
-                            .cornerRadius(8)
-                            .foregroundColor(.textPrimary)
-                            .focused($isNameFieldFocused)
-                    }
+                            LabeledTextInput(
+                                label: "Description (optional)",
+                                placeholder: "e.g., Chest, Shoulders, Triceps",
+                                text: $routineDescription,
+                                axis: .vertical,
+                                lineLimit: 3...6
+                            )
+                        }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Description (Optional)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.textSecondary)
+                        // Exercises Preview Card
+                        if let workout = workout, !workout.exercises.isEmpty {
+                            FormSectionCard(title: "Exercises to Include") {
+                                VStack(spacing: 8) {
+                                    ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.accentSuccess)
+                                                .font(.system(size: 16))
 
-                        TextField("e.g., Chest, Shoulders, Triceps", text: $routineDescription)
-                            .textFieldStyle(.plain)
-                            .padding(12)
-                            .background(Color.secondaryBg)
-                            .cornerRadius(8)
-                            .foregroundColor(.textPrimary)
-                            .focused($isNameFieldFocused)
-                    }
+                                            if let exercise = allExercises.first(where: { $0.id == workoutExercise.exerciseId }) {
+                                                Text(exercise.name)
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.textPrimary)
+                                            }
 
-                    if let workout = workout {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Exercises to Include")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.textSecondary)
-
-                            VStack(spacing: 8) {
-                                ForEach(workout.exercises.sorted { $0.order < $1.order }, id: \.id) { workoutExercise in
-                                    HStack {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.accentSuccess)
-                                            .font(.system(size: 16))
-
-                                        if let exercise = allExercises.first(where: { $0.id == workoutExercise.exerciseId }) {
-                                            Text(exercise.name)
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.textPrimary)
+                                            Spacer()
                                         }
-
-                                        Spacer()
+                                        .padding(12)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
                                     }
-                                    .padding(12)
-                                    .background(Color.secondaryBg)
-                                    .cornerRadius(8)
                                 }
                             }
                         }
-                    }
 
-                    Spacer()
+                        // Color Picker Card
+                        FormSectionCard(title: "Color") {
+                            RoutineColorPicker(selectedColor: $selectedColor)
+                        }
+
+                        // Schedule Type Card
+                        FormSectionCard(title: "Schedule (optional)") {
+                            ScheduleTypePicker(selectedType: $selectedScheduleType)
+                        }
+
+                        // Configuration based on schedule type
+                        if selectedScheduleType == .weekly {
+                            FormSectionCard(title: "Repeat Days") {
+                                DayOfWeekSelector(selectedDays: $selectedDays)
+                            }
+                        } else if selectedScheduleType == .interval {
+                            FormSectionCard(title: "Repeat Interval") {
+                                IntervalSchedulePicker(
+                                    intervalDays: $intervalDays,
+                                    startDate: $startDate
+                                )
+                            }
+                        }
+
+                        // Next occurrence preview (if schedule is configured)
+                        if selectedScheduleType != .none && isValidSchedule {
+                            NextOccurrencePreview(
+                                scheduleType: selectedScheduleType,
+                                selectedDays: selectedDays,
+                                intervalDays: intervalDays,
+                                startDate: startDate
+                            )
+                        }
+
+                        Spacer(minLength: 100) // Space for fixed button
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                 }
-                .padding(20)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    // Dismiss keyboard when tapping outside input fields
-                    isNameFieldFocused = false
-                }
+
+                // Fixed CTA at bottom
+                FixedModalCTAButton(
+                    title: "Save Routine",
+                    icon: "checkmark",
+                    isEnabled: !routineName.isEmpty && isValidSchedule,
+                    action: saveRoutine
+                )
             }
             .navigationTitle("Save as Routine")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         isPresented = false
                     }
-                    .foregroundColor(.textSecondary)
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(routineName, routineDescription.isEmpty ? nil : routineDescription)
-                        isPresented = false
-                    }
-                    .foregroundColor(.accentColor)
-                    .disabled(routineName.isEmpty)
+                    .foregroundColor(.accentPrimary)
                 }
             }
             .onAppear {
                 isNameFieldFocused = true
             }
         }
+    }
+
+    private var isValidSchedule: Bool {
+        switch selectedScheduleType {
+        case .none:
+            return true
+        case .weekly:
+            return !selectedDays.isEmpty
+        case .interval:
+            return intervalDays >= 1
+        }
+    }
+
+    private func saveRoutine() {
+        guard let workout = workout else {
+            isPresented = false
+            return
+        }
+
+        // Create the routine
+        let routine = RoutineService.shared.createRoutine(
+            name: routineName,
+            description: routineDescription.isEmpty ? nil : routineDescription,
+            modelContext: modelContext
+        )
+
+        // Set the routine color
+        routine.color = selectedColor
+
+        // Apply schedule configuration if set
+        if selectedScheduleType != .none {
+            RoutineService.shared.updateRoutineSchedule(
+                routine: routine,
+                scheduleType: selectedScheduleType,
+                scheduleDays: selectedScheduleType == .weekly ? selectedDays : nil,
+                intervalDays: selectedScheduleType == .interval ? intervalDays : nil,
+                startDate: selectedScheduleType == .interval ? startDate : nil,
+                modelContext: modelContext
+            )
+        }
+
+        // Copy exercises from workout to routine
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+        for workoutExercise in sortedExercises {
+            _ = RoutineService.shared.addExerciseToRoutine(
+                routine: routine,
+                exerciseId: workoutExercise.exerciseId,
+                notes: workoutExercise.notes,
+                modelContext: modelContext
+            )
+        }
+
+        // Save to database
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving routine: \(error)")
+        }
+
+        isPresented = false
+        onComplete()
     }
 }
 

@@ -1496,6 +1496,7 @@ struct RoutineDetailView: View {
     @Query private var exercises: [Exercise]
     @State private var showingAddExercise = false
     @State private var showingScheduleView = false
+    @State private var showingDeleteConfirmation = false
     @State private var cachedExercises: [RoutineExercise] = []
     @State private var hasUncommittedChanges = false
 
@@ -1664,6 +1665,16 @@ struct RoutineDetailView: View {
             }
             .navigationTitle("Routine Details")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(.errorRed)
+                    }
+                }
+            }
             .overlay(
                 // Fixed bottom button - overlay on top
                 VStack {
@@ -1683,6 +1694,19 @@ struct RoutineDetailView: View {
                 RoutineScheduleView(routine: routine)
             }
         }
+        .alert("Delete Routine", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteRoutine()
+            }
+        } message: {
+            Text("Are you sure you want to delete \"\(routine.name)\"? This action cannot be undone.")
+        }
+    }
+
+    private func deleteRoutine() {
+        RoutineService.shared.deleteRoutine(routine: routine, modelContext: modelContext)
+        dismiss()
     }
     
     private func commitReorder() {
