@@ -1267,17 +1267,36 @@ struct RoutineCardView: View {
 struct RoutinesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Routine.name) private var routines: [Routine]
+    @ObservedObject private var storeManager = StoreKitManager.shared
     @State private var showingAddRoutine = false
+    @State private var showingLimitReachedSheet = false
     @State private var selectedRoutine: Routine?
     @State private var addExerciseRoutine: Routine?
-    
+
+    private var canCreateRoutine: Bool {
+        FreemiumLimitsService.shared.canCreateRoutine(isPremium: storeManager.isPremium, modelContext: modelContext)
+    }
+
     var body: some View {
         ZStack {
             // Dark theme background
             Color.primaryBg
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
+                // Usage counter badge
+                HStack {
+                    Spacer()
+                    UsageCounterBadge(
+                        current: routines.count,
+                        max: FreemiumLimitsService.maxFreeRoutines,
+                        label: "Routines",
+                        isPremium: storeManager.isPremium
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
                 if routines.isEmpty {
                     EmptyStateView(
                         icon: "list.bullet.rectangle",
@@ -1310,18 +1329,29 @@ struct RoutinesView: View {
                     }
                 }
             }
-            
+
             // Fixed bottom button - overlay on top (always visible for consistency)
             VStack {
                 Spacer()
                 PrimaryActionButton(title: "New Routine") {
-                    showingAddRoutine = true
+                    if canCreateRoutine {
+                        showingAddRoutine = true
+                    } else {
+                        showingLimitReachedSheet = true
+                    }
                 }
                 .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .sheet(isPresented: $showingAddRoutine) {
             AddRoutineView()
+        }
+        .sheet(isPresented: $showingLimitReachedSheet) {
+            FreemiumLimitReachedSheet(
+                featureName: "Routines",
+                currentCount: routines.count,
+                maxCount: FreemiumLimitsService.maxFreeRoutines
+            )
         }
         .sheet(item: $selectedRoutine) { routine in
             RoutineDetailView(routine: routine)
@@ -2007,11 +2037,13 @@ struct SettingsView: View {
 struct PreferencesView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
+    @ObservedObject private var storeManager = StoreKitManager.shared
     @Query private var preferencesQuery: [UserPreferences]
 
     @State private var showingTimePicker = false
     @State private var tempSelectedSeconds: Int = 90
     @State private var showingYearInReview = false
+    @State private var showingUpgradeSheet = false
 
     // Expandable section states
     @State private var isWeightUnitExpanded = false
@@ -2056,6 +2088,55 @@ struct PreferencesView: View {
             
             ScrollView {
                 VStack(spacing: 12) {
+                    // Upgrade to Premium Card (only for free users)
+                    if !storeManager.isPremium {
+                        Button(action: { showingUpgradeSheet = true }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.accentPrimary, .accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Upgrade to Premium")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.textPrimary)
+                                    Text("Unlimited routines, tracking & insights")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.textSecondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.textTertiary)
+                            }
+                            .padding(16)
+                            .background(Color.secondaryBg)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [.accentPrimary.opacity(0.3), .accentSecondary.opacity(0.3)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    }
+
                     // Year in Review Card (only show after user has viewed it once)
                     if shouldShowYearInReviewInSettings {
                         YearInReviewCard(
@@ -2319,6 +2400,9 @@ struct PreferencesView: View {
         }
         .fullScreenCover(isPresented: $showingYearInReview) {
             YearInReviewSheet(data: yearInReviewData)
+        }
+        .sheet(isPresented: $showingUpgradeSheet) {
+            UpgradeSheet()
         }
     }
 

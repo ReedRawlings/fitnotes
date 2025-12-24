@@ -1024,10 +1024,12 @@ struct SaveWorkoutAsRoutineView: View {
     let modelContext: ModelContext
     let onComplete: () -> Void
 
+    @ObservedObject private var storeManager = StoreKitManager.shared
     @State private var routineName = ""
     @State private var routineDescription = ""
     @FocusState private var isNameFieldFocused: Bool
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
+    @Query(sort: \Routine.name) private var routines: [Routine]
 
     // Schedule configuration state
     @State private var selectedColor: RoutineColor = .teal
@@ -1036,30 +1038,42 @@ struct SaveWorkoutAsRoutineView: View {
     @State private var intervalDays: Int = 2
     @State private var startDate: Date = Date()
 
+    private var canCreateRoutine: Bool {
+        FreemiumLimitsService.shared.canCreateRoutine(isPremium: storeManager.isPremium, modelContext: modelContext)
+    }
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.primaryBg
-                    .ignoresSafeArea()
+            if !canCreateRoutine {
+                // Show limit reached view
+                FreemiumLimitReachedSheet(
+                    featureName: "Routines",
+                    currentCount: routines.count,
+                    maxCount: FreemiumLimitsService.maxFreeRoutines
+                )
+            } else {
+                ZStack {
+                    Color.primaryBg
+                        .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 16) {
-                        // Routine Details Card
-                        FormSectionCard(title: "Routine Details") {
-                            LabeledTextInput(
-                                label: "Routine Name",
-                                placeholder: "e.g., Push Day, Leg Day",
-                                text: $routineName
-                            )
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Routine Details Card
+                            FormSectionCard(title: "Routine Details") {
+                                LabeledTextInput(
+                                    label: "Routine Name",
+                                    placeholder: "e.g., Push Day, Leg Day",
+                                    text: $routineName
+                                )
 
-                            LabeledTextInput(
-                                label: "Description (optional)",
-                                placeholder: "e.g., Chest, Shoulders, Triceps",
-                                text: $routineDescription,
-                                axis: .vertical,
-                                lineLimit: 3...6
-                            )
-                        }
+                                LabeledTextInput(
+                                    label: "Description (optional)",
+                                    placeholder: "e.g., Chest, Shoulders, Triceps",
+                                    text: $routineDescription,
+                                    axis: .vertical,
+                                    lineLimit: 3...6
+                                )
+                            }
 
                         // Exercises Preview Card
                         if let workout = workout, !workout.exercises.isEmpty {
@@ -1127,26 +1141,27 @@ struct SaveWorkoutAsRoutineView: View {
                     .padding(.top, 16)
                 }
 
-                // Fixed CTA at bottom
-                FixedModalCTAButton(
-                    title: "Save Routine",
-                    icon: "checkmark",
-                    isEnabled: !routineName.isEmpty && isValidSchedule,
-                    action: saveRoutine
-                )
-            }
-            .navigationTitle("Save as Routine")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                    .foregroundColor(.accentPrimary)
+                    // Fixed CTA at bottom
+                    FixedModalCTAButton(
+                        title: "Save Routine",
+                        icon: "checkmark",
+                        isEnabled: !routineName.isEmpty && isValidSchedule,
+                        action: saveRoutine
+                    )
                 }
-            }
-            .onAppear {
-                isNameFieldFocused = true
+                .navigationTitle("Save as Routine")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            isPresented = false
+                        }
+                        .foregroundColor(.accentPrimary)
+                    }
+                }
+                .onAppear {
+                    isNameFieldFocused = true
+                }
             }
         }
     }

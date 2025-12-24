@@ -61,6 +61,7 @@
 		7423C88B2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */; };
 		7423C88C2EF68B6300E92CA7 /* RestTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */; };
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
+		744B6B5D2EE9A00100804AB6 /* FreemiumLimitsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */; };
 		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
 /* End PBXBuildFile section */
@@ -164,6 +165,7 @@
 		7423C8892EF686A900E92CA7 /* RestTimerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RestTimerWidgetExtension.entitlements; sourceTree = "<group>"; };
 		7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerActivityAttributes.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
+		744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumLimitsService.swift; sourceTree = "<group>"; };
 		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -324,6 +326,7 @@
 				741C98722ECD0D9100753A52 /* InsightsService.swift */,
 				741C98742ECD0D9100753A52 /* ProgressionService.swift */,
 				744B6B572ED8EE6300804AB6 /* PreferencesService.swift */,
+				744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -617,6 +620,7 @@
 				741C987A2ECD0D9100753A52 /* RecentPRsView.swift in Sources */,
 				741C987C2ECD0D9100753A52 /* InsightsChartView.swift in Sources */,
 				744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */,
+				744B6B5D2EE9A00100804AB6 /* FreemiumLimitsService.swift in Sources */,
 				741C987D2ECD0D9100753A52 /* InsightsService.swift in Sources */,
 				741C987E2ECD0D9100753A52 /* RestTimerManager.swift in Sources */,
 				7423C0942EF1198F00E92CA7 /* DevDataSeeder.swift in Sources */,

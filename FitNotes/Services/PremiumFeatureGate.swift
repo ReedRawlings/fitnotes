@@ -366,6 +366,120 @@ extension View {
     }
 }
 
+// MARK: - Usage Counter Badge
+/// Displays usage count for freemium limits (e.g., "2/2 Routines")
+struct UsageCounterBadge: View {
+    let current: Int
+    let max: Int
+    let label: String
+    let isPremium: Bool
+
+    private var isAtLimit: Bool { current >= max && !isPremium }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if isPremium {
+                // Premium: show count only without limit
+                Text("\(current) \(label)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.textSecondary)
+            } else {
+                // Free: show X/Y format
+                Text("\(current)/\(max) \(label)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(isAtLimit ? .accentSecondary : .textSecondary)
+
+                if isAtLimit {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.accentSecondary)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.secondaryBg)
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Freemium Limit Reached Sheet
+/// Bottom sheet shown when user hits a freemium limit
+struct FreemiumLimitReachedSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingUpgradeSheet = false
+
+    let featureName: String
+    let currentCount: Int
+    let maxCount: Int
+
+    var body: some View {
+        VStack(spacing: 24) {
+            // Lock icon with gradient
+            Image(systemName: "lock.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.accentPrimary, .accentSecondary],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            // Title
+            Text("Free Limit Reached")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.textPrimary)
+
+            // Usage indicator
+            Text("\(currentCount)/\(maxCount) \(featureName) used")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundColor(.textSecondary)
+
+            // Description
+            Text("Upgrade to Premium for unlimited \(featureName.lowercased()) and more features.")
+                .font(.system(size: 15))
+                .foregroundColor(.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+
+            // Upgrade button
+            Button(action: { showingUpgradeSheet = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "crown.fill")
+                    Text("Upgrade to Premium")
+                }
+                .font(.buttonFont)
+                .foregroundColor(.textInverse)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    LinearGradient(
+                        colors: [.accentPrimary, .accentSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(16)
+            }
+            .padding(.horizontal, 20)
+
+            // Maybe later button
+            Button("Maybe Later") {
+                dismiss()
+            }
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(.textSecondary)
+        }
+        .padding(.vertical, 32)
+        .presentationDetents([.height(400)])
+        .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showingUpgradeSheet) {
+            UpgradeSheet()
+        }
+    }
+}
+
 // MARK: - Environment Key for Premium Status
 struct IsPremiumKey: EnvironmentKey {
     static let defaultValue: Bool = false
