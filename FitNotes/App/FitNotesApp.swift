@@ -37,14 +37,19 @@ struct FitNotesApp: App {
 
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            
+
+            // Create a context for initialization tasks
+            let initContext = ModelContext(container)
+
             #if DEBUG
             // Seed development demo data the first time if the store is empty.
-            // Use a temporary ModelContext just for seeding.
-            let devContext = ModelContext(container)
-            DevDataSeeder.seedIfNeeded(modelContext: devContext)
+            DevDataSeeder.seedIfNeeded(modelContext: initContext)
             #endif
-            
+
+            // Sync default exercises library (adds new exercises, updates equipment types)
+            // Safe to run on every launch - only adds missing exercises
+            ExerciseDatabaseService.shared.syncDefaultExercises(modelContext: initContext)
+
             return container
         } catch {
             // If there's a schema issue, try to delete the old database and recreate
@@ -56,12 +61,16 @@ struct FitNotesApp: App {
             
             do {
                 let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-                
+
+                let initContext = ModelContext(container)
+
                 #if DEBUG
-                let devContext = ModelContext(container)
-                DevDataSeeder.seedIfNeeded(modelContext: devContext)
+                DevDataSeeder.seedIfNeeded(modelContext: initContext)
                 #endif
-                
+
+                // Sync default exercises library
+                ExerciseDatabaseService.shared.syncDefaultExercises(modelContext: initContext)
+
                 print("Successfully recreated ModelContainer")
                 return container
             } catch {

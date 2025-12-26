@@ -1354,7 +1354,9 @@ struct RoutinesView: View {
             )
         }
         .sheet(item: $selectedRoutine) { routine in
-            RoutineDetailView(routine: routine)
+            NavigationStack {
+                RoutineDetailView(routine: routine)
+            }
         }
         .sheet(item: $addExerciseRoutine) { routine in
             AddExerciseToRoutineTemplateView(routine: routine)

@@ -177,3 +177,53 @@ enum SubscriptionPlan: String, Codable {
         }
     }
 }
+
+// MARK: - StarterRoutine
+/// Available starter routines for beginners during onboarding
+enum StarterRoutine: String, Codable, CaseIterable {
+    case fullBody = "full_body"
+    case pushPullLegs = "push_pull_legs"
+    case upperLower = "upper_lower"
+
+    var displayName: String {
+        switch self {
+        case .fullBody: return "Full Body Starter"
+        case .pushPullLegs: return "Push/Pull/Legs"
+        case .upperLower: return "Upper/Lower Split"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .fullBody: return "3 days/week • Perfect for beginners"
+        case .pushPullLegs: return "3-6 days/week • Flexible split"
+        case .upperLower: return "4 days/week • Balanced approach"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .fullBody: return "figure.walk"
+        case .pushPullLegs: return "arrow.left.arrow.right"
+        case .upperLower: return "arrow.up.arrow.down"
+        }
+    }
+
+    /// Minimum number of workout days required for this routine
+    var minimumDays: Int {
+        switch self {
+        case .fullBody: return 3
+        case .pushPullLegs: return 3  // Can work with 3 (1x each) or 6 (2x each)
+        case .upperLower: return 4
+        }
+    }
+
+    /// Description of the day requirement for UI
+    var daysRequirement: String {
+        switch self {
+        case .fullBody: return "Select at least 3 days"
+        case .pushPullLegs: return "Select 3-6 days"
+        case .upperLower: return "Select at least 4 days"
+        }
+    }
+}

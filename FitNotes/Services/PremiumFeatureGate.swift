@@ -161,10 +161,9 @@ struct UpgradeSheet: View {
 
                         // Features
                         VStack(alignment: .leading, spacing: 12) {
-                            premiumFeature("Unlimited exercise tracking")
-                            premiumFeature("Advanced analytics & insights")
-                            premiumFeature("Custom progression targets")
-                            premiumFeature("Export workout data")
+                            premiumFeature("Unlimited routines")
+                            premiumFeature("Unlimited progressive overload tracking")
+                            premiumFeature("Full insights history (3 months, YTD, all time)")
                             premiumFeature("Priority support")
                         }
                         .padding(20)

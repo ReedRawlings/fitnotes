@@ -605,45 +605,100 @@ struct OnboardingConditionalView: View {
     }
 
     private var beginnerContent: some View {
-        VStack(spacing: 16) {
-            Text("Perfect for Getting Started")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.accentPrimary)
+        VStack(spacing: 20) {
+            // Routine Selection
+            VStack(spacing: 16) {
+                Text("Choose Your Starting Routine")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.accentPrimary)
 
-            Text("We've curated beginner-friendly routines designed to build your foundation safely and effectively.")
-                .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
+                Text("Select a routine to help you get started.")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundColor(.textSecondary)
+                    .multilineTextAlignment(.center)
 
-            VStack(spacing: 12) {
-                routineCard(
-                    title: "Full Body Starter",
-                    subtitle: "3 days/week • Perfect for beginners",
-                    icon: "figure.walk"
-                )
-
-                routineCard(
-                    title: "Push/Pull/Legs",
-                    subtitle: "3-6 days/week • Flexible split",
-                    icon: "arrow.left.arrow.right"
-                )
-
-                routineCard(
-                    title: "Upper/Lower Split",
-                    subtitle: "4 days/week • Balanced approach",
-                    icon: "arrow.up.arrow.down"
-                )
+                VStack(spacing: 12) {
+                    ForEach(StarterRoutine.allCases, id: \.self) { routine in
+                        selectableRoutineCard(routine)
+                    }
+                }
             }
+            .padding(20)
+            .background(Color.secondaryBg)
+            .cornerRadius(20)
 
-            Text("You can browse and start these routines after onboarding")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundColor(.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
+            // Day Picker (shown after routine is selected)
+            if let routine = state.selectedStarterRoutine {
+                VStack(spacing: 16) {
+                    Text("When Can You Work Out?")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.accentPrimary)
+
+                    Text(routine.daysRequirement)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                        .multilineTextAlignment(.center)
+
+                    // Day of week picker
+                    workoutDaysPicker
+
+                    // Validation feedback
+                    if state.selectedWorkoutDays.count > 0 && state.selectedWorkoutDays.count < routine.minimumDays {
+                        Text("Select \(routine.minimumDays - state.selectedWorkoutDays.count) more day\(routine.minimumDays - state.selectedWorkoutDays.count == 1 ? "" : "s")")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.orange)
+                    } else if state.selectedWorkoutDays.count >= routine.minimumDays {
+                        Text("Your routine will be created when you finish onboarding")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.textTertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(20)
+                .background(Color.secondaryBg)
+                .cornerRadius(20)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
         }
-        .padding(20)
-        .background(Color.secondaryBg)
-        .cornerRadius(20)
+    }
+
+    private var workoutDaysPicker: some View {
+        let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+        return HStack(spacing: 8) {
+            ForEach(0..<7, id: \.self) { dayIndex in
+                let isSelected = state.selectedWorkoutDays.contains(dayIndex)
+
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        if isSelected {
+                            state.selectedWorkoutDays.remove(dayIndex)
+                        } else {
+                            state.selectedWorkoutDays.insert(dayIndex)
+                        }
+                    }
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                }) {
+                    Text(days[dayIndex])
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(isSelected ? .textInverse : .textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(
+                            isSelected ?
+                            AnyView(LinearGradient(
+                                colors: [.accentPrimary, .accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )) :
+                            AnyView(Color.tertiaryBg)
+                        )
+                        .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
     }
 
     private var advancedContent: some View {
@@ -688,32 +743,54 @@ struct OnboardingConditionalView: View {
         .cornerRadius(20)
     }
 
-    private func routineCard(title: String, subtitle: String, icon: String) -> some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.accentPrimary)
-                .frame(width: 40)
+    private func selectableRoutineCard(_ routine: StarterRoutine) -> some View {
+        let isSelected = state.selectedStarterRoutine == routine
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.textPrimary)
-
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(.textSecondary)
+        return Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                state.selectedStarterRoutine = routine
             }
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+        }) {
+            HStack(spacing: 16) {
+                Image(systemName: routine.icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(isSelected ? .accentPrimary : .textSecondary)
+                    .frame(width: 40)
 
-            Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(routine.displayName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.textPrimary)
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.textTertiary)
+                    Text(routine.subtitle)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.textSecondary)
+                }
+
+                Spacer()
+
+                // Selection indicator
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.accentPrimary)
+                } else {
+                    Circle()
+                        .stroke(Color.textTertiary, lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                }
+            }
+            .padding(16)
+            .background(isSelected ? Color.accentPrimary.opacity(0.1) : Color.tertiaryBg)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.accentPrimary : Color.white.opacity(0.06), lineWidth: isSelected ? 2 : 1)
+            )
         }
-        .padding(16)
-        .background(Color.tertiaryBg)
-        .cornerRadius(12)
+        .buttonStyle(PlainButtonStyle())
     }
 
     private func featureCard(title: String, subtitle: String, icon: String) -> some View {
@@ -882,9 +959,9 @@ struct OnboardingPaywallView: View {
                 Spacer()
                     .frame(height: 40)
 
-                // Commitment Section
+                // Header Section
                 VStack(spacing: 16) {
-                    Image(systemName: "flame.fill")
+                    Image(systemName: "crown.fill")
                         .font(.system(size: 48))
                         .foregroundStyle(
                             LinearGradient(
@@ -894,30 +971,53 @@ struct OnboardingPaywallView: View {
                             )
                         )
 
-                    Text("Ready to Commit?")
+                    Text("Unlock Premium")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.textPrimary)
 
-                    Text("Are you ready to become the most fit you've ever been?")
+                    Text("Get unlimited access to all features")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                 }
 
                 Spacer()
-                    .frame(height: 32)
+                    .frame(height: 24)
 
-                // Plan Selection
-                VStack(spacing: 16) {
+                // Premium Features List
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(premiumFeatures, id: \.self) { feature in
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(.accentSuccess)
+
+                            Text(feature)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.textPrimary)
+                        }
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondaryBg)
+                .cornerRadius(16)
+                .padding(.horizontal, 20)
+
+                Spacer()
+                    .frame(height: 24)
+
+                // Subscription Options
+                VStack(spacing: 12) {
                     // Yearly Plan (Best Value)
                     if let yearly = storeManager.yearlyProduct {
-                        StoreKitPlanCard(
-                            product: yearly,
-                            isSelected: selectedProductId == yearly.id,
-                            isPremium: true,
+                        SubscriptionOptionCard(
+                            title: "Yearly",
+                            price: yearly.displayPrice,
+                            period: "/year",
+                            subtitle: "7-day free trial",
                             badge: savingsBadge,
-                            monthlyEquivalent: storeManager.formattedPricePerMonth(for: yearly),
-                            features: premiumFeatures,
+                            isSelected: selectedProductId == yearly.id,
                             onTap: {
                                 selectedProductId = yearly.id
                                 state.selectedPlan = .premium
@@ -927,13 +1027,13 @@ struct OnboardingPaywallView: View {
 
                     // Monthly Plan
                     if let monthly = storeManager.monthlyProduct {
-                        StoreKitPlanCard(
-                            product: monthly,
-                            isSelected: selectedProductId == monthly.id,
-                            isPremium: true,
+                        SubscriptionOptionCard(
+                            title: "Monthly",
+                            price: monthly.displayPrice,
+                            period: "/month",
+                            subtitle: nil,
                             badge: nil,
-                            monthlyEquivalent: nil,
-                            features: premiumFeatures,
+                            isSelected: selectedProductId == monthly.id,
                             onTap: {
                                 selectedProductId = monthly.id
                                 state.selectedPlan = .premium
@@ -942,12 +1042,13 @@ struct OnboardingPaywallView: View {
                     }
 
                     // Free Plan
-                    PlanOptionCard(
+                    SubscriptionOptionCard(
                         title: "Free",
-                        price: "Forever",
-                        features: freeFeatures,
+                        price: "Free",
+                        period: "forever",
+                        subtitle: "Limited features",
+                        badge: nil,
                         isSelected: state.selectedPlan == .free && selectedProductId == nil,
-                        isPremium: false,
                         onTap: {
                             selectedProductId = nil
                             state.selectedPlan = .free
@@ -975,7 +1076,7 @@ struct OnboardingPaywallView: View {
 
                 // Legal text and restore
                 VStack(spacing: 12) {
-                    Text("Cancel anytime. Subscription auto-renews.")
+                    Text("Cancel anytime. Subscription auto-renews after trial.")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.textTertiary)
                         .multilineTextAlignment(.center)
@@ -1034,19 +1135,10 @@ struct OnboardingPaywallView: View {
     // MARK: - Premium Features
     private var premiumFeatures: [String] {
         [
-            "Unlimited exercise tracking",
-            "Advanced analytics & insights",
-            "Custom progression targets",
-            "Export workout data",
+            "Unlimited routines",
+            "Unlimited progressive overload tracking",
+            "Full insights history (3 months, YTD, all time)",
             "Priority support"
-        ]
-    }
-
-    private var freeFeatures: [String] {
-        [
-            "Track up to 5 exercises",
-            "Basic workout logging",
-            "7-day history"
         ]
     }
 
@@ -1136,139 +1228,14 @@ struct OnboardingPaywallView: View {
     }
 }
 
-// MARK: - StoreKit Plan Card
-struct StoreKitPlanCard: View {
-    let product: Product
-    let isSelected: Bool
-    let isPremium: Bool
-    let badge: String?
-    let monthlyEquivalent: String?
-    let features: [String]
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            onTap()
-        }) {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Text(product.displayName)
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.textPrimary)
-
-                            if isPremium {
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.accentSecondary)
-                            }
-
-                            if let badge = badge {
-                                Text(badge)
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.textInverse)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.accentSuccess)
-                                    .cornerRadius(6)
-                            }
-                        }
-
-                        HStack(spacing: 4) {
-                            Text(product.displayPrice)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
-
-                            Text(subscriptionPeriod)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(.textSecondary)
-                        }
-
-                        if let monthly = monthlyEquivalent {
-                            Text("(\(monthly)/month)")
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.textTertiary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // Selection indicator
-                    ZStack {
-                        Circle()
-                            .stroke(isSelected ? Color.accentPrimary : Color.textTertiary, lineWidth: 2)
-                            .frame(width: 24, height: 24)
-
-                        if isSelected {
-                            Circle()
-                                .fill(Color.accentPrimary)
-                                .frame(width: 14, height: 14)
-                        }
-                    }
-                }
-
-                // Features (only show when selected)
-                if isSelected {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(features, id: \.self) { feature in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
-
-                                Text(feature)
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(.textSecondary)
-                            }
-                        }
-                    }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-            }
-            .padding(20)
-            .background(isSelected ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg)
-            .cornerRadius(20)
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(
-                        isSelected ? Color.accentPrimary : Color.white.opacity(0.06),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
-            .animation(.standardSpring, value: isSelected)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-
-    private var subscriptionPeriod: String {
-        guard let subscription = product.subscription else { return "" }
-
-        switch subscription.subscriptionPeriod.unit {
-        case .month:
-            return subscription.subscriptionPeriod.value == 1 ? "/month" : "/\(subscription.subscriptionPeriod.value) months"
-        case .year:
-            return subscription.subscriptionPeriod.value == 1 ? "/year" : "/\(subscription.subscriptionPeriod.value) years"
-        case .week:
-            return "/week"
-        case .day:
-            return "/day"
-        @unknown default:
-            return ""
-        }
-    }
-}
-
-// MARK: - Plan Option Card
-struct PlanOptionCard: View {
+// MARK: - Subscription Option Card
+struct SubscriptionOptionCard: View {
     let title: String
     let price: String
-    let features: [String]
+    let period: String
+    let subtitle: String?
+    let badge: String?
     let isSelected: Bool
-    let isPremium: Bool
     let onTap: () -> Void
 
     var body: some View {
@@ -1277,65 +1244,64 @@ struct PlanOptionCard: View {
             generator.impactOccurred()
             onTap()
         }) {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Text(title)
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.textPrimary)
+            HStack {
+                // Left side: Title, price, subtitle
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.textPrimary)
 
-                            if isPremium {
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.accentSecondary)
-                            }
+                        if let badge = badge {
+                            Text(badge)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.textInverse)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.accentSuccess)
+                                .cornerRadius(6)
                         }
-
-                        Text(price)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
                     }
 
-                    Spacer()
+                    HStack(spacing: 2) {
+                        Text(price)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.accentPrimary)
 
-                    // Selection indicator
-                    ZStack {
-                        Circle()
-                            .stroke(isSelected ? Color.accentPrimary : Color.textTertiary, lineWidth: 2)
-                            .frame(width: 24, height: 24)
+                        Text(period)
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.textSecondary)
+                    }
 
-                        if isSelected {
-                            Circle()
-                                .fill(Color.accentPrimary)
-                                .frame(width: 14, height: 14)
-                        }
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.textTertiary)
                     }
                 }
 
-                // Features
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(features, id: \.self) { feature in
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(isPremium ? .accentPrimary : .textSecondary)
+                Spacer()
 
-                            Text(feature)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(.textSecondary)
-                        }
+                // Selection indicator
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color.accentPrimary : Color.textTertiary, lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    if isSelected {
+                        Circle()
+                            .fill(Color.accentPrimary)
+                            .frame(width: 14, height: 14)
                     }
                 }
             }
-            .padding(20)
-            .background(isSelected ? (isPremium ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg) : Color.secondaryBg)
-            .cornerRadius(20)
+            .padding(18)
+            .background(isSelected ? Color.accentPrimary.opacity(0.1) : Color.secondaryBg)
+            .cornerRadius(16)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(
-                        isSelected ? (isPremium ? Color.accentPrimary : Color.textTertiary) : Color.white.opacity(0.06),
+                        isSelected ? Color.accentPrimary : Color.white.opacity(0.06),
                         lineWidth: isSelected ? 2 : 1
                     )
             )

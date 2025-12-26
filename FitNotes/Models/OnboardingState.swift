@@ -28,6 +28,8 @@ class OnboardingState: ObservableObject {
     // MARK: - Setup State (Phase 3)
     @Published var selectedSetupExercise: PrimaryLift?
     @Published var hasCompletedSetup: Bool = false
+    @Published var selectedStarterRoutine: StarterRoutine?
+    @Published var selectedWorkoutDays: Set<Int> = []  // 0=Sun, 1=Mon, ..., 6=Sat
 
     // MARK: - Conversion (Phase 3)
     @Published var email: String = ""
@@ -49,6 +51,8 @@ class OnboardingState: ObservableObject {
         static let autoProgress = "onboarding_autoProgress"
         static let email = "onboarding_email"
         static let selectedPlan = "onboarding_selectedPlan"
+        static let selectedStarterRoutine = "onboarding_selectedStarterRoutine"
+        static let selectedWorkoutDays = "onboarding_selectedWorkoutDays"
     }
 
     // MARK: - Pages
@@ -72,6 +76,12 @@ class OnboardingState: ObservableObject {
         case .interactive:
             return hasCompletedSetup
         case .conditional:
+            // Beginners must select a starter routine and enough workout days
+            if let level = experienceLevel,
+               (level == .brandNew || level == .beginner) {
+                guard let routine = selectedStarterRoutine else { return false }
+                return selectedWorkoutDays.count >= routine.minimumDays
+            }
             return true
         case .emailCapture:
             return true // Skip is allowed
@@ -269,6 +279,15 @@ class OnboardingState: ObservableObject {
         }
 
         UserDefaults.standard.set(selectedPlan.rawValue, forKey: StorageKeys.selectedPlan)
+
+        if let routine = selectedStarterRoutine {
+            UserDefaults.standard.set(routine.rawValue, forKey: StorageKeys.selectedStarterRoutine)
+        }
+
+        if !selectedWorkoutDays.isEmpty {
+            let daysArray = Array(selectedWorkoutDays)
+            UserDefaults.standard.set(daysArray, forKey: StorageKeys.selectedWorkoutDays)
+        }
     }
 
     static func hasCompletedOnboarding() -> Bool {
@@ -284,6 +303,8 @@ class OnboardingState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: StorageKeys.autoProgress)
         UserDefaults.standard.removeObject(forKey: StorageKeys.email)
         UserDefaults.standard.removeObject(forKey: StorageKeys.selectedPlan)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.selectedStarterRoutine)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.selectedWorkoutDays)
     }
 
     // MARK: - Page Builder

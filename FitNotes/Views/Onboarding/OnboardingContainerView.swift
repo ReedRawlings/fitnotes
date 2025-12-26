@@ -47,6 +47,29 @@ struct OnboardingContainerView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onChange(of: state.isOnboardingComplete) { _, isComplete in
+            if isComplete {
+                createStarterRoutineIfNeeded()
+            }
+        }
+    }
+
+    // MARK: - Starter Routine Creation
+
+    private func createStarterRoutineIfNeeded() {
+        // Only create starter routine for beginners who selected one with workout days
+        guard let level = state.experienceLevel,
+              (level == .brandNew || level == .beginner),
+              let selectedRoutine = state.selectedStarterRoutine,
+              !state.selectedWorkoutDays.isEmpty else {
+            return
+        }
+
+        StarterRoutineService.shared.createStarterRoutine(
+            selectedRoutine,
+            workoutDays: state.selectedWorkoutDays,
+            modelContext: modelContext
+        )
     }
 }
 
@@ -221,6 +244,20 @@ struct OnboardingBottomBar: View {
     // MARK: - Actions
 
     private func handlePrimaryAction() {
+        // If on email capture page with email entered, send to MailerLite
+        if state.currentPage.type == .emailCapture && !state.email.isEmpty {
+            Task {
+                // Send to MailerLite in background (don't block navigation)
+                await MailerLiteService.shared.addSubscriber(
+                    email: state.email,
+                    experienceLevel: state.experienceLevel?.rawValue,
+                    selectedPlan: state.selectedPlan.rawValue
+                )
+            }
+            state.nextPage()
+            return
+        }
+
         // If on paywall and premium is selected, initiate purchase
         if state.currentPage.type == .paywall && state.selectedPlan == .premium {
             Task {
