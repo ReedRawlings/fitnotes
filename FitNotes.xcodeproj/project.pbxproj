@@ -61,12 +61,18 @@
 		7423C88B2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */; };
 		7423C88C2EF68B6300E92CA7 /* RestTimerActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */; };
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
+		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		744B6B5D2EE9A00100804AB6 /* FreemiumLimitsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */; };
 		744B6B5F2EE9B00100804AB6 /* MailerLiteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B602EE9B00100804AB6 /* MailerLiteService.swift */; };
 		744B6B612EE9B00100804AB6 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B622EE9B00100804AB6 /* Secrets.swift */; };
-		STARTER0012F0B5A0100000001 /* StarterRoutineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STARTER0022F0B5A0100000002 /* StarterRoutineService.swift */; };
-		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
+		74633D8D2EFF83A500A58A13 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 74633D8C2EFF83A500A58A13 /* Supabase */; };
+		74633D922EFFB06600A58A13 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 74633D912EFFB06600A58A13 /* GoogleSignInSwift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
+		ACCT00012F0B5A0100000001 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCT00022F0B5A0100000002 /* AccountView.swift */; };
+		AUTH00012F0B5A0100000001 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AUTH00022F0B5A0100000002 /* AuthService.swift */; };
+		SIGN00012F0B5A0100000001 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SIGN00022F0B5A0100000002 /* SignInView.swift */; };
+		STARTER0012F0B5A0100000001 /* StarterRoutineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STARTER0022F0B5A0100000002 /* StarterRoutineService.swift */; };
+		SUPA00012F0B5A0100000001 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPA00022F0B5A0100000002 /* SupabaseConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -168,11 +174,15 @@
 		7423C8892EF686A900E92CA7 /* RestTimerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RestTimerWidgetExtension.entitlements; sourceTree = "<group>"; };
 		7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerActivityAttributes.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
+		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
 		744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumLimitsService.swift; sourceTree = "<group>"; };
 		744B6B602EE9B00100804AB6 /* MailerLiteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailerLiteService.swift; sourceTree = "<group>"; };
-		STARTER0022F0B5A0100000002 /* StarterRoutineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarterRoutineService.swift; sourceTree = "<group>"; };
 		744B6B622EE9B00100804AB6 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
-		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
+		ACCT00022F0B5A0100000002 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		AUTH00022F0B5A0100000002 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		SIGN00022F0B5A0100000002 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		STARTER0022F0B5A0100000002 /* StarterRoutineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarterRoutineService.swift; sourceTree = "<group>"; };
+		SUPA00022F0B5A0100000002 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -194,6 +204,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74633D8D2EFF83A500A58A13 /* Supabase in Frameworks */,
+				74633D922EFFB06600A58A13 /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,6 +348,7 @@
 				744B6B5E2EE9A00100804AB6 /* FreemiumLimitsService.swift */,
 				744B6B602EE9B00100804AB6 /* MailerLiteService.swift */,
 				STARTER0022F0B5A0100000002 /* StarterRoutineService.swift */,
+				AUTH00022F0B5A0100000002 /* AuthService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -343,6 +356,7 @@
 		741C98852ECD0D9100753A56 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AUTH00032F0B5A0100000003 /* Auth */,
 				7423C7B22EF270F100E92CA7 /* Onboarding */,
 				741C98882ECD0D9100753A59 /* Exercise */,
 				741C98892ECD0D9100753A60 /* Workout */,
@@ -371,14 +385,6 @@
 				741C98772ECD0D9100753A52 /* RestTimerManager.swift */,
 			);
 			path = Utilities;
-			sourceTree = "<group>";
-		};
-		744B6B632EE9B00100804AB6 /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				744B6B622EE9B00100804AB6 /* Secrets.swift */,
-			);
-			path = Config;
 			sourceTree = "<group>";
 		};
 		741C98882ECD0D9100753A59 /* Exercise */ = {
@@ -445,6 +451,24 @@
 				7423C8712EF6862600E92CA7 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		744B6B632EE9B00100804AB6 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				744B6B622EE9B00100804AB6 /* Secrets.swift */,
+				SUPA00022F0B5A0100000002 /* SupabaseConfig.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		AUTH00032F0B5A0100000003 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				SIGN00022F0B5A0100000002 /* SignInView.swift */,
+				ACCT00022F0B5A0100000002 /* AccountView.swift */,
+			);
+			path = Auth;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -562,6 +586,10 @@
 				Base,
 			);
 			mainGroup = 741324FF2E9F733D0099C49A;
+			packageReferences = (
+				74633D8B2EFF83A500A58A13 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				74633D902EFFB06600A58A13 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			productRefGroup = 741325092E9F733D0099C49A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -662,6 +690,10 @@
 				A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */,
 				744B6B5F2EE9B00100804AB6 /* MailerLiteService.swift in Sources */,
 				STARTER0012F0B5A0100000001 /* StarterRoutineService.swift in Sources */,
+				AUTH00012F0B5A0100000001 /* AuthService.swift in Sources */,
+				SUPA00012F0B5A0100000001 /* SupabaseConfig.swift in Sources */,
+				SIGN00012F0B5A0100000001 /* SignInView.swift in Sources */,
+				ACCT00012F0B5A0100000001 /* AccountView.swift in Sources */,
 				744B6B612EE9B00100804AB6 /* Secrets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -849,6 +881,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -885,6 +918,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1086,6 +1120,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		74633D8B2EFF83A500A58A13 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		74633D902EFFB06600A58A13 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		74633D8C2EFF83A500A58A13 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 74633D8B2EFF83A500A58A13 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		74633D912EFFB06600A58A13 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 74633D902EFFB06600A58A13 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 741325002E9F733D0099C49A /* Project object */;
 }

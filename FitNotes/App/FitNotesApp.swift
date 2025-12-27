@@ -81,15 +81,23 @@ struct FitNotesApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                ContentView()
-            } else {
-                OnboardingContainerView()
-                    .onReceive(NotificationCenter.default.publisher(for: .onboardingCompleted)) { _ in
-                        withAnimation(.standardSpring) {
-                            hasCompletedOnboarding = true
+            Group {
+                if hasCompletedOnboarding {
+                    ContentView()
+                } else {
+                    OnboardingContainerView()
+                        .onReceive(NotificationCenter.default.publisher(for: .onboardingCompleted)) { _ in
+                            withAnimation(.standardSpring) {
+                                hasCompletedOnboarding = true
+                            }
                         }
-                    }
+                }
+            }
+            .onOpenURL { url in
+                // Handle OAuth callback (Google Sign-In, Magic Links)
+                Task {
+                    await AuthService.shared.handleOAuthCallback(url: url)
+                }
             }
         }
         .modelContainer(sharedModelContainer)
