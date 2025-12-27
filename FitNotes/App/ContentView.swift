@@ -2090,6 +2090,10 @@ struct PreferencesView: View {
             
             ScrollView {
                 VStack(spacing: 12) {
+                    // Account Section
+                    AccountSettingsRow()
+                        .padding(.horizontal, 20)
+
                     // Upgrade to Premium Card (only for free users)
                     if !storeManager.isPremium {
                         Button(action: { showingUpgradeSheet = true }) {

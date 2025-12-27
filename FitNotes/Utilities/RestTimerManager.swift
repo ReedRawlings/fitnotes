@@ -103,8 +103,14 @@ class RestTimerManager: ObservableObject {
             }
         }
 
-        // Auto-dismiss after 2 seconds
+        // Capture the timer ID at completion time
+        let completedTimerId = lastKnownTimerId
+
+        // Auto-dismiss after 2 seconds, but only if no new timer has started
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // Only dismiss if the same timer is still active (no new timer started)
+            guard self.lastKnownTimerId == completedTimerId else { return }
+
             self.appState.cancelRestTimer()
             self.showCompletionState = false
             self.celebrationScale = 1.0
