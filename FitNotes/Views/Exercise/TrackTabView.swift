@@ -425,10 +425,13 @@ struct TrackTabView: View {
     }
 
     private func loadSets() {
-        // Prefer today's persisted sets; if none, prefill from last session
+        // Use workout date if available, otherwise today
+        let targetDate = workout?.date ?? Date()
+
+        // Prefer persisted sets for the target date; if none, prefill from last session
         let todaysSets = ExerciseService.shared.getSetsByDate(
             exerciseId: exercise.id,
-            date: Date(),
+            date: targetDate,
             modelContext: modelContext
         )
         if !todaysSets.isEmpty {
@@ -532,21 +535,22 @@ struct TrackTabView: View {
     
     private func saveSets() {
         isSaving = true
-        let today = Date()
+        // Use workout date if available, otherwise today
+        let targetDate = workout?.date ?? Date()
         let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
-        
+
         let success = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
-            date: today,
+            date: targetDate,
             unit: exercise.unit,
             sets: setData,
             modelContext: modelContext
         )
-        
+
         if success {
-            // Also ensure we have a workout for today
+            // Also ensure we have a workout for the target date
             _ = WorkoutService.shared.getOrCreateWorkoutForDate(
-                date: today,
+                date: targetDate,
                 modelContext: modelContext
             )
             
@@ -578,11 +582,12 @@ struct TrackTabView: View {
     }
     
     private func persistCurrentSets() {
-        let today = Date()
+        // Use workout date if available, otherwise today
+        let targetDate = workout?.date ?? Date()
         let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
         _ = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
-            date: today,
+            date: targetDate,
             unit: exercise.unit,
             sets: setData,
             modelContext: modelContext
