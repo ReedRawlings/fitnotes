@@ -1097,6 +1097,7 @@ struct RoutineSettingsCardView: View {
     let routine: Routine
     let subtitle: String?
     let onTap: () -> Void
+    var onDelete: (() -> Void)?
 
     var body: some View {
         Button(action: onTap) {
@@ -1125,6 +1126,16 @@ struct RoutineSettingsCardView: View {
                 }
 
                 Spacer()
+
+                if let onDelete = onDelete {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundColor(.errorRed)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.trailing, 12)
+                }
 
                 Image(systemName: "chevron.right")
                     .font(.caption)
@@ -1272,6 +1283,7 @@ struct RoutinesView: View {
     @State private var showingLimitReachedSheet = false
     @State private var selectedRoutine: Routine?
     @State private var addExerciseRoutine: Routine?
+    @State private var routineToDelete: Routine?
 
     private var canCreateRoutine: Bool {
         FreemiumLimitsService.shared.canCreateRoutine(isPremium: storeManager.isPremium, modelContext: modelContext)
@@ -1315,10 +1327,14 @@ struct RoutinesView: View {
                                         subtitle: RoutineService.shared.getDaysSinceLastUsed(
                                             for: routine,
                                             modelContext: modelContext
-                                        )
-                                    ) {
-                                        selectedRoutine = routine
-                                    }
+                                        ),
+                                        onTap: {
+                                            selectedRoutine = routine
+                                        },
+                                        onDelete: {
+                                            routineToDelete = routine
+                                        }
+                                    )
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -1364,6 +1380,24 @@ struct RoutinesView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ShowAddExerciseForRoutine"))) { notification in
             if let routine = notification.object as? Routine {
                 addExerciseRoutine = routine
+            }
+        }
+        .alert("Delete Routine", isPresented: .init(
+            get: { routineToDelete != nil },
+            set: { if !$0 { routineToDelete = nil } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                routineToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let routine = routineToDelete {
+                    RoutineService.shared.deleteRoutine(routine: routine, modelContext: modelContext)
+                    routineToDelete = nil
+                }
+            }
+        } message: {
+            if let routine = routineToDelete {
+                Text("Are you sure you want to delete \"\(routine.name)\"? This action cannot be undone.")
             }
         }
     }
@@ -1523,12 +1557,10 @@ struct AddRoutineView: View {
 // MARK: - RoutineDetailView
 struct RoutineDetailView: View {
     let routine: Routine
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     @State private var showingAddExercise = false
     @State private var showingScheduleView = false
-    @State private var showingDeleteConfirmation = false
     @State private var cachedExercises: [RoutineExercise] = []
     @State private var hasUncommittedChanges = false
 
@@ -1561,28 +1593,6 @@ struct RoutineDetailView: View {
                 if routine.exercises.isEmpty {
                     ScrollView {
                         VStack(spacing: 16) {
-                            // Routine Header Card
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(routine.name)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.textPrimary)
-
-                                if let description = routine.routineDescription, !description.isEmpty {
-                                    Text(description)
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color.secondaryBg)
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                            )
-
                             // Schedule Card (tappable to edit)
                             RoutineScheduleCard(
                                 routine: routine,
@@ -1606,29 +1616,6 @@ struct RoutineDetailView: View {
                     }
                 } else {
                     List {
-                        // Routine Header Card as first row
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(routine.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.textPrimary)
-
-                            if let description = routine.routineDescription, !description.isEmpty {
-                                Text(description)
-                                    .font(.body)
-                                    .foregroundColor(.textSecondary)
-                            }
-                        }
-                        .padding()
-                        .background(Color.secondaryBg)
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-
                         // Schedule Card (tappable to edit)
                         RoutineScheduleCard(
                             routine: routine,
@@ -1638,7 +1625,6 @@ struct RoutineDetailView: View {
                         )
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
-                        .padding(.top, 8)
 
                         // Exercises section header
                         Text("EXERCISES")
@@ -1669,6 +1655,12 @@ struct RoutineDetailView: View {
                             // Mark as having uncommitted changes
                             hasUncommittedChanges = true
                         }
+
+                        // Bottom spacer for Add Exercise button
+                        Color.clear
+                            .frame(height: 100)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -1695,18 +1687,8 @@ struct RoutineDetailView: View {
                     }
                 }
             }
-            .navigationTitle("Routine Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .foregroundColor(.errorRed)
-                    }
-                }
-            }
+            .navigationTitle(routine.name)
+            .navigationBarTitleDisplayMode(.large)
             .overlay(
                 // Fixed bottom button - overlay on top
                 VStack {
@@ -1726,19 +1708,6 @@ struct RoutineDetailView: View {
                 RoutineScheduleView(routine: routine)
             }
         }
-        .alert("Delete Routine", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                deleteRoutine()
-            }
-        } message: {
-            Text("Are you sure you want to delete \"\(routine.name)\"? This action cannot be undone.")
-        }
-    }
-
-    private func deleteRoutine() {
-        RoutineService.shared.deleteRoutine(routine: routine, modelContext: modelContext)
-        dismiss()
     }
     
     private func commitReorder() {
