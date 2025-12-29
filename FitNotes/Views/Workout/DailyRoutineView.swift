@@ -8,6 +8,7 @@ struct WorkoutView: View {
     @State private var showingAddExercise = false
     @State private var selectedDate = Date()
     @State private var showingSaveRoutineDialog = false
+    @State private var showingUpdateRoutineDialog = false
     @State private var routineName = ""
     @State private var routineDescription = ""
     @State private var dismissedScheduledRoutineId: UUID? // Track if user dismissed today's prompt
@@ -108,24 +109,36 @@ struct WorkoutView: View {
 
                         Spacer()
 
-                        // Save as Routine button - only show if workout has exercises
+                        // Routine buttons - only show if workout has exercises
                         if let workout = getWorkoutForDate(displayDate), !workout.exercises.isEmpty {
-                            Button(action: {
-                                showingSaveRoutineDialog = true
-                            }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "square.and.arrow.down")
-                                        .font(.system(size: 14))
-                                    Text("Save as Routine")
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    showingSaveRoutineDialog = true
+                                }) {
+                                    Text("Save Routine")
                                         .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.accentColor)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.accentColor.opacity(0.1))
+                                        )
                                 }
-                                .foregroundColor(.accentColor)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.1))
-                                )
+
+                                Button(action: {
+                                    showingUpdateRoutineDialog = true
+                                }) {
+                                    Text("Update Routine")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.accentColor)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.accentColor.opacity(0.1))
+                                        )
+                                }
                             }
                         } else {
                             // Invisible spacer to maintain centering when button is hidden
@@ -200,6 +213,13 @@ struct WorkoutView: View {
                 workout: getWorkoutForDate(displayDate),
                 modelContext: modelContext,
                 onComplete: { }
+            )
+        }
+        .sheet(isPresented: $showingUpdateRoutineDialog) {
+            UpdateRoutineFromWorkoutView(
+                isPresented: $showingUpdateRoutineDialog,
+                workout: getWorkoutForDate(displayDate),
+                modelContext: modelContext
             )
         }
         .onAppear {
@@ -1225,6 +1245,150 @@ struct SaveWorkoutAsRoutineView: View {
 
         isPresented = false
         onComplete()
+    }
+}
+
+// MARK: - Update Routine From Workout View
+struct UpdateRoutineFromWorkoutView: View {
+    @Binding var isPresented: Bool
+    let workout: Workout?
+    let modelContext: ModelContext
+
+    @Query(sort: \Routine.name) private var routines: [Routine]
+    @Query(sort: \Exercise.name) private var allExercises: [Exercise]
+    @State private var showingConfirmation = false
+    @State private var selectedRoutine: Routine?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.primaryBg
+                    .ignoresSafeArea()
+
+                if routines.isEmpty {
+                    EmptyStateView(
+                        icon: "list.bullet.rectangle",
+                        title: "No routines",
+                        subtitle: "Create a routine first to update it",
+                        actionTitle: nil,
+                        onAction: nil
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(routines) { routine in
+                                UpdateRoutineCardView(routine: routine) {
+                                    selectedRoutine = routine
+                                    showingConfirmation = true
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                    }
+                }
+            }
+            .navigationTitle("Update Routine")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                    .foregroundColor(.accentPrimary)
+                }
+            }
+            .alert("Update Routine", isPresented: $showingConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    selectedRoutine = nil
+                }
+                Button("Update", role: .destructive) {
+                    if let routine = selectedRoutine {
+                        updateRoutine(routine)
+                    }
+                }
+            } message: {
+                if let routine = selectedRoutine {
+                    Text("Replace all exercises in \"\(routine.name)\" with exercises from this workout?")
+                }
+            }
+        }
+    }
+
+    private func updateRoutine(_ routine: Routine) {
+        guard let workout = workout else {
+            isPresented = false
+            return
+        }
+
+        // Remove all existing exercises from the routine
+        for exercise in routine.exercises {
+            modelContext.delete(exercise)
+        }
+        routine.exercises.removeAll()
+
+        // Add exercises from workout to routine
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+        for (index, workoutExercise) in sortedExercises.enumerated() {
+            let routineExercise = RoutineExercise(
+                exerciseId: workoutExercise.exerciseId,
+                order: index + 1,
+                notes: workoutExercise.notes
+            )
+            routine.exercises.append(routineExercise)
+            modelContext.insert(routineExercise)
+        }
+
+        // Save to database
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error updating routine: \(error)")
+        }
+
+        isPresented = false
+    }
+}
+
+// MARK: - Update Routine Card View
+struct UpdateRoutineCardView: View {
+    let routine: Routine
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 12) {
+                // Color indicator
+                Circle()
+                    .fill(Color.forRoutineColor(routine.color))
+                    .frame(width: 10, height: 10)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(routine.name)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundColor(.textPrimary)
+                        .lineLimit(1)
+
+                    Text("\(routine.exercises.count) exercises")
+                        .font(.system(size: 13))
+                        .foregroundColor(.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.textTertiary)
+            }
+            .padding(16)
+            .background(Color.secondaryBg)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
