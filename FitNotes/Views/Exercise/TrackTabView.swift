@@ -28,29 +28,11 @@ struct TrackTabView: View {
         PreferencesService.shared.getUseWarmupSets(modelContext: modelContext)
     }
 
-    // Live progression status based on current (uncommitted) sets
-    private var liveProgressionStatus: ProgressionStatus {
-        let currentSetsData = sets.map { (weight: $0.weight, reps: $0.reps) }
-        return ProgressionService.analyzeLiveProgression(
-            exercise: exercise,
-            currentSets: currentSetsData,
-            modelContext: modelContext
-        )
-    }
-
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
-                    // Live Progression Banner (shows recommendations based on current input)
-                    LiveProgressionBannerView(
-                        status: liveProgressionStatus,
-                        unit: exercise.unit
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-
                     // Current Sets
                     if !sets.isEmpty {
                         // Header Row
@@ -954,99 +936,6 @@ struct SaveButton: View {
         .disabled(!isEnabled || isSaving || isSaved)
         .scaleEffect(1.0)
         .animation(.buttonPress, value: isSaved)
-    }
-}
-
-// MARK: - Live Progression Banner View
-struct LiveProgressionBannerView: View {
-    let status: ProgressionStatus
-    let unit: String
-
-    private var shouldShowBanner: Bool {
-        switch status {
-        case .insufficientData:
-            return false
-        default:
-            return true
-        }
-    }
-
-    private var iconName: String {
-        switch status {
-        case .readyToIncreaseReps, .readyToIncreaseWeight:
-            return "arrow.up.circle.fill"
-        case .progressingTowardTarget:
-            return "chart.line.uptrend.xyaxis"
-        case .belowTarget:
-            return "exclamationmark.triangle.fill"
-        case .needsRest:
-            return "bed.double.fill"
-        default:
-            return "info.circle.fill"
-        }
-    }
-
-    private var bannerColor: Color {
-        switch status {
-        case .readyToIncreaseReps, .readyToIncreaseWeight:
-            return .green
-        case .progressingTowardTarget:
-            return .blue
-        case .belowTarget:
-            return .orange
-        case .needsRest:
-            return .yellow
-        default:
-            return .gray
-        }
-    }
-
-    private var backgroundColor: Color {
-        switch status {
-        case .readyToIncreaseReps, .readyToIncreaseWeight:
-            return Color.green.opacity(0.15)
-        case .progressingTowardTarget:
-            return Color.blue.opacity(0.10)
-        case .belowTarget:
-            return Color.orange.opacity(0.15)
-        case .needsRest:
-            return Color.yellow.opacity(0.15)
-        default:
-            return Color.gray.opacity(0.10)
-        }
-    }
-
-    var body: some View {
-        if shouldShowBanner {
-            HStack(spacing: 10) {
-                // Icon
-                Image(systemName: iconName)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(bannerColor)
-
-                // Message
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(status.title)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.textPrimary)
-
-                    Text(status.getMessage(unit: unit))
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(backgroundColor)
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(bannerColor.opacity(0.3), lineWidth: 1)
-            )
-        }
     }
 }
 
