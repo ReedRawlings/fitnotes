@@ -5,14 +5,12 @@ struct ExerciseSettingsView: View {
     @Bindable var exercise: Exercise
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @ObservedObject private var storeManager = StoreKitManager.shared
 
     @State private var selectedMode: RPEMode = .off
     @State private var showingTimePicker = false
     @State private var timePickerForSet: Int? = nil // nil means default/standard mode
     @State private var tempSelectedSeconds: Int = 90
     @State private var showingAdvancedToStandardAlert = false
-    @State private var showingProgressionLimitSheet = false
     @FocusState private var focusedField: Bool
 
     // Expandable section states
@@ -29,20 +27,6 @@ struct ExerciseSettingsView: View {
         exercise.targetRepMin != nil && exercise.targetRepMax != nil
     }
 
-    // Whether the user can enable progression tracking for this exercise
-    private var canEnableProgression: Bool {
-        FreemiumLimitsService.shared.canEnableProgression(
-            for: exercise,
-            isPremium: storeManager.isPremium,
-            modelContext: modelContext
-        )
-    }
-
-    // Current count of exercises with progression tracking
-    private var progressionExerciseCount: Int {
-        FreemiumLimitsService.shared.getProgressionExerciseCount(modelContext: modelContext)
-    }
-    
     enum RPEMode: String, CaseIterable {
         case off = "Off"
         case rpe = "RPE"
@@ -238,105 +222,56 @@ struct ExerciseSettingsView: View {
                         onToggle: { isProgressiveOverloadExpanded.toggle() }
                     ) {
                         VStack(spacing: 12) {
-                            // Usage counter for free users
-                            if !storeManager.isPremium {
-                                HStack {
-                                    Spacer()
-                                    UsageCounterBadge(
-                                        current: progressionExerciseCount,
-                                        max: FreemiumLimitsService.maxFreeProgressionExercises,
-                                        label: "Tracked",
-                                        isPremium: storeManager.isPremium
-                                    )
-                                }
-                            }
-
                             Text("Set a target rep range to get progression recommendations when you consistently hit targets.")
                                 .font(.system(size: 13, weight: .regular))
                                 .foregroundColor(.textTertiary)
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                            // Show limit message if can't enable progression for this exercise
-                            if !canEnableProgression && !hasProgressionTracking {
-                                VStack(spacing: 12) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "lock.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.accentSecondary)
-                                        Text("Free limit reached")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.textSecondary)
-                                    }
-
-                                    Button(action: { showingProgressionLimitSheet = true }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "crown.fill")
-                                                .font(.system(size: 12))
-                                            Text("Upgrade for Unlimited")
-                                                .font(.system(size: 14, weight: .semibold))
-                                        }
-                                        .foregroundColor(.textInverse)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            LinearGradient(
-                                                colors: [.accentPrimary, .accentSecondary],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                        .cornerRadius(8)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                            } else {
-                                HStack(spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("Min Reps")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.textSecondary)
-
-                                        TextField("5", value: $exercise.targetRepMin, format: .number)
-                                            .font(.system(size: 17, weight: .medium, design: .monospaced))
-                                            .foregroundColor(.textPrimary)
-                                            .keyboardType(.numberPad)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 10)
-                                            .background(Color.tertiaryBg)
-                                            .cornerRadius(8)
-                                            .focused($focusedField)
-                                            .onChange(of: exercise.targetRepMin) { _, newValue in
-                                                validateRepRange()
-                                                saveExercise()
-                                            }
-                                    }
-
-                                    Text("to")
-                                        .font(.system(size: 15, weight: .medium))
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Min Reps")
+                                        .font(.system(size: 13, weight: .medium))
                                         .foregroundColor(.textSecondary)
-                                        .padding(.top, 20)
 
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("Max Reps")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.textSecondary)
+                                    TextField("5", value: $exercise.targetRepMin, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .focused($focusedField)
+                                        .onChange(of: exercise.targetRepMin) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
+                                }
 
-                                        TextField("8", value: $exercise.targetRepMax, format: .number)
-                                            .font(.system(size: 17, weight: .medium, design: .monospaced))
-                                            .foregroundColor(.textPrimary)
-                                            .keyboardType(.numberPad)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 10)
-                                            .background(Color.tertiaryBg)
-                                            .cornerRadius(8)
-                                            .focused($focusedField)
-                                            .onChange(of: exercise.targetRepMax) { _, newValue in
-                                                validateRepRange()
-                                                saveExercise()
-                                            }
-                                    }
+                                Text("to")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.textSecondary)
+                                    .padding(.top, 20)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Max Reps")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.textSecondary)
+
+                                    TextField("8", value: $exercise.targetRepMax, format: .number)
+                                        .font(.system(size: 17, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.textPrimary)
+                                        .keyboardType(.numberPad)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(Color.tertiaryBg)
+                                        .cornerRadius(8)
+                                        .focused($focusedField)
+                                        .onChange(of: exercise.targetRepMax) { _, newValue in
+                                            validateRepRange()
+                                            saveExercise()
+                                        }
                                 }
                             }
 
@@ -800,13 +735,6 @@ struct ExerciseSettingsView: View {
             } else {
                 selectedMode = .off
             }
-        }
-        .sheet(isPresented: $showingProgressionLimitSheet) {
-            FreemiumLimitReachedSheet(
-                featureName: "Tracked Exercises",
-                currentCount: progressionExerciseCount,
-                maxCount: FreemiumLimitsService.maxFreeProgressionExercises
-            )
         }
     }
     

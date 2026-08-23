@@ -265,13 +265,15 @@ struct WorkoutDetailView: View {
     @State private var showingRoutineTemplates = false
     @State private var cachedExercises: [WorkoutExercise] = []
     @State private var hasUncommittedChanges = false
-    @StateObject private var timerManager: RestTimerManager
+    // Observes the single shared manager on AppState — a per-view instance would
+    // split completion state from the Live Activity owner
+    @ObservedObject private var timerManager: RestTimerManager
 
     init(workout: Workout, appState: AppState) {
         self.workout = workout
         // Initialize cached exercises immediately from workout
         _cachedExercises = State(initialValue: workout.exercises.sorted { $0.order < $1.order })
-        _timerManager = StateObject(wrappedValue: RestTimerManager(appState: appState))
+        _timerManager = ObservedObject(wrappedValue: appState.restTimerManager)
     }
     
     var body: some View {
@@ -288,12 +290,6 @@ struct WorkoutDetailView: View {
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
-                .onAppear {
-                    timerManager.startTimerUpdates()
-                }
-                .onDisappear {
-                    timerManager.stopTimerUpdates()
-                }
                 .onChange(of: timer.isCompleted) { _, isCompleted in
                     if isCompleted && !timerManager.showCompletionState {
                         timerManager.handleTimerCompletion()
@@ -599,6 +595,7 @@ struct WorkoutExerciseRowView: View {
         )
         .onTapGesture {
             if let exercise = exercise {
+                appState.selectedExerciseDate = workout.date
                 appState.selectedExercise = exercise
             }
         }
@@ -606,9 +603,9 @@ struct WorkoutExerciseRowView: View {
     
     private func formatSetDisplay(set: WorkoutSet) -> String {
         if let weight = set.weight, let reps = set.reps {
-            return "\(reps)\u{00D7}\(formattedWeight(for: weight)) \(appState.weightUnit)"
+            return "\(reps)\u{00D7}\(formattedWeight(for: weight)) \(set.unit)"
         } else if let weight = set.weight {
-            return "\(formattedWeight(for: weight)) \(appState.weightUnit)"
+            return "\(formattedWeight(for: weight)) \(set.unit)"
         } else if let reps = set.reps {
             return "\(reps) reps"
         } else {
@@ -878,8 +875,15 @@ struct AddExerciseToWorkoutView: View {
                 modelContext: modelContext
             )
 
-            // Auto-persist last session's sets to today so volume comparison shows immediately
-            if let lastSession = ExerciseService.shared.getLastSessionForExercise(
+            // Auto-persist last session's sets so volume comparison shows immediately
+            // Skip if sets already exist for this exercise on this date (e.g., from routine hydration)
+            let existingSets = ExerciseService.shared.getSetsByDate(
+                exerciseId: exerciseId,
+                date: targetWorkout.date,
+                modelContext: modelContext
+            )
+            if existingSets.isEmpty,
+               let lastSession = ExerciseService.shared.getLastSessionForExercise(
                 exerciseId: exerciseId,
                 modelContext: modelContext
             ), !lastSession.isEmpty {
@@ -888,7 +892,7 @@ struct AddExerciseToWorkoutView: View {
                 let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)
                 _ = ExerciseService.shared.saveSets(
                     exerciseId: exerciseId,
-                    date: selectedDate,
+                    date: targetWorkout.date,
                     unit: exercise?.unit ?? "kg",
                     sets: setData,
                     modelContext: modelContext
@@ -1044,12 +1048,10 @@ struct SaveWorkoutAsRoutineView: View {
     let modelContext: ModelContext
     let onComplete: () -> Void
 
-    @ObservedObject private var storeManager = StoreKitManager.shared
     @State private var routineName = ""
     @State private var routineDescription = ""
     @FocusState private var isNameFieldFocused: Bool
     @Query(sort: \Exercise.name) private var allExercises: [Exercise]
-    @Query(sort: \Routine.name) private var routines: [Routine]
 
     // Schedule configuration state
     @State private var selectedColor: RoutineColor = .teal
@@ -1058,20 +1060,8 @@ struct SaveWorkoutAsRoutineView: View {
     @State private var intervalDays: Int = 2
     @State private var startDate: Date = Date()
 
-    private var canCreateRoutine: Bool {
-        FreemiumLimitsService.shared.canCreateRoutine(isPremium: storeManager.isPremium, modelContext: modelContext)
-    }
-
     var body: some View {
         NavigationStack {
-            if !canCreateRoutine {
-                // Show limit reached view
-                FreemiumLimitReachedSheet(
-                    featureName: "Routines",
-                    currentCount: routines.count,
-                    maxCount: FreemiumLimitsService.maxFreeRoutines
-                )
-            } else {
                 ZStack {
                     Color.primaryBg
                         .ignoresSafeArea()
@@ -1182,7 +1172,6 @@ struct SaveWorkoutAsRoutineView: View {
                 .onAppear {
                     isNameFieldFocused = true
                 }
-            }
         }
     }
 

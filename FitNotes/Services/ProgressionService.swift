@@ -18,24 +18,36 @@ struct E1RMCalculator {
         return calculate(weight: weight, reps: reps)
     }
 
-    /// Gets E1RM from first completed set in a session (before fatigue)
+    /// Gets E1RM from the best completed set in a session (highest estimated 1RM)
     static func fromSession(_ sets: [WorkoutSet]) -> Double? {
-        guard let firstSet = sets.first(where: { $0.isCompleted }) else { return nil }
-        return fromSet(firstSet)
+        sets.filter { $0.isCompleted }.compactMap { fromSet($0) }.max()
     }
 }
 
 // MARK: - Session Summary
 
-/// Summary of a single workout session for an exercise
+/// Summary of a single workout session for an exercise.
+///
+/// `sets` must contain **every** set logged for the exercise that day (completed or not) so the
+/// warm up set can be identified by its `order`. Progression metrics are then derived from the
+/// completed working sets only.
 struct SessionSummary {
     let date: Date
     let sets: [WorkoutSet]
-    let topWeight: Double
+    /// Heaviest completed working set, normalised to kg. `nil` when the session has no usable working set.
+    let topWeightKg: Double?
     let totalVolume: Double
     let estimatedOneRepMax: Double?
+    /// True when there is at least one completed working set and every one of them met the rep minimum.
     let hitTargetReps: Bool
-    let typicalReps: Int? // Most common reps in completed sets (for progression recommendations)
+    /// True when there is at least one completed working set and every one of them reached the top of the rep range.
+    let hitTopOfRange: Bool
+    /// Most common reps across completed working sets. Ties resolve to the LOWER rep count.
+    let typicalReps: Int?
+    /// Lowest reps across completed working sets (the limiting set).
+    let minReps: Int?
+    /// Completed working sets used for every metric above.
+    let workingSets: [WorkoutSet]
 
     init(date: Date, sets: [WorkoutSet], targetRepMin: Int?, targetRepMax: Int?, useWarmupSet: Bool = false, progressionSetCount: Int? = nil) {
         self.date = date
@@ -44,24 +56,26 @@ struct SessionSummary {
         // Sort sets by order for consistent processing
         let sortedSets = sets.sorted { $0.order < $1.order }
 
-        // Filter out warm up set (first set by order) when calculating progression metrics
-        var workingSets: [WorkoutSet]
-        if useWarmupSet && !sortedSets.isEmpty {
-            workingSets = Array(sortedSets.dropFirst())
-        } else {
-            workingSets = sortedSets
-        }
+        // Drop the warm up set: the lowest-order set of the session, whether or not it was checked off
+        let afterWarmup = (useWarmupSet && !sortedSets.isEmpty) ? Array(sortedSets.dropFirst()) : sortedSets
+
+        // Only completed sets count toward progression metrics
+        let completedSets = afterWarmup.filter { $0.isCompleted }
 
         // Limit to first N sets if progressionSetCount is specified
         let setsForCalculation: [WorkoutSet]
         if let count = progressionSetCount, count > 0 {
-            setsForCalculation = Array(workingSets.prefix(count))
+            setsForCalculation = Array(completedSets.prefix(count))
         } else {
-            setsForCalculation = workingSets
+            setsForCalculation = completedSets
         }
+        self.workingSets = setsForCalculation
 
-        // Calculate top weight (from working sets only)
-        self.topWeight = setsForCalculation.compactMap { $0.weight }.max() ?? 0
+        // Calculate top weight in kg so sessions logged in different units compare correctly
+        self.topWeightKg = setsForCalculation.compactMap { set -> Double? in
+            guard let weight = set.weight else { return nil }
+            return WeightUnitConverter.toKg(weight, from: set.unit)
+        }.max()
 
         // Calculate total volume (convert to kg for consistency, from working sets only)
         self.totalVolume = setsForCalculation.reduce(0.0) { sum, set in
@@ -69,33 +83,45 @@ struct SessionSummary {
             return sum + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
 
-        // Calculate E1RM from first working set (before fatigue)
+        // Calculate E1RM from the best working set
         self.estimatedOneRepMax = E1RMCalculator.fromSession(setsForCalculation)
 
-        // Get typical reps (most common reps value in completed working sets)
-        let completedSetsReps = setsForCalculation.compactMap { set -> Int? in
-            guard set.isCompleted, let reps = set.reps else { return nil }
-            return reps
-        }
+        let repsPerSet = setsForCalculation.compactMap { $0.reps }
+        self.typicalReps = SessionSummary.mode(of: repsPerSet)
+        self.minReps = repsPerSet.min()
 
-        if !completedSetsReps.isEmpty {
-            // Find the most common reps value (mode)
-            let repsCounts = Dictionary(grouping: completedSetsReps) { $0 }.mapValues { $0.count }
-            self.typicalReps = repsCounts.max(by: { $0.value < $1.value })?.key
-        } else {
-            self.typicalReps = nil
-        }
+        // Rep targets are only meaningful when at least one working set was completed
+        let hasWorkingSets = !setsForCalculation.isEmpty
 
-        // Check if target reps were hit (all working sets meet minimum, exceeding max is OK)
-        if let minReps = targetRepMin, targetRepMax != nil {
+        // Hitting the minimum on every working set makes the session a candidate for progression
+        if let minTarget = targetRepMin, hasWorkingSets {
             self.hitTargetReps = setsForCalculation.allSatisfy { set in
-                guard let reps = set.reps, set.isCompleted else { return false }
-                // Hitting minimum is sufficient - exceeding max indicates readiness to progress
-                return reps >= minReps
+                guard let reps = set.reps else { return false }
+                return reps >= minTarget
             }
         } else {
             self.hitTargetReps = false
         }
+
+        // Adding weight requires EVERY working set at the top of the range, not just the typical one
+        if let maxTarget = targetRepMax, hasWorkingSets {
+            self.hitTopOfRange = setsForCalculation.allSatisfy { set in
+                guard let reps = set.reps else { return false }
+                return reps >= maxTarget
+            }
+        } else {
+            self.hitTopOfRange = false
+        }
+    }
+
+    /// Most frequent value in `values`. Ties break toward the LOWER value so the result is
+    /// deterministic (Dictionary iteration order is not) and conservative.
+    static func mode(of values: [Int]) -> Int? {
+        guard !values.isEmpty else { return nil }
+        let counts = Dictionary(grouping: values, by: { $0 }).mapValues { $0.count }
+        return counts.max { lhs, rhs in
+            lhs.value != rhs.value ? lhs.value < rhs.value : lhs.key > rhs.key
+        }?.key
     }
 }
 
@@ -161,9 +187,15 @@ class ProgressionService {
 
     private static let volumeTolerance = 0.10  // 10% tolerance
     private static let e1rmTolerance = 0.05    // 5% tolerance
-    private static let weightTolerance = 0.1   // 0.1 kg tolerance
+    private static let weightToleranceValue = 0.1  // Ignore differences under 0.1 of the exercise's own unit
     private static let sessionsToAnalyze = 4   // Analyze last 4 sessions
     private static let consecutiveTargetSessions = 2  // Need 2 sessions hitting targets
+
+    /// Weight comparisons all happen in kg, so the tolerance is expressed in kg too.
+    /// A 0.1 lbs slop is a slightly larger kg slop — hence the unit-aware conversion.
+    private static func weightToleranceKg(unit: String) -> Double {
+        WeightUnitConverter.toKg(weightToleranceValue, from: unit)
+    }
 
     // MARK: - Public Methods
 
@@ -196,7 +228,7 @@ class ProgressionService {
         let latestSession = sessions[0]
 
         // Check if recently regressed from higher weight
-        if didRecentlyRegress(sessions: sessions) {
+        if didRecentlyRegress(sessions: sessions, unit: exercise.unit) {
             return .needsRest
         }
 
@@ -227,9 +259,11 @@ class ProgressionService {
         progressionSetCount: Int?,
         modelContext: ModelContext
     ) -> [SessionSummary] {
-        // Fetch only completed sets for progression analysis
+        // Fetch every set for the exercise — the warm up set is identified by its order within the
+        // full session, so incomplete sets have to be visible here even though only completed sets
+        // feed the progression metrics.
         let descriptor = FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate { $0.exerciseId == exerciseId && $0.isCompleted == true },
+            predicate: #Predicate { $0.exerciseId == exerciseId },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
 
@@ -243,8 +277,11 @@ class ProgressionService {
             calendar.startOfDay(for: set.date)
         }
 
+        // A day only counts as a session once something was checked off
+        let sessionDates = groupedByDate.filter { _, sets in sets.contains { $0.isCompleted } }.keys
+
         // Sort dates descending and take the most recent
-        let sortedDates = groupedByDate.keys.sorted(by: >).prefix(count)
+        let sortedDates = sessionDates.sorted(by: >).prefix(count)
 
         // Create session summaries
         return sortedDates.compactMap { date in
@@ -270,27 +307,21 @@ class ProgressionService {
     ) -> ProgressionStatus? {
         // Must have hit target reps in latest session
         guard latestSession.hitTargetReps else { return nil }
-        
-        // Must have typical reps value
-        guard let typicalReps = latestSession.typicalReps,
-              let minReps = exercise.targetRepMin,
+
+        guard let minReps = exercise.targetRepMin,
               let maxReps = exercise.targetRepMax else { return nil }
-        
-        // If at or above max reps, suggest weight increase and reset to min reps
-        if typicalReps >= maxReps {
-            let nextWeight = calculateNextWeight(currentWeight: latestSession.topWeight, unit: exercise.unit, exercise: exercise)
+
+        // Only add weight once EVERY working set reached the top of the range.
+        // 12/12/8 in an 8-12 range still has work to do at this weight.
+        if latestSession.hitTopOfRange, let topWeightKg = latestSession.topWeightKg {
+            let nextWeight = calculateNextWeight(currentWeightKg: topWeightKg, exercise: exercise)
             return .readyToIncreaseWeight(recommendedWeight: nextWeight, resetReps: minReps)
         }
-        
-        // If below max reps, suggest rep increase
-        if typicalReps >= minReps && typicalReps < maxReps {
-            let nextReps = typicalReps + 1
-            // Make sure we don't exceed max (though this should be handled above)
-            let recommendedReps = min(nextReps, maxReps)
-            return .readyToIncreaseReps(recommendedReps: recommendedReps)
-        }
-        
-        return nil
+
+        // Otherwise keep the weight and chase the top of the range
+        guard let typicalReps = latestSession.typicalReps, typicalReps >= minReps else { return nil }
+        let recommendedReps = min(typicalReps + 1, maxReps)
+        return .readyToIncreaseReps(recommendedReps: recommendedReps)
     }
 
     /// Check if volume is improving between sessions
@@ -326,26 +357,35 @@ class ProgressionService {
     }
 
     /// Check if weight is flat (same weight used)
-    private static func isWeightFlat(session1: SessionSummary, session2: SessionSummary) -> Bool {
-        return abs(session1.topWeight - session2.topWeight) <= weightTolerance
+    private static func isWeightFlat(session1: SessionSummary, session2: SessionSummary, unit: String) -> Bool {
+        guard let weight1 = session1.topWeightKg, let weight2 = session2.topWeightKg else { return false }
+        return abs(weight1 - weight2) <= weightToleranceKg(unit: unit)
     }
 
-    /// Check if user recently regressed from a higher weight
-    private static func didRecentlyRegress(sessions: [SessionSummary]) -> Bool {
+    /// Check if user recently regressed from a higher weight.
+    /// All comparisons happen in kg so switching the logging unit isn't read as a collapse.
+    private static func didRecentlyRegress(sessions: [SessionSummary], unit: String) -> Bool {
         guard sessions.count >= 3 else { return false }
 
-        let currentWeight = sessions[0].topWeight
+        // No usable working sets in the latest session means no evidence of a regression
+        guard let currentWeight = sessions[0].topWeightKg else { return false }
 
         // Check if any of the older sessions (2-4 sessions ago) used higher weight
+        let tolerance = weightToleranceKg(unit: unit)
         let olderSessions = Array(sessions.dropFirst(2))
-        return olderSessions.contains { $0.topWeight > currentWeight + weightTolerance }
+        return olderSessions.contains { session in
+            guard let olderWeight = session.topWeightKg else { return false }
+            return olderWeight > currentWeight + tolerance
+        }
     }
 
-    /// Calculate the next recommended weight
-    private static func calculateNextWeight(currentWeight: Double, unit: String, exercise: Exercise) -> Double {
+    /// Calculate the next recommended weight, expressed in the exercise's own unit
+    /// - Parameter currentWeightKg: The current top working weight, normalised to kg
+    private static func calculateNextWeight(currentWeightKg: Double, exercise: Exercise) -> Double {
         // Determine increment based on exercise category and unit
         let increment: Double
         let upperBodyCategories = ["Chest", "Back", "Shoulders", "Biceps", "Triceps"]
+        let unit = exercise.unit
 
         if unit.lowercased() == "lbs" {
             // For lbs: upper body gets 5 lbs, lower body gets 10 lbs
@@ -355,7 +395,9 @@ class ProgressionService {
             increment = upperBodyCategories.contains(exercise.primaryCategory) ? 2.5 : 5.0
         }
 
-        return currentWeight + increment
+        // Convert to the display unit before adding the increment, so the increment and the
+        // weight are always in the same unit
+        return WeightUnitConverter.fromKg(currentWeightKg, to: unit) + increment
     }
 
     // MARK: - Live Progression Analysis
@@ -402,16 +444,16 @@ class ProgressionService {
             modelContext: modelContext
         )
 
-        // Calculate current session metrics from input
+        // Calculate current session metrics from input.
+        // Live input is entered in the exercise's own unit; normalise to kg for comparisons.
         let currentWeight = setsWithData.compactMap { $0.weight }.max() ?? 0
+        let currentWeightKg = WeightUnitConverter.toKg(currentWeight, from: exercise.unit)
         let currentReps = setsWithData.compactMap { $0.reps }
 
-        // Get typical reps (mode) from current input
-        guard !currentReps.isEmpty else {
+        // Get typical reps (mode, ties favouring the lower count) from current input
+        guard let typicalReps = SessionSummary.mode(of: currentReps) else {
             return .insufficientData
         }
-        let repsCounts = Dictionary(grouping: currentReps) { $0 }.mapValues { $0.count }
-        let typicalReps = repsCounts.max(by: { $0.value < $1.value })?.key ?? currentReps[0]
 
         // Check if all current sets hit minimum target reps
         let allHitMinimum = setsWithData.allSatisfy { set in
@@ -419,9 +461,15 @@ class ProgressionService {
             return reps >= minReps
         }
 
+        // Adding weight requires every set at the top of the range, not just the typical set
+        let allAtTopOfRange = setsWithData.allSatisfy { set in
+            guard let reps = set.reps else { return false }
+            return reps >= maxReps
+        }
+
         // If no previous session, check if current input meets targets
-        guard let lastSession = lastSession else {
-            if allHitMinimum && typicalReps >= maxReps {
+        guard let lastSession = lastSession, let lastWeightKg = lastSession.topWeightKg else {
+            if allHitMinimum && allAtTopOfRange {
                 // First session and already at max reps - suggest this is a good starting point
                 return .insufficientData // Not enough history to recommend weight increase
             } else if allHitMinimum {
@@ -430,15 +478,15 @@ class ProgressionService {
             return .insufficientData
         }
 
-        // Compare current input against last session
-        let lastWeight = lastSession.topWeight
+        // Compare current input against last session (both in kg)
         let lastTypicalReps = lastSession.typicalReps ?? minReps
+        let tolerance = weightToleranceKg(unit: exercise.unit)
 
         // Check if user increased weight
-        let weightIncreased = currentWeight > lastWeight + weightTolerance
+        let weightIncreased = currentWeightKg > lastWeightKg + tolerance
 
         // Check if user is at same weight
-        let sameWeight = abs(currentWeight - lastWeight) <= weightTolerance
+        let sameWeight = abs(currentWeightKg - lastWeightKg) <= tolerance
 
         // If weight increased, check if they reset reps appropriately
         if weightIncreased {
@@ -453,9 +501,9 @@ class ProgressionService {
 
         // If at same weight, check rep progression
         if sameWeight {
-            if typicalReps >= maxReps && allHitMinimum {
-                // At top of rep range - ready to increase weight!
-                let nextWeight = calculateNextWeight(currentWeight: currentWeight, unit: exercise.unit, exercise: exercise)
+            if allAtTopOfRange && allHitMinimum {
+                // Every set is at the top of the rep range - ready to increase weight!
+                let nextWeight = calculateNextWeight(currentWeightKg: currentWeightKg, exercise: exercise)
                 return .readyToIncreaseWeight(recommendedWeight: nextWeight, resetReps: minReps)
             } else if typicalReps > lastTypicalReps && allHitMinimum {
                 // Reps increased - progressing!
@@ -473,7 +521,7 @@ class ProgressionService {
         }
 
         // Weight decreased from last session
-        if currentWeight < lastWeight - weightTolerance {
+        if currentWeightKg < lastWeightKg - tolerance {
             return .needsRest
         }
 
@@ -492,11 +540,10 @@ class ProgressionService {
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: Date())
 
-        // Fetch completed sets from before today
+        // Fetch every set from before today — incomplete sets are needed to locate the warm up set
         let descriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate {
                 $0.exerciseId == exerciseId &&
-                $0.isCompleted == true &&
                 $0.date < startOfToday
             },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
@@ -506,12 +553,12 @@ class ProgressionService {
             return nil
         }
 
-        // Group by date and get most recent
+        // Group by date and get the most recent day that actually had a completed set
         let groupedByDate = Dictionary(grouping: allSets) { set in
             calendar.startOfDay(for: set.date)
         }
 
-        guard let mostRecentDate = groupedByDate.keys.max(),
+        guard let mostRecentDate = groupedByDate.filter({ _, sets in sets.contains { $0.isCompleted } }).keys.max(),
               let sets = groupedByDate[mostRecentDate] else {
             return nil
         }

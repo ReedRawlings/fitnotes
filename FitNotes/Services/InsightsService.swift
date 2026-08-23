@@ -7,6 +7,15 @@ public final class InsightsService {
     public static let shared = InsightsService()
     private init() {}
 
+    // MARK: - Period Windows
+
+    /// Start of the current period: the `days` calendar days ending today (today included).
+    /// Every `days`-based query in this service uses this window so periods and their
+    /// "previous period" counterparts are equal length and adjacent.
+    private func periodStart(days: Int, from today: Date, calendar: Calendar) -> Date {
+        calendar.date(byAdding: .day, value: -(days - 1), to: today)!
+    }
+
     // MARK: - Volume Trends
 
     /// Returns daily volume totals for the past N days
@@ -19,10 +28,11 @@ public final class InsightsService {
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
 
-        // Determine start date based on days parameter
+        // Determine start date based on days parameter.
+        // The window ends on today, so it starts `days - 1` days back.
         let startDate: Date?
         if let days = days {
-            startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            startDate = periodStart(days: days, from: today, calendar: calendar)
         } else {
             startDate = nil // No start date filter for all-time
         }
@@ -175,7 +185,7 @@ public final class InsightsService {
 
         let descriptor: FetchDescriptor<WorkoutSet>
         if let days = days {
-            let startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            let startDate = periodStart(days: days, from: today, calendar: calendar)
             descriptor = FetchDescriptor<WorkoutSet>(
                 predicate: #Predicate { set in
                     set.isCompleted && set.date >= startDate && set.date < tomorrow
@@ -213,7 +223,7 @@ public final class InsightsService {
 
         let descriptor: FetchDescriptor<WorkoutSet>
         if let days = days {
-            let startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            let startDate = periodStart(days: days, from: today, calendar: calendar)
             descriptor = FetchDescriptor<WorkoutSet>(
                 predicate: #Predicate { set in
                     set.isCompleted && set.date >= startDate && set.date < tomorrow
@@ -248,7 +258,7 @@ public final class InsightsService {
 
         let descriptor: FetchDescriptor<WorkoutSet>
         if let days = days {
-            let startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            let startDate = periodStart(days: days, from: today, calendar: calendar)
             descriptor = FetchDescriptor<WorkoutSet>(
                 predicate: #Predicate { set in
                     set.isCompleted && set.date >= startDate && set.date < tomorrow
@@ -289,7 +299,7 @@ public final class InsightsService {
 
         let startDate: Date?
         if let days = days {
-            startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            startDate = periodStart(days: days, from: today, calendar: calendar)
         } else {
             startDate = nil // All-time
         }
@@ -310,7 +320,8 @@ public final class InsightsService {
 
             for set in allSets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
-                let volume = weight * Double(reps)
+                // Convert to kg so sets logged in different units compare correctly
+                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
             }
 
@@ -366,7 +377,7 @@ public final class InsightsService {
         // Fetch all completed sets in period
         let setsDescriptor: FetchDescriptor<WorkoutSet>
         if let days = days {
-            let startDate = calendar.date(byAdding: .day, value: -days, to: today)!
+            let startDate = periodStart(days: days, from: today, calendar: calendar)
             setsDescriptor = FetchDescriptor<WorkoutSet>(
                 predicate: #Predicate { set in
                     set.isCompleted && set.date >= startDate && set.date < tomorrow
@@ -445,7 +456,9 @@ public final class InsightsService {
     // MARK: - Personal Records
 
     /// Get recent personal records
-    public func getRecentPRs(limit: Int = 10, modelContext: ModelContext) -> [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
+    /// - Parameter unit: The display unit ("kg" or "lbs") for the returned weight/oneRM values,
+    ///   matching the convention used by `getExerciseStats`.
+    public func getRecentPRs(limit: Int = 10, unit: String = "kg", modelContext: ModelContext) -> [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
         // Fetch all completed sets
         let setsDescriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate { set in
@@ -469,10 +482,12 @@ public final class InsightsService {
 
             for set in allSets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
-                let volume = weight * Double(reps)
+                // Compare volumes in kg so sets logged in different units rank correctly;
+                // normalize the weight to kg here and convert to the display unit when a PR is emitted
+                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 exerciseRecords[set.exerciseId, default: []].append((
                     date: set.date,
-                    weight: weight,
+                    weight: WeightUnitConverter.toKg(weight, from: set.unit),
                     reps: reps,
                     volume: volume
                 ))
@@ -490,11 +505,12 @@ public final class InsightsService {
 
                 for record in sortedRecords {
                     if record.volume > maxVolumeSoFar {
-                        // This is a PR
-                        let oneRM = calculateOneRM(weight: record.weight, reps: record.reps)
+                        // This is a PR — express weight/1RM in the requested display unit
+                        let displayWeight = WeightUnitConverter.fromKg(record.weight, to: unit)
+                        let oneRM = calculateOneRM(weight: displayWeight, reps: record.reps)
                         prs.append((
                             exercise: exercise,
-                            weight: record.weight,
+                            weight: displayWeight,
                             reps: record.reps,
                             date: record.date,
                             oneRM: oneRM
@@ -593,7 +609,7 @@ public final class InsightsService {
     private func getWorkoutCountForPreviousPeriod(days: Int, modelContext: ModelContext) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let currentPeriodStart = calendar.date(byAdding: .day, value: -days, to: today)!
+        let currentPeriodStart = periodStart(days: days, from: today, calendar: calendar)
         let previousPeriodStart = calendar.date(byAdding: .day, value: -days, to: currentPeriodStart)!
 
         let descriptor = FetchDescriptor<WorkoutSet>(
@@ -615,7 +631,7 @@ public final class InsightsService {
     private func getSetCountForPreviousPeriod(days: Int, modelContext: ModelContext) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let currentPeriodStart = calendar.date(byAdding: .day, value: -days, to: today)!
+        let currentPeriodStart = periodStart(days: days, from: today, calendar: calendar)
         let previousPeriodStart = calendar.date(byAdding: .day, value: -days, to: currentPeriodStart)!
 
         let descriptor = FetchDescriptor<WorkoutSet>(
@@ -636,7 +652,7 @@ public final class InsightsService {
     private func getTotalVolumeForPreviousPeriod(days: Int, modelContext: ModelContext) -> Double {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let currentPeriodStart = calendar.date(byAdding: .day, value: -days, to: today)!
+        let currentPeriodStart = periodStart(days: days, from: today, calendar: calendar)
         let previousPeriodStart = calendar.date(byAdding: .day, value: -days, to: currentPeriodStart)!
 
         let descriptor = FetchDescriptor<WorkoutSet>(
@@ -660,7 +676,7 @@ public final class InsightsService {
     private func getPRCountForPreviousPeriod(days: Int, modelContext: ModelContext) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let currentPeriodStart = calendar.date(byAdding: .day, value: -days, to: today)!
+        let currentPeriodStart = periodStart(days: days, from: today, calendar: calendar)
         let previousPeriodStart = calendar.date(byAdding: .day, value: -days, to: currentPeriodStart)!
 
         // Fetch all completed sets
@@ -679,7 +695,8 @@ public final class InsightsService {
 
             for set in allSets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
-                let volume = weight * Double(reps)
+                // Convert to kg so sets logged in different units compare correctly
+                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
             }
 
@@ -846,20 +863,23 @@ public final class InsightsService {
 
     // MARK: - Per-Exercise Statistics
 
-    /// Represents detailed statistics for a single exercise
+    /// Represents detailed statistics for a single exercise.
+    /// All weight/E1RM values are expressed in the display unit passed to `getExerciseStats`;
+    /// `totalVolume` is in kg (consistent with the other volume stats in this service).
     public struct ExerciseStats {
         public let exerciseId: UUID
-        public let bestWeight: Double?           // Highest weight ever lifted
-        public let bestVolumeSet: (weight: Double, reps: Int)?  // Best single set by volume
-        public let currentE1RM: Double?          // Most recent E1RM (from sets with ≤10 reps)
-        public let totalVolume: Double           // All-time total volume
+        public let bestWeight: Double?           // Highest weight ever lifted (in display unit)
+        public let bestVolumeSet: (weight: Double, reps: Int)?  // Best single set by volume (weight in display unit)
+        public let currentE1RM: Double?          // Most recent E1RM (from sets with ≤10 reps, in display unit)
+        public let totalVolume: Double           // All-time total volume (kg)
         public let timesPerformed: Int           // Number of unique workout days
-        public let e1rmProgression: [(date: Date, e1rm: Double)]  // E1RM over time
-        public let repRecords: [Int: Double]     // Best weight at each rep count (1, 3, 5, 8, 10, 12)
+        public let e1rmProgression: [(date: Date, e1rm: Double)]  // E1RM over time (in display unit)
+        public let repRecords: [Int: Double]     // Best weight at each rep count (1, 3, 5, 8, 10, 12), in display unit
         public let recentHistory: [(date: Date, sets: Int, bestSet: String)]  // Last 10 sessions
     }
 
     /// Get detailed statistics for a specific exercise
+    /// - Parameter unit: The display unit ("kg" or "lbs") for all returned weight/E1RM values
     public func getExerciseStats(exerciseId: UUID, unit: String, modelContext: ModelContext) -> ExerciseStats {
         // Fetch all completed sets for this exercise
         let setsDescriptor = FetchDescriptor<WorkoutSet>(
@@ -873,33 +893,41 @@ public final class InsightsService {
             let sets = try modelContext.fetch(setsDescriptor)
             let calendar = Calendar.current
 
-            // Calculate best weight
-            let bestWeight = sets.compactMap { $0.weight }.max()
+            // Helper: express a set's stored weight in the requested display unit
+            func weightInDisplayUnit(_ weight: Double, from setUnit: String) -> Double {
+                WeightUnitConverter.fromKg(WeightUnitConverter.toKg(weight, from: setUnit), to: unit)
+            }
 
-            // Calculate best volume set
+            // Calculate best weight (compare in kg, return in display unit)
+            let bestWeight = sets.compactMap { set -> Double? in
+                guard let weight = set.weight else { return nil }
+                return WeightUnitConverter.toKg(weight, from: set.unit)
+            }.max().map { WeightUnitConverter.fromKg($0, to: unit) }
+
+            // Calculate best volume set (compare volume in kg, return weight in display unit)
             var bestVolumeSet: (weight: Double, reps: Int)?
             var maxVolume: Double = 0
             for set in sets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
-                let volume = weight * Double(reps)
+                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 if volume > maxVolume {
                     maxVolume = volume
-                    bestVolumeSet = (weight: weight, reps: reps)
+                    bestVolumeSet = (weight: weightInDisplayUnit(weight, from: set.unit), reps: reps)
                 }
             }
 
-            // Calculate current E1RM (most recent valid set with ≤10 reps)
+            // Calculate current E1RM (most recent valid set with ≤10 reps), in display unit
             var currentE1RM: Double?
             for set in sets.reversed() {
                 guard let weight = set.weight, let reps = set.reps, reps <= 10 else { continue }
-                currentE1RM = calculateOneRM(weight: weight, reps: reps)
+                currentE1RM = calculateOneRM(weight: weightInDisplayUnit(weight, from: set.unit), reps: reps)
                 break
             }
 
-            // Calculate total volume
+            // Calculate total volume (in kg, consistent with other volume stats)
             let totalVolume = sets.reduce(0.0) { total, set in
                 guard let weight = set.weight, let reps = set.reps else { return total }
-                return total + (weight * Double(reps))
+                return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
             }
 
             // Calculate times performed (unique days)
@@ -907,24 +935,30 @@ public final class InsightsService {
             let timesPerformed = uniqueDays.count
 
             // Calculate E1RM progression (best E1RM per day for sets with ≤10 reps)
+            // Compare in kg, then convert to display unit
             var dailyE1RMs: [Date: Double] = [:]
             for set in sets {
                 guard let weight = set.weight, let reps = set.reps, reps <= 10 else { continue }
                 let day = calendar.startOfDay(for: set.date)
-                let e1rm = calculateOneRM(weight: weight, reps: reps)
+                let e1rm = calculateOneRM(weight: WeightUnitConverter.toKg(weight, from: set.unit), reps: reps)
                 dailyE1RMs[day] = max(dailyE1RMs[day] ?? 0, e1rm)
             }
-            let e1rmProgression = dailyE1RMs.map { (date: $0.key, e1rm: $0.value) }.sorted { $0.date < $1.date }
+            let e1rmProgression = dailyE1RMs
+                .map { (date: $0.key, e1rm: WeightUnitConverter.fromKg($0.value, to: unit)) }
+                .sorted { $0.date < $1.date }
 
             // Calculate rep records (best weight at 1, 3, 5, 8, 10, 12 reps)
-            var repRecords: [Int: Double] = [:]
+            // Compare in kg, then convert to display unit
+            var repRecordsKg: [Int: Double] = [:]
             let targetReps = [1, 3, 5, 8, 10, 12]
             for set in sets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
                 if targetReps.contains(reps) {
-                    repRecords[reps] = max(repRecords[reps] ?? 0, weight)
+                    let weightKg = WeightUnitConverter.toKg(weight, from: set.unit)
+                    repRecordsKg[reps] = max(repRecordsKg[reps] ?? 0, weightKg)
                 }
             }
+            let repRecords = repRecordsKg.mapValues { WeightUnitConverter.fromKg($0, to: unit) }
 
             // Calculate recent history (last 10 sessions)
             var sessionData: [Date: (sets: Int, bestWeight: Double, bestReps: Int, bestVolume: Double)] = [:]
@@ -933,9 +967,10 @@ public final class InsightsService {
                 var existing = sessionData[day] ?? (sets: 0, bestWeight: 0, bestReps: 0, bestVolume: 0)
                 existing.sets += 1
                 if let weight = set.weight, let reps = set.reps {
-                    let volume = weight * Double(reps)
+                    // Compare volume in kg; store weight in display unit (labeled with `unit` below)
+                    let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                     if volume > existing.bestVolume {
-                        existing.bestWeight = weight
+                        existing.bestWeight = weightInDisplayUnit(weight, from: set.unit)
                         existing.bestReps = reps
                         existing.bestVolume = volume
                     }
@@ -1273,9 +1308,15 @@ public final class InsightsService {
 
         do {
             let sets = try modelContext.fetch(descriptor)
-            let bestWeight = sets.compactMap { $0.weight }.max() ?? 0
-
             let unit = goal.weightUnit ?? "kg"
+
+            // Convert each set's weight into the goal's unit before taking the max,
+            // so sets logged in a different unit compare correctly against the target
+            let bestWeight = sets.compactMap { set -> Double? in
+                guard let weight = set.weight else { return nil }
+                return WeightUnitConverter.fromKg(WeightUnitConverter.toKg(weight, from: set.unit), to: unit)
+            }.max() ?? 0
+
             let targetDisplay = formatWeight(goal.targetValue, unit: unit)
             let currentDisplay = formatWeight(bestWeight, unit: unit)
 
@@ -1575,7 +1616,8 @@ public final class InsightsService {
 
         for set in sets {
             guard let weight = set.weight, let reps = set.reps else { continue }
-            let volume = weight * Double(reps)
+            // Convert to kg so sets logged in different units compare correctly
+            let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
             exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
         }
 

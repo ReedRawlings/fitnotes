@@ -2,8 +2,12 @@ import SwiftUI
 import Combine
 import UserNotifications
 import ActivityKit
+import AudioToolbox
 
-/// Manages rest timer updates, completion handling, and Live Activity for views
+/// Manages rest timer updates, completion handling, and Live Activity.
+/// A single shared instance lives on AppState (`appState.restTimerManager`) and owns the
+/// countdown polling, completion UI state, notification, chime, and Live Activity together —
+/// per-view instances would split that state and the Live Activity never sees completion.
 @MainActor
 class RestTimerManager: ObservableObject {
     @Published var showCompletionState = false
@@ -11,15 +15,13 @@ class RestTimerManager: ObservableObject {
 
     private var timerUpdateTimer: Timer?
     private var appState: AppState
-    private var filterExerciseId: UUID?
     private var lastKnownTimerId: UUID?
 
     // Live Activity tracking
     private var currentActivity: Activity<RestTimerWidgetAttributes>?
 
-    init(appState: AppState, filterExerciseId: UUID? = nil) {
+    init(appState: AppState) {
         self.appState = appState
-        self.filterExerciseId = filterExerciseId
         requestNotificationPermissions()
     }
 
@@ -34,62 +36,54 @@ class RestTimerManager: ObservableObject {
         }
     }
 
-    /// Start periodic timer updates to check completion state
-    func startTimerUpdates() {
+    /// Start periodic timer updates to check completion state.
+    /// The manager starts/stops this itself around the timer's lifecycle.
+    private func startTimerUpdates() {
+        // Never stack a second polling timer on top of a live one
+        timerUpdateTimer?.invalidate()
         timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self else { return }
 
             Task { @MainActor in
-                // Check if we should filter by exercise ID
-                if let filterExerciseId = self.filterExerciseId {
-                    if let timer = self.appState.activeRestTimer,
-                       timer.exerciseId == filterExerciseId {
-                        // Detect if a NEW timer was started (different ID) - reset completion state
-                        if timer.id != self.lastKnownTimerId {
-                            self.lastKnownTimerId = timer.id
-                            self.showCompletionState = false
-                            self.celebrationScale = 1.0
-                        }
-
-                        // Check for completion
-                        if timer.isCompleted && !self.showCompletionState {
-                            self.handleTimerCompletion()
-                        }
+                guard let timer = self.appState.activeRestTimer else {
+                    // Nothing to watch: stop polling unless the completion banner is mid-dismiss
+                    if !self.showCompletionState {
+                        self.stopTimerUpdates()
                     }
-                } else {
-                    // No filter - check any timer
-                    if let timer = self.appState.activeRestTimer {
-                        // Detect if a NEW timer was started (different ID) - reset completion state
-                        if timer.id != self.lastKnownTimerId {
-                            self.lastKnownTimerId = timer.id
-                            self.showCompletionState = false
-                            self.celebrationScale = 1.0
-                        }
+                    return
+                }
 
-                        // Check for completion
-                        if timer.isCompleted && !self.showCompletionState {
-                            self.handleTimerCompletion()
-                        }
-                    }
+                // Detect if a NEW timer was started (different ID) - reset completion state
+                if timer.id != self.lastKnownTimerId {
+                    self.lastKnownTimerId = timer.id
+                    self.showCompletionState = false
+                    self.celebrationScale = 1.0
+                }
+
+                // Check for completion
+                if timer.isCompleted && !self.showCompletionState {
+                    self.handleTimerCompletion()
                 }
             }
         }
     }
 
     /// Stop timer updates
-    func stopTimerUpdates() {
+    private func stopTimerUpdates() {
         timerUpdateTimer?.invalidate()
         timerUpdateTimer = nil
     }
 
-    /// Handle timer completion with celebration animation and auto-dismiss
+    /// Handle timer completion with chime, celebration animation, and auto-dismiss
     func handleTimerCompletion() {
+        guard !showCompletionState else { return }
         showCompletionState = true
 
         // Update Live Activity to show completion
         updateLiveActivityCompletion()
 
-        // Success haptic
+        // Completion chime (system "Calypso"; respects the silent switch) + success haptic
+        AudioServicesPlaySystemSound(SystemSoundID(1022))
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.success)
 
@@ -97,9 +91,9 @@ class RestTimerManager: ObservableObject {
         withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
             celebrationScale = 1.05
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
             withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-                self.celebrationScale = 1.0
+                self?.celebrationScale = 1.0
             }
         }
 
@@ -107,61 +101,54 @@ class RestTimerManager: ObservableObject {
         let completedTimerId = lastKnownTimerId
 
         // Auto-dismiss after 2 seconds, but only if no new timer has started
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            guard let self else { return }
             // Only dismiss if the same timer is still active (no new timer started)
             guard self.lastKnownTimerId == completedTimerId else { return }
 
-            self.appState.cancelRestTimer()
+            self.appState.cancelRestTimer() // triggers endTimer(), which cleans everything up
             self.showCompletionState = false
             self.celebrationScale = 1.0
-            self.endLiveActivity()
         }
     }
 
     /// Handle skip action
     func skipTimer() {
-        appState.cancelRestTimer()
+        appState.cancelRestTimer() // triggers endTimer(), which cleans everything up
         showCompletionState = false
         celebrationScale = 1.0
         lastKnownTimerId = nil
-        cancelNotification()
-        endLiveActivity()
     }
 
     /// Handle app returning to foreground - dismiss completed timers immediately
     func handleAppBecameActive() {
-        if let timer = appState.activeRestTimer {
-            // Check if this timer matches our filter (if any)
-            if let filterExerciseId = filterExerciseId {
-                guard timer.exerciseId == filterExerciseId else { return }
-            }
-
-            // If timer is completed, dismiss it immediately
-            if timer.isCompleted {
-                appState.cancelRestTimer()
-                showCompletionState = false
-                celebrationScale = 1.0
-                lastKnownTimerId = nil
-                endLiveActivity()
-            }
+        if let timer = appState.activeRestTimer, timer.isCompleted {
+            appState.cancelRestTimer()
+            showCompletionState = false
+            celebrationScale = 1.0
+            lastKnownTimerId = nil
         }
     }
 
     // MARK: - Notification Management
 
-    /// Start timer and schedule notification
+    /// Start timer: schedule the notification, start the Live Activity, and begin polling
     func startTimer(exerciseName: String, setNumber: Int, duration: TimeInterval) {
         // Schedule notification for when timer completes
         scheduleNotification(delay: duration)
 
         // Start Live Activity
         startLiveActivity(exerciseName: exerciseName, setNumber: setNumber, duration: duration)
+
+        // Watch for completion while the timer runs
+        startTimerUpdates()
     }
 
-    /// End timer and cancel notification
+    /// End timer: cancel notification, end the Live Activity, and stop polling
     func endTimer() {
         cancelNotification()
         endLiveActivity()
+        stopTimerUpdates()
     }
 
     /// Schedule notification for timer completion

@@ -2,7 +2,9 @@
 
 ## Overview
 
-The onboarding flow is 14 screens divided into three phases: Education (screens 1-5), Personalization (screens 6-8), and Setup & Conversion (screens 9-14). The flow builds understanding of progressive overload, collects user preferences, then guides them through their first setup.
+> **Updated 2026-08-23:** The flow was trimmed to **5 screens**: Welcome → Your Preferences → Let's Set Up Your First Exercise → Watch Your Progress Grow → Insights That Matter. The education/marketing screens, personalization questions (experience level, key lifts), conditional next-steps screen, email capture, and the paywall were all removed, along with MailerLite and StoreKit. Sections below describing removed screens are retained as **historical reference only**.
+
+The original flow was 14 screens divided into three phases: Education (screens 1-5), Personalization (screens 6-8), and Setup & Conversion (screens 9-14).
 
 ---
 

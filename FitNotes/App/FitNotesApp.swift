@@ -93,12 +93,6 @@ struct FitNotesApp: App {
                         }
                 }
             }
-            .onOpenURL { url in
-                // Handle OAuth callback (Google Sign-In, Magic Links)
-                Task {
-                    await AuthService.shared.handleOAuthCallback(url: url)
-                }
-            }
         }
         .modelContainer(sharedModelContainer)
     }
