@@ -45,6 +45,11 @@ final class E1RMCalculatorTests: XCTestCase {
         XCTAssertEqual(e1rm!, 100 * (1 + 5.0 / 30.0), accuracy: 0.01)
     }
 
+    func testSingleRepReturnsTheLiftedWeight() {
+        // A true 1RM single IS the 1RM — Epley must not inflate it by 3.3%
+        XCTAssertEqual(E1RMCalculator.calculate(weight: 225, reps: 1), 225)
+    }
+
     func testFromSessionReturnsNilWhenNoValidSets() {
         XCTAssertNil(E1RMCalculator.fromSession([]))
         XCTAssertNil(E1RMCalculator.fromSession([makeSet(order: 1, weight: 100, reps: 5, isCompleted: false)]))

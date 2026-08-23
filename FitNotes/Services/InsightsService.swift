@@ -315,14 +315,14 @@ public final class InsightsService {
         do {
             let allSets = try modelContext.fetch(allSetsDescriptor)
 
-            // Group by exercise
-            var exerciseRecords: [UUID: [(date: Date, volume: Double)]] = [:]
+            // Group by exercise. A PR is a new best WEIGHT for the exercise (a heavy double
+            // beats a light 20-rep set), compared in kg so mixed units rank correctly.
+            var exerciseRecords: [UUID: [(date: Date, weightKg: Double)]] = [:]
 
             for set in allSets {
-                guard let weight = set.weight, let reps = set.reps else { continue }
-                // Convert to kg so sets logged in different units compare correctly
-                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
-                exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
+                guard let weight = set.weight else { continue }
+                let weightKg = WeightUnitConverter.toKg(weight, from: set.unit)
+                exerciseRecords[set.exerciseId, default: []].append((date: set.date, weightKg: weightKg))
             }
 
             // Count PRs in the period
@@ -331,20 +331,20 @@ public final class InsightsService {
             for (_, records) in exerciseRecords {
                 let sortedRecords = records.sorted { $0.date < $1.date }
 
-                // Find max volume in period
-                let periodRecords: [(date: Date, volume: Double)]
+                // Find max weight in period
+                let periodRecords: [(date: Date, weightKg: Double)]
                 if let startDate = startDate {
                     periodRecords = sortedRecords.filter { $0.date >= startDate && $0.date < tomorrow }
                 } else {
                     // All-time: count total unique PRs (each new max is a PR)
                     periodRecords = sortedRecords.filter { $0.date < tomorrow }
                 }
-                guard let maxInPeriod = periodRecords.map({ $0.volume }).max() else { continue }
+                guard let maxInPeriod = periodRecords.map({ $0.weightKg }).max() else { continue }
 
                 // Find max volume before period (for all-time, there's no "before")
                 if let startDate = startDate {
                     let beforeRecords = sortedRecords.filter { $0.date < startDate }
-                    let maxBefore = beforeRecords.map({ $0.volume }).max() ?? 0
+                    let maxBefore = beforeRecords.map({ $0.weightKg }).max() ?? 0
 
                     // If period max is greater, it's a PR
                     if maxInPeriod > maxBefore {
@@ -458,7 +458,7 @@ public final class InsightsService {
     /// Get recent personal records
     /// - Parameter unit: The display unit ("kg" or "lbs") for the returned weight/oneRM values,
     ///   matching the convention used by `getExerciseStats`.
-    public func getRecentPRs(limit: Int = 10, unit: String = "kg", modelContext: ModelContext) -> [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
+    public func getRecentPRs(limit: Int = 10, unit: String = "kg", modelContext: ModelContext) -> [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double?)] {
         // Fetch all completed sets
         let setsDescriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate { set in
@@ -477,36 +477,33 @@ public final class InsightsService {
             // Create exercise lookup
             let exerciseById = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
 
-            // Group by exercise
-            var exerciseRecords: [UUID: [(date: Date, weight: Double, reps: Int, volume: Double)]] = [:]
+            // Group by exercise. A PR is a new best WEIGHT (compared in kg so mixed units
+            // rank correctly) — a heavy double beats a light 20-rep set.
+            var exerciseRecords: [UUID: [(date: Date, weightKg: Double, reps: Int)]] = [:]
 
             for set in allSets {
                 guard let weight = set.weight, let reps = set.reps else { continue }
-                // Compare volumes in kg so sets logged in different units rank correctly;
-                // normalize the weight to kg here and convert to the display unit when a PR is emitted
-                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
                 exerciseRecords[set.exerciseId, default: []].append((
                     date: set.date,
-                    weight: WeightUnitConverter.toKg(weight, from: set.unit),
-                    reps: reps,
-                    volume: volume
+                    weightKg: WeightUnitConverter.toKg(weight, from: set.unit),
+                    reps: reps
                 ))
             }
 
             // Find PRs for each exercise
-            var prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] = []
+            var prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double?)] = []
 
             for (exerciseId, records) in exerciseRecords {
                 guard let exercise = exerciseById[exerciseId] else { continue }
 
                 let sortedRecords = records.sorted { $0.date < $1.date }
 
-                var maxVolumeSoFar: Double = 0
+                var maxWeightKgSoFar: Double = 0
 
                 for record in sortedRecords {
-                    if record.volume > maxVolumeSoFar {
+                    if record.weightKg > maxWeightKgSoFar {
                         // This is a PR — express weight/1RM in the requested display unit
-                        let displayWeight = WeightUnitConverter.fromKg(record.weight, to: unit)
+                        let displayWeight = WeightUnitConverter.fromKg(record.weightKg, to: unit)
                         let oneRM = calculateOneRM(weight: displayWeight, reps: record.reps)
                         prs.append((
                             exercise: exercise,
@@ -515,7 +512,7 @@ public final class InsightsService {
                             date: record.date,
                             oneRM: oneRM
                         ))
-                        maxVolumeSoFar = record.volume
+                        maxWeightKgSoFar = record.weightKg
                     }
                 }
             }
@@ -530,9 +527,13 @@ public final class InsightsService {
 
     // MARK: - Helper Methods
 
-    /// Calculate estimated 1RM using Epley formula
-    /// Formula: weight × (1 + reps / 30)
-    public func calculateOneRM(weight: Double, reps: Int) -> Double {
+    /// Calculate estimated 1RM using the Epley formula: weight × (1 + reps / 30).
+    /// A true single IS the 1RM (no inflation), and the formula is only valid up to
+    /// 10 reps — beyond that it errs by 15-20%, so no estimate is returned.
+    public func calculateOneRM(weight: Double, reps: Int) -> Double? {
+        guard reps >= 1 else { return nil }
+        if reps == 1 { return weight }
+        guard reps <= 10 else { return nil }
         return weight * (1 + Double(reps) / 30)
     }
 
@@ -690,14 +691,14 @@ public final class InsightsService {
         do {
             let allSets = try modelContext.fetch(allSetsDescriptor)
 
-            // Group by exercise
-            var exerciseRecords: [UUID: [(date: Date, volume: Double)]] = [:]
+            // Group by exercise. A PR is a new best WEIGHT for the exercise (a heavy double
+            // beats a light 20-rep set), compared in kg so mixed units rank correctly.
+            var exerciseRecords: [UUID: [(date: Date, weightKg: Double)]] = [:]
 
             for set in allSets {
-                guard let weight = set.weight, let reps = set.reps else { continue }
-                // Convert to kg so sets logged in different units compare correctly
-                let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
-                exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
+                guard let weight = set.weight else { continue }
+                let weightKg = WeightUnitConverter.toKg(weight, from: set.unit)
+                exerciseRecords[set.exerciseId, default: []].append((date: set.date, weightKg: weightKg))
             }
 
             // Count PRs in the previous period
@@ -708,11 +709,11 @@ public final class InsightsService {
 
                 // Find max volume in previous period
                 let periodRecords = sortedRecords.filter { $0.date >= previousPeriodStart && $0.date < currentPeriodStart }
-                guard let maxInPeriod = periodRecords.map({ $0.volume }).max() else { continue }
+                guard let maxInPeriod = periodRecords.map({ $0.weightKg }).max() else { continue }
 
                 // Find max volume before previous period
                 let beforeRecords = sortedRecords.filter { $0.date < previousPeriodStart }
-                let maxBefore = beforeRecords.map({ $0.volume }).max() ?? 0
+                let maxBefore = beforeRecords.map({ $0.weightKg }).max() ?? 0
 
                 // If period max is greater, it's a PR
                 if maxInPeriod > maxBefore {
@@ -919,8 +920,9 @@ public final class InsightsService {
             // Calculate current E1RM (most recent valid set with ≤10 reps), in display unit
             var currentE1RM: Double?
             for set in sets.reversed() {
-                guard let weight = set.weight, let reps = set.reps, reps <= 10 else { continue }
-                currentE1RM = calculateOneRM(weight: weightInDisplayUnit(weight, from: set.unit), reps: reps)
+                guard let weight = set.weight, let reps = set.reps,
+                      let e1rm = calculateOneRM(weight: weightInDisplayUnit(weight, from: set.unit), reps: reps) else { continue }
+                currentE1RM = e1rm
                 break
             }
 
@@ -938,9 +940,9 @@ public final class InsightsService {
             // Compare in kg, then convert to display unit
             var dailyE1RMs: [Date: Double] = [:]
             for set in sets {
-                guard let weight = set.weight, let reps = set.reps, reps <= 10 else { continue }
+                guard let weight = set.weight, let reps = set.reps,
+                      let e1rm = calculateOneRM(weight: WeightUnitConverter.toKg(weight, from: set.unit), reps: reps) else { continue }
                 let day = calendar.startOfDay(for: set.date)
-                let e1rm = calculateOneRM(weight: WeightUnitConverter.toKg(weight, from: set.unit), reps: reps)
                 dailyE1RMs[day] = max(dailyE1RMs[day] ?? 0, e1rm)
             }
             let e1rmProgression = dailyE1RMs
@@ -1611,26 +1613,25 @@ public final class InsightsService {
 
     /// Calculate PRs achieved in the given sets
     private func calculateYearPRs(sets: [WorkoutSet]) -> Int {
-        // Group by exercise
-        var exerciseRecords: [UUID: [(date: Date, volume: Double)]] = [:]
+        // Group by exercise. A PR is a new best weight, compared in kg (see getPRCount)
+        var exerciseRecords: [UUID: [(date: Date, weightKg: Double)]] = [:]
 
         for set in sets {
-            guard let weight = set.weight, let reps = set.reps else { continue }
-            // Convert to kg so sets logged in different units compare correctly
-            let volume = WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
-            exerciseRecords[set.exerciseId, default: []].append((date: set.date, volume: volume))
+            guard let weight = set.weight else { continue }
+            let weightKg = WeightUnitConverter.toKg(weight, from: set.unit)
+            exerciseRecords[set.exerciseId, default: []].append((date: set.date, weightKg: weightKg))
         }
 
         var prCount = 0
 
         for (_, records) in exerciseRecords {
             let sortedRecords = records.sorted { $0.date < $1.date }
-            var maxVolumeSoFar: Double = 0
+            var maxWeightKgSoFar: Double = 0
 
             for record in sortedRecords {
-                if record.volume > maxVolumeSoFar {
+                if record.weightKg > maxWeightKgSoFar {
                     prCount += 1
-                    maxVolumeSoFar = record.volume
+                    maxWeightKgSoFar = record.weightKg
                 }
             }
         }

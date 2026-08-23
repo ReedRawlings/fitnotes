@@ -2365,7 +2365,7 @@ struct InsightsView: View {
     @State private var totalVolume: String = "0"
     @State private var prCount: Int = 0
     @State private var muscleBreakdown: [(category: String, volume: Double, percentage: Double)] = []
-    @State private var recentPRs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] = []
+    @State private var recentPRs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double?)] = []
     @State private var muscleRecoveryStatus: [String: InsightsService.MuscleRecoveryStatus] = [:]
     @State private var topExercises: [(exercise: Exercise, setCount: Int)] = []
     @State private var streakData = InsightsService.StreakData(
