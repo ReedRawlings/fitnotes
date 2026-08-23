@@ -6,9 +6,10 @@ import SwiftData
 /// Calculates Estimated 1 Rep Max using the Epley formula
 struct E1RMCalculator {
     /// Calculates E1RM using: weight × (1 + reps/30)
-    /// Only accurate for reps in 1-10 range
+    /// Only accurate for reps in 1-10 range. A true single IS the 1RM — no inflation.
     static func calculate(weight: Double, reps: Int) -> Double? {
         guard reps >= 1 && reps <= 10 else { return nil }
+        if reps == 1 { return weight }
         return weight * (1 + Double(reps) / 30.0)
     }
 
@@ -132,7 +133,6 @@ enum ProgressionStatus {
     case readyToIncreaseWeight(recommendedWeight: Double, resetReps: Int)  // Increase weight, reset to min reps
     case progressingTowardTarget
     case belowTarget  // Reps below minimum - suggest lowering weight or adjusting range
-    case needsRest  // Weight decreased - suggest taking rest days
     case insufficientData
 
     var title: String {
@@ -141,7 +141,6 @@ enum ProgressionStatus {
         case .readyToIncreaseWeight: return "Ready to Progress!"
         case .progressingTowardTarget: return "Progressing Toward Target"
         case .belowTarget: return "Below Target Range"
-        case .needsRest: return "Consider Resting"
         case .insufficientData: return "Insufficient Data"
         }
     }
@@ -161,8 +160,6 @@ enum ProgressionStatus {
             return "You're getting closer! Keep at this weight until you hit all target reps."
         case .belowTarget:
             return "Reps are below your target range. Consider lowering the weight or adjusting your rep range in settings."
-        case .needsRest:
-            return "You're lifting less than last session. Consider taking a few days rest to recover."
         case .insufficientData:
             return "Complete a few more sessions to get progression recommendations."
         }
@@ -173,7 +170,6 @@ enum ProgressionStatus {
         case .readyToIncreaseReps, .readyToIncreaseWeight: return "green"
         case .progressingTowardTarget: return "blue"
         case .belowTarget: return "orange"
-        case .needsRest: return "yellow"
         case .insufficientData: return "gray"
         }
     }
@@ -226,11 +222,6 @@ class ProgressionService {
         }
 
         let latestSession = sessions[0]
-
-        // Check if recently regressed from higher weight
-        if didRecentlyRegress(sessions: sessions, unit: exercise.unit) {
-            return .needsRest
-        }
 
         // Check if ready to progress (rep increase or weight increase)
         if let progressionRecommendation = getProgressionRecommendation(
@@ -360,23 +351,6 @@ class ProgressionService {
     private static func isWeightFlat(session1: SessionSummary, session2: SessionSummary, unit: String) -> Bool {
         guard let weight1 = session1.topWeightKg, let weight2 = session2.topWeightKg else { return false }
         return abs(weight1 - weight2) <= weightToleranceKg(unit: unit)
-    }
-
-    /// Check if user recently regressed from a higher weight.
-    /// All comparisons happen in kg so switching the logging unit isn't read as a collapse.
-    private static func didRecentlyRegress(sessions: [SessionSummary], unit: String) -> Bool {
-        guard sessions.count >= 3 else { return false }
-
-        // No usable working sets in the latest session means no evidence of a regression
-        guard let currentWeight = sessions[0].topWeightKg else { return false }
-
-        // Check if any of the older sessions (2-4 sessions ago) used higher weight
-        let tolerance = weightToleranceKg(unit: unit)
-        let olderSessions = Array(sessions.dropFirst(2))
-        return olderSessions.contains { session in
-            guard let olderWeight = session.topWeightKg else { return false }
-            return olderWeight > currentWeight + tolerance
-        }
     }
 
     /// Calculate the next recommended weight, expressed in the exercise's own unit
@@ -520,9 +494,9 @@ class ProgressionService {
             }
         }
 
-        // Weight decreased from last session
+        // Weight decreased from last session — a deliberately lighter day is not a failure state
         if currentWeightKg < lastWeightKg - tolerance {
-            return .needsRest
+            return allHitMinimum ? .progressingTowardTarget : .belowTarget
         }
 
         return .belowTarget

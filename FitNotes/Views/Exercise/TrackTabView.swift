@@ -875,9 +875,6 @@ struct SetRowView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
-        .onLongPressGesture(minimumDuration: 0.5) {
-            onDelete()
-        }
         .onAppear {
             logger.debug("SetRowView appeared for set \(set.id)")
         }

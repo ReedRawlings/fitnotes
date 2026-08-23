@@ -70,8 +70,8 @@ Sets save immediately on every change via `persistCurrentSets()`. No manual save
 ### Derived Stats Stay Out of `body`
 HomeView, InsightsView, and PreferencesView cache expensive aggregations (volume, PRs, streaks) in `@State`, refreshed on appear/tab-switch/period-change. Computing them in `body` or computed properties re-runs full-history fetches on every AppState publish (i.e., every tap) and was the cause of app-wide tap latency. Keep `@Query` properties predicate-filtered—never fetch whole tables.
 
-### E1RM
-`E1RMCalculator.fromSession` returns the best (highest) E1RM among completed sets, covered by unit tests in `FitNotesTests`.
+### E1RM and PRs
+`E1RMCalculator.fromSession` returns the best (highest) E1RM among completed sets; a 1-rep set's E1RM is the weight itself; >10 reps yields no estimate (Epley validity). A PR is a new best WEIGHT for an exercise (kg-normalized) — not set volume: 225×2 outranks 150×20. Covered by unit tests in `FitNotesTests`. There is no "needs rest" recommendation — deliberately lighter sessions are not a failure state.
 
 ### SwiftData Predicates
 ```swift

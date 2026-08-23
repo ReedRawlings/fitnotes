@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - RecentPRsListView
 /// Scrollable list of recent personal records
 struct RecentPRsListView: View {
-    let prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)]
+    let prs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double?)]
     let unit: String // "kg" or "lbs"
     @EnvironmentObject var appState: AppState
 
@@ -84,7 +84,7 @@ struct PRRowView: View {
     let weight: Double
     let reps: Int
     let date: Date
-    let oneRM: Double
+    let oneRM: Double?
     let unit: String
     let dateAgo: String
     let appState: AppState
@@ -118,10 +118,12 @@ struct PRRowView: View {
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
                     .foregroundColor(.textPrimary)
 
-                // 1RM estimate
-                Text("~\(formatWeight(oneRM)) \(unit) 1RM")
-                    .font(.system(size: 12, weight: .regular, design: .monospaced))
-                    .foregroundColor(.textSecondary)
+                // 1RM estimate (no estimate for sets over 10 reps — Epley isn't valid there)
+                if let oneRM {
+                    Text("~\(formatWeight(oneRM)) \(unit) 1RM")
+                        .font(.system(size: 12, weight: .regular, design: .monospaced))
+                        .foregroundColor(.textSecondary)
+                }
             }
 
             Spacer()
