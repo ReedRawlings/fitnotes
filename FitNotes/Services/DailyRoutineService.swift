@@ -102,6 +102,7 @@ public final class WorkoutService {
         let exerciseUnit = exercise?.unit ?? "kg"
 
         // Create sets from the provided setData
+        let normalizedDate = Calendar.current.startOfDay(for: workout.date)
         for (index, setInfo) in setData.enumerated() {
             let workoutSet = WorkoutSet(
                 exerciseId: exerciseId,
@@ -112,7 +113,7 @@ public final class WorkoutService {
                 duration: setInfo.duration,
                 distance: setInfo.distance,
                 notes: notes,
-                date: workout.date
+                date: normalizedDate
             )
             modelContext.insert(workoutSet)
         }
@@ -387,9 +388,45 @@ public final class RoutineService {
         notes: String? = nil,
         modelContext: ModelContext
     ) -> Workout {
+        // Reuse an existing workout for this date if one exists to avoid
+        // creating duplicate Workout records for the same day.
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        let descriptor = FetchDescriptor<Workout>(
+            predicate: #Predicate<Workout> { workout in
+                workout.date >= startOfDay && workout.date < endOfDay
+            },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+
+        do {
+            let workouts = try modelContext.fetch(descriptor)
+            if let existingWorkout = workouts.first {
+                // Tag the workout with this routine if it isn't already linked to one
+                if existingWorkout.routineTemplateId == nil {
+                    existingWorkout.routineTemplateId = routine.id
+                }
+
+                // Add the template's exercises, skipping any already present
+                // (also hydrates initial sets and saves)
+                _ = addExercisesFromRoutineToWorkout(
+                    workout: existingWorkout,
+                    routine: routine,
+                    modelContext: modelContext
+                )
+
+                return existingWorkout
+            }
+        } catch {
+            print("Error fetching workout for date: \(error)")
+        }
+
+        // No workout exists for this date - create a new one
         // Generate session-specific workout name
         let sessionName = "Workout - \(date.formatted(date: .abbreviated, time: .omitted))"
-        
+
         let workout = Workout(
             name: sessionName,
             date: date,
@@ -669,6 +706,14 @@ public final class RoutineService {
     ) {
         let exerciseId = templateExercise.exerciseId
         let date = workout.date
+
+        // Skip hydration if sets already exist for this exercise on this date
+        let existingSets = ExerciseService.shared.getSetsByDate(
+            exerciseId: exerciseId,
+            date: date,
+            modelContext: modelContext
+        )
+        if !existingSets.isEmpty { return }
 
         // Get exercise to retrieve its unit and type
         let exercise = ExerciseService.shared.getExercise(by: exerciseId, modelContext: modelContext)

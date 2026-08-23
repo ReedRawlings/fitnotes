@@ -30,7 +30,7 @@ FitNotes is a workout tracking iOS app built with **SwiftUI + SwiftData**. No ex
 - `selectedTab` - Tab navigation (0=Home, 1=Insights, 2=Workout, 3=Settings)
 - `weightUnit` - Global unit preference (kg/lbs)
 
-**OnboardingState** - 17-screen onboarding flow state, persists via UserDefaults.
+**OnboardingState** - 5-screen onboarding flow state (Welcome, Preferences, First Exercise setup, two feature explainers), persists via UserDefaults.
 
 ### Service Layer
 
@@ -65,7 +65,13 @@ ContentView (TabView)
 ## Key Patterns
 
 ### Real-Time Persistence
-Sets save immediately on every change via `persistCurrentSets()`. No manual save button for internal data—this ensures data survives app backgrounding.
+Sets save immediately on every change via `persistCurrentSets()`. No manual save button for internal data—this ensures data survives app backgrounding. `ExerciseService.saveSets` diffs sets in place (stable UUIDs, one save, preserved notes/duration/distance)—do NOT revert it to delete-and-reinsert.
+
+### Derived Stats Stay Out of `body`
+HomeView, InsightsView, and PreferencesView cache expensive aggregations (volume, PRs, streaks) in `@State`, refreshed on appear/tab-switch/period-change. Computing them in `body` or computed properties re-runs full-history fetches on every AppState publish (i.e., every tap) and was the cause of app-wide tap latency. Keep `@Query` properties predicate-filtered—never fetch whole tables.
+
+### E1RM
+`E1RMCalculator.fromSession` returns the best (highest) E1RM among completed sets, covered by unit tests in `FitNotesTests`.
 
 ### SwiftData Predicates
 ```swift
@@ -102,6 +108,7 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 
 ## Development Notes
 
+- The app is fully free and 100% local: no premium/StoreKit gating, no accounts/auth, no backend or sync (Supabase was removed 2026-08; prefer CloudKit if sync ever returns)
 - DEBUG builds auto-seed demo data via `DevDataSeeder.seedIfNeeded()`
 - Database stored at `{Documents}/FitNotes.sqlite`
 - CloudKit disabled (`.none`)

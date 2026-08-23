@@ -107,11 +107,7 @@ struct CustomNumericKeyboard: View {
     // MARK: - Helper Functions
 
     private func formatIncrement(_ value: Double) -> String {
-        if value.truncatingRemainder(dividingBy: 1) == 0 {
-            return "\(Int(value))"
-        } else {
-            return String(format: "%.1f", value)
-        }
+        WeightTextFormatter.format(value)
     }
 
     private func appendDigit(_ digit: String) {
@@ -166,12 +162,7 @@ struct CustomNumericKeyboard: View {
         let newValue = currentValue + increment
         logger.debug("New value after increment: \(newValue)")
 
-        // Format the result
-        if newValue.truncatingRemainder(dividingBy: 1) == 0 {
-            text = "\(Int(newValue))"
-        } else {
-            text = String(format: "%.1f", newValue)
-        }
+        text = WeightTextFormatter.format(newValue)
         logger.info("After increment: text is now '\(self.text)'")
     }
 
@@ -188,13 +179,26 @@ struct CustomNumericKeyboard: View {
         let newValue = max(0, currentValue - increment) // Don't go below 0
         logger.debug("New value after decrement (clamped to >= 0): \(newValue)")
 
-        // Format the result
-        if newValue.truncatingRemainder(dividingBy: 1) == 0 {
-            text = "\(Int(newValue))"
-        } else {
-            text = String(format: "%.1f", newValue)
-        }
+        text = WeightTextFormatter.format(newValue)
         logger.info("After decrement: text is now '\(self.text)'")
+    }
+}
+
+// MARK: - Weight Text Formatter
+
+/// Formats weights for text entry and display: whole numbers without decimals,
+/// otherwise up to two decimal places with trailing zeros trimmed (e.g. 101.25, 100.5).
+/// Two decimals cover the smallest real plate steps (1.25 kg / 2.5 lb and microplates).
+enum WeightTextFormatter {
+    static func format(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        }
+        var s = String(format: "%.2f", value)
+        if s.hasSuffix("0") {
+            s = String(s.dropLast())
+        }
+        return s
     }
 }
 

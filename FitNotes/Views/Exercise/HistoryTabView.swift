@@ -6,17 +6,23 @@ struct HistoryTabView: View {
     @Environment(\.modelContext) private var modelContext
     
     @Query private var allSets: [WorkoutSet]
-    
-    private var filteredSets: [WorkoutSet] {
-        // Filter sets for this exercise (client-side filtering)
-        allSets.filter { $0.exerciseId == exercise.id }
+
+    // Custom initializer to filter sets by exercise ID at the database level
+    init(exercise: Exercise) {
+        self.exercise = exercise
+
+        // Filter sets by exercise ID at the database level instead of fetching all sets
+        let exerciseId = exercise.id
+        _allSets = Query(filter: #Predicate<WorkoutSet> { set in
+            set.exerciseId == exerciseId
+        })
     }
 
     private var groupedSets: [(Date, [WorkoutSet])] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        let grouped = Dictionary(grouping: filteredSets) { calendar.startOfDay(for: $0.date) }
+        let grouped = Dictionary(grouping: allSets) { calendar.startOfDay(for: $0.date) }
 
         // For each date group, filter appropriately:
         // - Today: show all sets (including incomplete, for current workout tracking)

@@ -39,6 +39,11 @@ extension UIColor {
 @MainActor
 public class AppState: ObservableObject {
     @Published var selectedExercise: Exercise?
+    /// Date context for the exercise detail sheet. Tap sites must set this BEFORE setting
+    /// `selectedExercise`; nil is treated as today. Not @Published on purpose — the sheet is
+    /// driven by `selectedExercise`'s publish, and this value is read when the sheet resolves
+    /// its workout, so publishing it would only cause redundant invalidation.
+    var selectedExerciseDate: Date?
     @Published var showWorkoutFinishedBanner: Bool = false
     private var _activeWorkout: ActiveWorkoutState?
     @Published var selectedTab: Int = 0
@@ -216,7 +221,6 @@ struct MonthlyCalendarView: View {
     @Query private var workouts: [Workout]
     @Query private var exercises: [Exercise]
     @Query private var routines: [Routine]
-    @Query private var allSets: [WorkoutSet]
 
     @State private var colorMode: CalendarColorMode = .routine
     @State private var currentDate = Date()
@@ -255,7 +259,7 @@ struct MonthlyCalendarView: View {
         let firstWeekday = calendar.component(.weekday, from: startOfMonth)
         let paddingDaysBefore = (firstWeekday - calendar.firstWeekday + 7) % 7
 
-        for i in (1...paddingDaysBefore).reversed() {
+        for i in stride(from: paddingDaysBefore, through: 1, by: -1) {
             if let date = calendar.date(byAdding: .day, value: -i, to: startOfMonth) {
                 dates.insert(date, at: 0)
             }
@@ -507,7 +511,7 @@ struct MonthlyCalendarView: View {
             get: { selectedDayWorkout.map { DayWorkoutWrapper(date: $0.date, workout: $0.workout) } },
             set: { newValue in selectedDayWorkout = newValue.map { ($0.date, $0.workout) } }
         )) { wrapper in
-            DayDetailSheet(date: wrapper.date, workout: wrapper.workout, exercises: exercises, allSets: allSets)
+            DayDetailSheet(date: wrapper.date, workout: wrapper.workout, exercises: exercises)
         }
     }
 }
@@ -596,9 +600,24 @@ struct DayDetailSheet: View {
     let date: Date
     let workout: Workout
     let exercises: [Exercise]
-    let allSets: [WorkoutSet]
+    // Only this day's completed sets — the predicate is built at init so the sheet never
+    // holds (or re-fetches) the full WorkoutSet table.
+    @Query private var workoutSets: [WorkoutSet]
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
+
+    init(date: Date, workout: Workout, exercises: [Exercise]) {
+        self.date = date
+        self.workout = workout
+        self.exercises = exercises
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        _workoutSets = Query(filter: #Predicate<WorkoutSet> { set in
+            set.date >= startOfDay && set.date < endOfDay && set.isCompleted
+        })
+    }
 
     private var dateString: String {
         let formatter = DateFormatter()
@@ -606,20 +625,10 @@ struct DayDetailSheet: View {
         return formatter.string(from: date)
     }
 
-    private var workoutSets: [WorkoutSet] {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-
-        return allSets.filter { set in
-            set.date >= startOfDay && set.date < endOfDay && set.isCompleted
-        }
-    }
-
     private var totalVolume: Double {
         workoutSets.reduce(0) { total, set in
             guard let weight = set.weight, let reps = set.reps else { return total }
-            return total + (weight * Double(reps))
+            return total + WeightUnitConverter.volumeInKg(weight, reps: reps, unit: set.unit)
         }
     }
 
@@ -639,8 +648,8 @@ struct DayDetailSheet: View {
             // Find best set (highest volume)
             var bestSetString = "–"
             if let bestSet = sets.max(by: {
-                let v1 = ($0.weight ?? 0) * Double($0.reps ?? 0)
-                let v2 = ($1.weight ?? 0) * Double($1.reps ?? 0)
+                let v1 = WeightUnitConverter.volumeInKg($0.weight ?? 0, reps: $0.reps ?? 0, unit: $0.unit)
+                let v2 = WeightUnitConverter.volumeInKg($1.weight ?? 0, reps: $1.reps ?? 0, unit: $1.unit)
                 return v1 < v2
             }) {
                 if let weight = bestSet.weight, let reps = bestSet.reps {
@@ -744,6 +753,7 @@ struct DayDetailSheet: View {
                                     .background(Color.tertiaryBg)
                                     .cornerRadius(12)
                                     .onTapGesture {
+                                        appState.selectedExerciseDate = date
                                         appState.selectedExercise = summary.exercise
                                         dismiss()
                                     }
@@ -867,44 +877,59 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query(sort: \Routine.name) private var routines: [Routine]
-    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
-    @Query private var allSets: [WorkoutSet]
     @Query(filter: #Predicate<FitnessGoal> { $0.isActive }) private var activeGoals: [FitnessGoal]
     @State private var expandedRoutineId: UUID?
     @State private var showingRoutineDetail: Routine?
-    @State private var cachedStats: (weeksActive: Int?, totalVolume: String?, daysSince: String?) = (nil, nil, nil)
     @State private var dismissedScheduledRoutineId: UUID? // Track if user dismissed today's prompt
     @State private var showingAddGoal = false
 
-    // Get the routine scheduled for today (if any and not already started)
+    // MARK: - Cached Stats
+    // Computed by refreshHomeStats() on appear / tab-switch-to-Home / goal or routine
+    // changes instead of on every body evaluation (HomeView stays mounted in the TabView
+    // and re-renders on every AppState publish).
+    @State private var weeksActive: Int = 0
+    @State private var totalVolumeFormatted: String = "0"
+    @State private var daysSinceLastLiftText: String = "Never"
+    @State private var goalProgress: [InsightsService.GoalProgress] = []
+    @State private var scheduledRoutineToday: Routine? // Raw scheduled routine from DB
+    @State private var routineLastUsedTexts: [UUID: String] = [:]
+
+    // Get the routine scheduled for today (if any and not already started).
+    // The DB lookup is cached in scheduledRoutineToday; only the cheap guards run in body
+    // so dismissing the prompt or starting a workout hides it immediately.
     private var scheduledRoutineForToday: Routine? {
         // Don't show if user already has an active workout
         guard appState.activeWorkout == nil else { return nil }
 
         // Don't show if user dismissed this routine today
-        let scheduled = RoutineService.shared.getScheduledRoutine(for: Date(), modelContext: modelContext)
-        if let routine = scheduled, routine.id == dismissedScheduledRoutineId {
+        guard let routine = scheduledRoutineToday, routine.id != dismissedScheduledRoutineId else {
             return nil
         }
 
-        return scheduled
+        return routine
     }
 
-    private var weeksActive: Int {
-        StatsService.shared.getWeeksActiveStreak(workouts: workouts)
-    }
+    /// Recomputes all Home stats. Workouts and sets are fetched here (scoped fetches)
+    /// rather than held as unfiltered @Query arrays that re-fetch on every model change.
+    private func refreshHomeStats() {
+        let workouts = (try? modelContext.fetch(FetchDescriptor<Workout>())) ?? []
+        weeksActive = StatsService.shared.getWeeksActiveStreak(workouts: workouts)
+        daysSinceLastLiftText = StatsService.shared.getDaysSinceLastLift(workouts: workouts)
 
-    private var totalVolumeFormatted: String {
-        let volume = StatsService.shared.getTotalVolume(allSets: allSets)
-        return StatsService.shared.formatVolume(volume)
-    }
+        // Total volume is an all-time stat, but only completed sets contribute,
+        // so restrict the fetch to those.
+        let completedSets = (try? modelContext.fetch(
+            FetchDescriptor<WorkoutSet>(predicate: #Predicate<WorkoutSet> { $0.isCompleted })
+        )) ?? []
+        totalVolumeFormatted = StatsService.shared.formatVolume(
+            StatsService.shared.getTotalVolume(allSets: completedSets)
+        )
 
-    private var daysSinceLastLiftText: String {
-        StatsService.shared.getDaysSinceLastLift(workouts: workouts)
-    }
-
-    private var goalProgress: [InsightsService.GoalProgress] {
-        InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
+        goalProgress = InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
+        scheduledRoutineToday = RoutineService.shared.getScheduledRoutine(for: Date(), modelContext: modelContext)
+        routineLastUsedTexts = Dictionary(uniqueKeysWithValues: routines.map { routine in
+            (routine.id, RoutineService.shared.getDaysSinceLastUsed(for: routine, modelContext: modelContext))
+        })
     }
 
     var body: some View {
@@ -977,10 +1002,7 @@ struct HomeView: View {
                                         routine: routine,
                                         isExpanded: expandedRoutineId == routine.id,
                                         isActiveWorkout: appState.activeWorkout != nil,
-                                        lastDoneText: RoutineService.shared.getDaysSinceLastUsed(
-                                            for: routine,
-                                            modelContext: modelContext
-                                        ),
+                                        lastDoneText: routineLastUsedTexts[routine.id] ?? "",
                                         onTap: {
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 if expandedRoutineId == routine.id {
@@ -1027,8 +1049,21 @@ struct HomeView: View {
                 .environmentObject(appState)
         }
         .onAppear {
-            // Invalidate cache on appear
-            cachedStats = (nil, nil, nil)
+            refreshHomeStats()
+        }
+        .onChange(of: appState.selectedTab) { _, newTab in
+            // Refresh when switching back TO the Home tab (e.g. after logging a workout)
+            if newTab == 0 {
+                refreshHomeStats()
+            }
+        }
+        .onChange(of: activeGoals) { _, _ in
+            // Goals added/deleted via the sheet or delete action
+            refreshHomeStats()
+        }
+        .onChange(of: routines) { _, _ in
+            // Routines added/removed/renamed — keep last-used texts in sync
+            refreshHomeStats()
         }
     }
 
@@ -1278,16 +1313,10 @@ struct RoutineCardView: View {
 struct RoutinesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Routine.name) private var routines: [Routine]
-    @ObservedObject private var storeManager = StoreKitManager.shared
     @State private var showingAddRoutine = false
-    @State private var showingLimitReachedSheet = false
     @State private var selectedRoutine: Routine?
     @State private var addExerciseRoutine: Routine?
     @State private var routineToDelete: Routine?
-
-    private var canCreateRoutine: Bool {
-        FreemiumLimitsService.shared.canCreateRoutine(isPremium: storeManager.isPremium, modelContext: modelContext)
-    }
 
     var body: some View {
         ZStack {
@@ -1296,19 +1325,6 @@ struct RoutinesView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Usage counter badge
-                HStack {
-                    Spacer()
-                    UsageCounterBadge(
-                        current: routines.count,
-                        max: FreemiumLimitsService.maxFreeRoutines,
-                        label: "Routines",
-                        isPremium: storeManager.isPremium
-                    )
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-
                 if routines.isEmpty {
                     EmptyStateView(
                         icon: "list.bullet.rectangle",
@@ -1350,24 +1366,13 @@ struct RoutinesView: View {
             VStack {
                 Spacer()
                 PrimaryActionButton(title: "New Routine") {
-                    if canCreateRoutine {
-                        showingAddRoutine = true
-                    } else {
-                        showingLimitReachedSheet = true
-                    }
+                    showingAddRoutine = true
                 }
                 .padding(.bottom, 8) // Small padding above tab bar
             }
         }
         .sheet(isPresented: $showingAddRoutine) {
             AddRoutineView()
-        }
-        .sheet(isPresented: $showingLimitReachedSheet) {
-            FreemiumLimitReachedSheet(
-                featureName: "Routines",
-                currentCount: routines.count,
-                maxCount: FreemiumLimitsService.maxFreeRoutines
-            )
         }
         .sheet(item: $selectedRoutine) { routine in
             NavigationStack {
@@ -2008,13 +2013,11 @@ struct SettingsView: View {
 struct PreferencesView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
-    @ObservedObject private var storeManager = StoreKitManager.shared
     @Query private var preferencesQuery: [UserPreferences]
 
     @State private var showingTimePicker = false
     @State private var tempSelectedSeconds: Int = 90
     @State private var showingYearInReview = false
-    @State private var showingUpgradeSheet = false
 
     // Expandable section states
     @State private var isWeightUnitExpanded = false
@@ -2036,12 +2039,12 @@ struct PreferencesView: View {
         Calendar.current.component(.year, from: Date())
     }
 
-    private var yearInReviewData: InsightsService.YearInReviewData {
-        InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
-    }
+    // Cached on appear: getYearInReview is a full-year fetch + aggregation and must not
+    // run on every body evaluation (this view re-renders on every AppState publish).
+    @State private var yearInReviewData: InsightsService.YearInReviewData?
 
     private var hasYearData: Bool {
-        yearInReviewData.totalWorkouts > 0
+        (yearInReviewData?.totalWorkouts ?? 0) > 0
     }
 
     private var hasViewedYearInReview: Bool {
@@ -2059,59 +2062,6 @@ struct PreferencesView: View {
             
             ScrollView {
                 VStack(spacing: 12) {
-                    // Account Section
-                    AccountSettingsRow()
-                        .padding(.horizontal, 20)
-
-                    // Upgrade to Premium Card (only for free users)
-                    if !storeManager.isPremium {
-                        Button(action: { showingUpgradeSheet = true }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.accentPrimary, .accentSecondary],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Upgrade to Premium")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.textPrimary)
-                                    Text("Unlimited routines, tracking & insights")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.textSecondary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.textTertiary)
-                            }
-                            .padding(16)
-                            .background(Color.secondaryBg)
-                            .cornerRadius(16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [.accentPrimary.opacity(0.3), .accentSecondary.opacity(0.3)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1
-                                    )
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                    }
-
                     // Year in Review Card (only show after user has viewed it once)
                     if shouldShowYearInReviewInSettings {
                         YearInReviewCard(
@@ -2374,10 +2324,12 @@ struct PreferencesView: View {
                 }
         }
         .fullScreenCover(isPresented: $showingYearInReview) {
-            YearInReviewSheet(data: yearInReviewData)
+            if let yearInReviewData {
+                YearInReviewSheet(data: yearInReviewData)
+            }
         }
-        .sheet(isPresented: $showingUpgradeSheet) {
-            UpgradeSheet()
+        .onAppear {
+            yearInReviewData = InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
         }
     }
 
@@ -2397,12 +2349,46 @@ struct InsightsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query private var workouts: [Workout]
-    @Query private var exercises: [Exercise]
-    @Query(filter: #Predicate<FitnessGoal> { $0.isActive }) private var activeGoals: [FitnessGoal]
 
     @State private var selectedPeriod: Int = 0 // Uses InsightsPeriod raw values
     @State private var showingAddGoal = false
     @State private var showingYearInReview = false
+
+    // MARK: - Cached Stats
+    // All of these are full-history SwiftData fetches + aggregation. They are computed
+    // once per visit/period change by refreshStats() instead of on every body evaluation,
+    // because InsightsView stays mounted in the TabView and would otherwise recompute on
+    // every AppState publish (i.e. on every tap, app-wide).
+    @State private var volumeData: [(date: Date, volume: Double)] = []
+    @State private var workoutCount: Int = 0
+    @State private var setCount: Int = 0
+    @State private var totalVolume: String = "0"
+    @State private var prCount: Int = 0
+    @State private var muscleBreakdown: [(category: String, volume: Double, percentage: Double)] = []
+    @State private var recentPRs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] = []
+    @State private var muscleRecoveryStatus: [String: InsightsService.MuscleRecoveryStatus] = [:]
+    @State private var topExercises: [(exercise: Exercise, setCount: Int)] = []
+    @State private var streakData = InsightsService.StreakData(
+        currentStreak: 0,
+        bestStreak: 0,
+        streakUnit: "weeks",
+        isAtRisk: false,
+        lastWorkoutDate: nil,
+        weeklyConsistency: []
+    )
+    @State private var yearInReviewData: InsightsService.YearInReviewData?
+    @State private var hasViewedYearInReview = true
+    @State private var comparisonStats: (
+        workouts: InsightsService.PeriodComparison,
+        sets: InsightsService.PeriodComparison,
+        volume: InsightsService.PeriodComparison,
+        prs: InsightsService.PeriodComparison
+    ) = (
+        workouts: InsightsService.PeriodComparison(current: 0, previous: 0),
+        sets: InsightsService.PeriodComparison(current: 0, previous: 0),
+        volume: InsightsService.PeriodComparison(current: 0, previous: 0),
+        prs: InsightsService.PeriodComparison(current: 0, previous: 0)
+    )
 
     private var currentPeriod: InsightsPeriod {
         InsightsPeriod(rawValue: selectedPeriod) ?? .week
@@ -2430,84 +2416,46 @@ struct InsightsView: View {
         }
     }
 
-    private var volumeData: [(date: Date, volume: Double)] {
-        if currentPeriod == .week {
-            // Week view: daily data
-            return InsightsService.shared.getVolumeTrendForPeriod(days: periodDays, modelContext: modelContext)
-        } else {
-            // All other views: weekly aggregates
-            return InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, isAllTime: isAllTime, modelContext: modelContext)
-        }
-    }
-
-    private var workoutCount: Int {
-        InsightsService.shared.getWorkoutCount(days: periodDays, modelContext: modelContext)
-    }
-
-    private var setCount: Int {
-        InsightsService.shared.getSetCount(days: periodDays, modelContext: modelContext)
-    }
-
-    private var totalVolume: String {
-        let volume = InsightsService.shared.getTotalVolume(days: periodDays, modelContext: modelContext)
-        return StatsService.shared.formatVolume(volume)
-    }
-
-    private var prCount: Int {
-        InsightsService.shared.getPRCount(days: periodDays, modelContext: modelContext)
-    }
-
-    private var muscleBreakdown: [(category: String, volume: Double, percentage: Double)] {
-        InsightsService.shared.getMuscleGroupBreakdown(days: periodDays, modelContext: modelContext)
-    }
-
-    private var recentPRs: [(exercise: Exercise, weight: Double, reps: Int, date: Date, oneRM: Double)] {
-        InsightsService.shared.getRecentPRs(limit: 10, modelContext: modelContext)
-    }
-
-    private var muscleRecoveryStatus: [String: InsightsService.MuscleRecoveryStatus] {
-        InsightsService.shared.getMuscleRecoveryStatus(modelContext: modelContext)
-    }
-
-    private var topExercises: [(exercise: Exercise, setCount: Int)] {
-        InsightsService.shared.getTopExercises(limit: 5, modelContext: modelContext)
-    }
-
-    private var streakData: InsightsService.StreakData {
-        InsightsService.shared.getStreakData(modelContext: modelContext)
-    }
-
-    private var goalProgress: [InsightsService.GoalProgress] {
-        InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
-    }
-
     private var currentYear: Int {
         Calendar.current.component(.year, from: Date())
     }
 
-    private var yearInReviewData: InsightsService.YearInReviewData {
-        InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
-    }
-
     private var hasYearData: Bool {
-        yearInReviewData.totalWorkouts > 0
-    }
-
-    private var hasViewedYearInReview: Bool {
-        PreferencesService.shared.getHasViewedYearInReview2024(modelContext: modelContext)
+        (yearInReviewData?.totalWorkouts ?? 0) > 0
     }
 
     private var shouldShowYearInReviewCard: Bool {
         hasYearData && !hasViewedYearInReview
     }
 
-    private var comparisonStats: (
-        workouts: InsightsService.PeriodComparison,
-        sets: InsightsService.PeriodComparison,
-        volume: InsightsService.PeriodComparison,
-        prs: InsightsService.PeriodComparison
-    ) {
-        InsightsService.shared.getComparisonStats(days: periodDays, modelContext: modelContext)
+    /// Recomputes every stat displayed by this view. Called on appear, when the selected
+    /// period changes, when the user switches to the Insights tab, and when the global
+    /// weight unit changes — never from body.
+    private func refreshStats() {
+        let days = periodDays
+
+        if currentPeriod == .week {
+            // Week view: daily data
+            volumeData = InsightsService.shared.getVolumeTrendForPeriod(days: days, modelContext: modelContext)
+        } else {
+            // All other views: weekly aggregates
+            volumeData = InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, isAllTime: isAllTime, modelContext: modelContext)
+        }
+
+        workoutCount = InsightsService.shared.getWorkoutCount(days: days, modelContext: modelContext)
+        setCount = InsightsService.shared.getSetCount(days: days, modelContext: modelContext)
+        totalVolume = StatsService.shared.formatVolume(
+            InsightsService.shared.getTotalVolume(days: days, modelContext: modelContext)
+        )
+        prCount = InsightsService.shared.getPRCount(days: days, modelContext: modelContext)
+        muscleBreakdown = InsightsService.shared.getMuscleGroupBreakdown(days: days, modelContext: modelContext)
+        recentPRs = InsightsService.shared.getRecentPRs(limit: 10, unit: appState.weightUnit, modelContext: modelContext)
+        muscleRecoveryStatus = InsightsService.shared.getMuscleRecoveryStatus(modelContext: modelContext)
+        topExercises = InsightsService.shared.getTopExercises(limit: 5, modelContext: modelContext)
+        streakData = InsightsService.shared.getStreakData(modelContext: modelContext)
+        yearInReviewData = InsightsService.shared.getYearInReview(year: currentYear, modelContext: modelContext)
+        hasViewedYearInReview = PreferencesService.shared.getHasViewedYearInReview2024(modelContext: modelContext)
+        comparisonStats = InsightsService.shared.getComparisonStats(days: days, modelContext: modelContext)
     }
 
     var body: some View {
@@ -2589,13 +2537,33 @@ struct InsightsView: View {
                             .environmentObject(appState)
                     }
                     .fullScreenCover(isPresented: $showingYearInReview) {
-                        YearInReviewSheet(data: yearInReviewData) {
-                            PreferencesService.shared.markYearInReview2024AsViewed(modelContext: modelContext)
+                        if let yearInReviewData {
+                            YearInReviewSheet(data: yearInReviewData) {
+                                PreferencesService.shared.markYearInReview2024AsViewed(modelContext: modelContext)
+                                hasViewedYearInReview = true
+                            }
                         }
                     }
                 }
             }
             .navigationBarHidden(true)
+        }
+        .onAppear {
+            refreshStats()
+        }
+        .onChange(of: selectedPeriod) { _, _ in
+            refreshStats()
+        }
+        .onChange(of: appState.selectedTab) { _, newTab in
+            // Refresh when switching TO the Insights tab so data is fresh per visit
+            // without recomputing on unrelated taps elsewhere in the app.
+            if newTab == 1 {
+                refreshStats()
+            }
+        }
+        .onChange(of: appState.weightUnit) { _, _ in
+            // recentPRs values are converted to the display unit at fetch time
+            refreshStats()
         }
     }
 }
@@ -2643,12 +2611,22 @@ struct ContentView: View {
         .tint(.accentPrimary)
         .environmentObject(appState)
         .sheet(item: $appState.selectedExercise) { exercise in
-            let todaysWorkout = workouts.first { Calendar.current.isDateInToday($0.date) }
-            let workoutExercise = todaysWorkout?.exercises.first { $0.exerciseId == exercise.id }
+            // Resolve the workout for the date the user was viewing (nil = today) so that
+            // browsing a past date never loads/saves sets against today's workout.
+            let targetDate = appState.selectedExerciseDate ?? Date()
+            let workoutForDate = workouts.first { Calendar.current.isDate($0.date, inSameDayAs: targetDate) }
+            let workoutExercise = workoutForDate?.exercises.first { $0.exerciseId == exercise.id }
 
             NavigationStack {
-                ExerciseDetailView(exercise: exercise, workout: todaysWorkout, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
+                ExerciseDetailView(exercise: exercise, workout: workoutForDate, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
                     .environmentObject(appState)
+            }
+        }
+        .onChange(of: appState.selectedExercise) { _, newValue in
+            // Clear the date context when the sheet dismisses. Exercise-to-exercise handoff
+            // (auto-advance within a workout) keeps the date because selectedExercise stays non-nil.
+            if newValue == nil {
+                appState.selectedExerciseDate = nil
             }
         }
         .onAppear {

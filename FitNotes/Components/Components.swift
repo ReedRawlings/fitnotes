@@ -709,16 +709,9 @@ enum InsightsPeriod: Int, CaseIterable {
 /// Segmented control for selecting time period in Insights tab
 struct InsightsPeriodSelector: View {
     @Binding var selectedPeriod: Int
-    @ObservedObject private var storeManager = StoreKitManager.shared
 
-    /// Returns periods available based on subscription status
     private var availablePeriods: [InsightsPeriod] {
-        if storeManager.isPremium {
-            return InsightsPeriod.allCases
-        } else {
-            // Free users only see 7 Days and 30 Days
-            return [.week, .month]
-        }
+        InsightsPeriod.allCases
     }
 
     var body: some View {

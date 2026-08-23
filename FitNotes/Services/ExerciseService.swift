@@ -24,13 +24,16 @@ public final class ExerciseService {
 
     /// Returns the most recent set of WorkoutSet records for this exercise (grouped by date).
     /// Used to pre-populate new workouts.
+    /// Only considers completed sets so hydrated placeholder sets (e.g. from a skipped
+    /// routine day) are never treated as the "last session".
     public func getLastSessionForExercise(
         exerciseId: UUID,
         modelContext: ModelContext
     ) -> [WorkoutSet]? {
         let descriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate<WorkoutSet> { workoutSet in
-                workoutSet.exerciseId == exerciseId
+                workoutSet.exerciseId == exerciseId &&
+                workoutSet.isCompleted == true
             },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
@@ -219,7 +222,10 @@ public final class ExerciseService {
     
     // MARK: - Save Sets
     
-    /// Saves sets for an exercise on a specific date, replacing any existing sets.
+    /// Saves sets for an exercise on a specific date by diffing against existing sets.
+    /// Existing sets are updated in place (preserving their id, notes, duration, distance,
+    /// and completedAt when completion state is unchanged); new trailing sets are inserted,
+    /// and surplus sets beyond the incoming count are deleted.
     /// All sets are persisted (both completed and incomplete) to support mid-workout state.
     /// When calculating history/progression, filter for isCompleted == true at read time.
     public func saveSets(
@@ -229,32 +235,94 @@ public final class ExerciseService {
         sets: [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)],
         modelContext: ModelContext
     ) -> Bool {
+        // Normalize date to start of day to prevent duplicates from time-of-day mismatches
+        let normalizedDate = Calendar.current.startOfDay(for: date)
+
         do {
-            // First, delete existing sets for this exercise on this date
-            let existingSets = getSetsByDate(exerciseId: exerciseId, date: date, modelContext: modelContext)
-            for set in existingSets {
-                modelContext.delete(set)
-            }
+            // Existing sets for this exercise on this date, sorted by order (see getSetsByDate)
+            let existingSets = getSetsByDate(exerciseId: exerciseId, date: normalizedDate, modelContext: modelContext)
 
-            // Save all sets (both completed and incomplete) to preserve workout state
+            var hasChanges = false
+
             for (index, setData) in sets.enumerated() {
-                let newSet = WorkoutSet(
-                    exerciseId: exerciseId,
-                    order: index + 1,
-                    reps: setData.reps,
-                    weight: setData.weight,
-                    unit: unit,
-                    notes: nil,
-                    isCompleted: setData.isCompleted,
-                    completedAt: setData.isCompleted ? date : nil,
-                    date: date,
-                    rpe: setData.rpe,
-                    rir: setData.rir
-                )
-                modelContext.insert(newSet)
+                let order = index + 1
+
+                // Match WorkoutSet init validation: RPE/RIR outside 0-10 are treated as nil
+                let validatedRpe = setData.rpe.flatMap { (0...10).contains($0) ? $0 : nil }
+                let validatedRir = setData.rir.flatMap { (0...10).contains($0) ? $0 : nil }
+
+                if index < existingSets.count {
+                    // Match by position: update the existing set in place
+                    let existingSet = existingSets[index]
+                    var setChanged = false
+
+                    if existingSet.order != order {
+                        existingSet.order = order
+                        setChanged = true
+                    }
+                    if existingSet.weight != setData.weight {
+                        existingSet.weight = setData.weight
+                        setChanged = true
+                    }
+                    if existingSet.reps != setData.reps {
+                        existingSet.reps = setData.reps
+                        setChanged = true
+                    }
+                    if existingSet.rpe != validatedRpe {
+                        existingSet.rpe = validatedRpe
+                        setChanged = true
+                    }
+                    if existingSet.rir != validatedRir {
+                        existingSet.rir = validatedRir
+                        setChanged = true
+                    }
+                    if existingSet.unit != unit {
+                        existingSet.unit = unit
+                        setChanged = true
+                    }
+                    // Only touch completedAt when completion state actually changes
+                    if existingSet.isCompleted != setData.isCompleted {
+                        existingSet.isCompleted = setData.isCompleted
+                        existingSet.completedAt = setData.isCompleted ? date : nil
+                        setChanged = true
+                    }
+
+                    if setChanged {
+                        existingSet.updatedAt = Date()
+                        hasChanges = true
+                    }
+                } else {
+                    // Genuinely new trailing set: insert it
+                    let newSet = WorkoutSet(
+                        exerciseId: exerciseId,
+                        order: order,
+                        reps: setData.reps,
+                        weight: setData.weight,
+                        unit: unit,
+                        notes: nil,
+                        isCompleted: setData.isCompleted,
+                        completedAt: setData.isCompleted ? date : nil,
+                        date: normalizedDate,
+                        rpe: validatedRpe,
+                        rir: validatedRir
+                    )
+                    modelContext.insert(newSet)
+                    hasChanges = true
+                }
             }
 
-            try modelContext.save()
+            // Delete only the sets beyond the incoming count
+            if existingSets.count > sets.count {
+                for surplusSet in existingSets[sets.count...] {
+                    modelContext.delete(surplusSet)
+                }
+                hasChanges = true
+            }
+
+            // Single save, skipped entirely when nothing changed
+            if hasChanges {
+                try modelContext.save()
+            }
             return true
         } catch {
             print("Error saving sets: \(error)")

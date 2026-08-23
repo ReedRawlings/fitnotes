@@ -13,22 +13,31 @@ struct ExerciseDetailView: View {
 
     @State private var selectedTab = 0
     @State private var showSettings = false
-    @StateObject private var timerManager: RestTimerManager
+    // Observes the single shared manager on AppState — a per-view instance would
+    // split completion state from the Live Activity owner
+    @ObservedObject private var timerManager: RestTimerManager
 
     init(exercise: Exercise, workout: Workout? = nil, workoutExercise: WorkoutExercise? = nil, shouldDismissOnSave: Bool = false, appState: AppState) {
         self.exercise = exercise
         self.workout = workout
         self.workoutExercise = workoutExercise
         self.shouldDismissOnSave = shouldDismissOnSave
-        _timerManager = StateObject(wrappedValue: RestTimerManager(appState: appState, filterExerciseId: exercise.id))
+        _timerManager = ObservedObject(wrappedValue: appState.restTimerManager)
     }
 
     // MARK: - Stats Computed Properties
 
+    /// The date this detail view is scoped to. Matches TrackTabView's convention:
+    /// the workout's date if one was resolved, else the date context set by the tap
+    /// site (`appState.selectedExerciseDate`), else today.
+    private var targetDate: Date {
+        workout?.date ?? appState.selectedExerciseDate ?? Date()
+    }
+
     private var todaySets: [WorkoutSet] {
         ExerciseService.shared.getSetsByDate(
             exerciseId: exercise.id,
-            date: Date(),
+            date: targetDate,
             modelContext: modelContext
         )
     }
@@ -36,7 +45,7 @@ struct ExerciseDetailView: View {
     private var lastSession: [WorkoutSet]? {
         ExerciseService.shared.getLastSessionForExerciseExcludingDate(
             exerciseId: exercise.id,
-            excludeDate: Date(),
+            excludeDate: targetDate,
             modelContext: modelContext
         )
     }
@@ -108,12 +117,6 @@ struct ExerciseDetailView: View {
                         }
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
-                    .onAppear {
-                        timerManager.startTimerUpdates()
-                    }
-                    .onDisappear {
-                        timerManager.stopTimerUpdates()
-                    }
                     .onChange(of: timer.isCompleted) { _, isCompleted in
                         if isCompleted && !timerManager.showCompletionState {
                             timerManager.handleTimerCompletion()

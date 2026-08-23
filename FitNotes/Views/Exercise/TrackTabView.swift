@@ -21,11 +21,22 @@ struct TrackTabView: View {
         case rir(UUID)
     }
     @State private var focusedInput: InputFocus?
+    // Raw text for the weight field being edited. The model Double can't represent
+    // in-progress input like "100." — this keeps the decimal point from vanishing.
+    @State private var weightEditingText = ""
 
     private let logger = Logger(subsystem: "com.fitnotes.app", category: "TrackTabView")
 
     private var globalUseWarmupSets: Bool {
         PreferencesService.shared.getUseWarmupSets(modelContext: modelContext)
+    }
+
+    /// The single date used for BOTH loading and saving sets. Prefers the workout passed in,
+    /// falls back to the app-level selected exercise date (set by tap sites when browsing a
+    /// non-today date), and only then to today. Keeping load/save on the same date prevents
+    /// phantom sessions being written to today while viewing a past date.
+    private var targetDate: Date {
+        workout?.date ?? appState.selectedExerciseDate ?? Date()
     }
 
     var body: some View {
@@ -48,6 +59,7 @@ struct TrackTabView: View {
                                     set: set,
                                     setIndex: index,
                                     globalUseWarmupSets: globalUseWarmupSets,
+                                    weightEditingText: weightEditingText,
                                     weight: Binding<Double?>(
                                         get: { sets[index].weight },
                                         set: { newVal in
@@ -97,25 +109,26 @@ struct TrackTabView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 16)  // Reduced from 28
                     }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.bottom, 100) // Space for fixed bottom action bar
+                }
 
-                    // Add Set Button
+                // Fixed bottom action bar: Add Set + Save side-by-side
+                HStack(spacing: 12) {
                     AddSetButton {
                         addSet()
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)  // Reduced from 28
-                        .padding(.bottom, 100) // Space for fixed save button
-                    }
-                    .frame(maxWidth: .infinity, alignment: .top)
-                }
+                    .frame(maxWidth: .infinity)
 
-                // Fixed Save Button
-                SaveButton(
-                    isEnabled: !sets.isEmpty,
-                    isSaving: isSaving,
-                    isSaved: isSaved,
-                    onSave: saveSets
-                )
+                    SaveButton(
+                        isEnabled: !sets.isEmpty,
+                        isSaving: isSaving,
+                        isSaved: isSaved,
+                        onSave: saveSets
+                    )
+                    .frame(maxWidth: .infinity)
+                }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 34) // Safe area + padding
                 .background(Color.primaryBg) // Ensure background matches
@@ -163,6 +176,10 @@ struct TrackTabView: View {
         }
         .onChange(of: focusedInput) { oldValue, newValue in
             logger.info("⚡️ FocusedInput CHANGED - OLD: \(String(describing: oldValue)) -> NEW: \(String(describing: newValue))")
+            if case .weight(let id) = newValue,
+               let index = sets.firstIndex(where: { $0.id == id }) {
+                weightEditingText = sets[index].weight.map { formatWeight($0) } ?? ""
+            }
             if newValue != nil {
                 logger.info("✅ Keyboard should now be VISIBLE - focusedInput is NOT nil")
             } else {
@@ -191,23 +208,21 @@ struct TrackTabView: View {
                 logger.debug("Found weight field at index \(index)")
                 return Binding<String>(
                     get: {
-                        if let weight = sets[index].weight {
-                            let formatted = formatWeight(weight)
-                            logger.debug("Weight binding GET: returning '\(formatted)' for weight \(weight)")
-                            return formatted
-                        }
-                        logger.debug("Weight binding GET: returning empty string (no weight)")
-                        return ""
+                        // The raw text is authoritative while editing so in-progress
+                        // input like "100." isn't collapsed by the Double round-trip
+                        weightEditingText
                     },
                     set: { newValue in
                         logger.info("Weight binding SET: received '\(newValue)'")
                         let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
+                        weightEditingText = cleaned
                         if cleaned.isEmpty {
-                            logger.debug("Weight set to nil (empty string)")
                             sets[index].weight = nil
                         } else if let val = Double(cleaned) {
-                            logger.info("Weight set to \(val)")
                             sets[index].weight = val
+                        } else if cleaned == "." {
+                            // Bare decimal point: keep the text, treat the value as unset
+                            sets[index].weight = nil
                         } else {
                             logger.error("Failed to parse weight value: '\(newValue)'")
                         }
@@ -327,13 +342,9 @@ struct TrackTabView: View {
     }
 
     private func formatWeight(_ weight: Double) -> String {
-        if weight.truncatingRemainder(dividingBy: 1) == 0 {
-            return "\(Int(weight))"
-        } else {
-            return String(format: "%.1f", weight)
-        }
+        WeightTextFormatter.format(weight)
     }
-    
+
     private func fillDownCurrentColumn() {
         guard let focusedInput = focusedInput else {
             logger.warning("fillDownCurrentColumn called but focusedInput is nil")
@@ -425,9 +436,6 @@ struct TrackTabView: View {
     }
 
     private func loadSets() {
-        // Use workout date if available, otherwise today
-        let targetDate = workout?.date ?? Date()
-
         // Prefer persisted sets for the target date; if none, prefill from last session
         let todaysSets = ExerciseService.shared.getSetsByDate(
             exerciseId: exercise.id,
@@ -535,8 +543,6 @@ struct TrackTabView: View {
     
     private func saveSets() {
         isSaving = true
-        // Use workout date if available, otherwise today
-        let targetDate = workout?.date ?? Date()
         let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
 
         let success = ExerciseService.shared.saveSets(
@@ -582,8 +588,6 @@ struct TrackTabView: View {
     }
     
     private func persistCurrentSets() {
-        // Use workout date if available, otherwise today
-        let targetDate = workout?.date ?? Date()
         let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
         _ = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
@@ -712,6 +716,10 @@ struct SetHeaderRowView: View {
             // Spacer for checkbox column
             Spacer()
                 .frame(width: 44) // Match checkbox width
+
+            // Spacer for delete button column
+            Spacer()
+                .frame(width: 28) // Match delete button width
         }
     }
 }
@@ -722,6 +730,7 @@ struct SetRowView: View {
     let set: (id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)
     let setIndex: Int
     let globalUseWarmupSets: Bool
+    let weightEditingText: String
     @Binding var weight: Double?
     @Binding var reps: Int?
     @Binding var rpe: Int?
@@ -756,7 +765,12 @@ struct SetRowView: View {
             // Weight Column
             NumericInputField(
                 text: Binding<String>(
-                    get: { formatWeight(weight) },
+                    get: {
+                        // Show the raw in-progress text (e.g. "100.") while this field is active
+                        focusedInput == TrackTabView.InputFocus.weight(set.id)
+                            ? weightEditingText
+                            : formatWeight(weight)
+                    },
                     set: { _ in } // No-op: editing happens through keyboard binding
                 ),
                 placeholder: "0",
@@ -842,6 +856,22 @@ struct SetRowView: View {
             .buttonStyle(PlainButtonStyle())
             .accessibilityLabel(set.isChecked ? "Uncheck set" : "Check set")
             .accessibilityHint("Marks this set as complete")
+
+            // Delete Set Button
+            Button(action: onDelete) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.06))
+                        .frame(width: 28, height: 28)
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.textTertiary)
+                }
+                .frame(width: 28, height: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .accessibilityLabel("Delete set")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 0)  // Removed vertical padding
@@ -859,11 +889,7 @@ struct SetRowView: View {
     
     private func formatWeight(_ weight: Double?) -> String {
         guard let weight = weight else { return "" }
-        if weight.truncatingRemainder(dividingBy: 1) == 0 {
-            return "\(Int(weight))"
-        } else {
-            return String(format: "%.1f", weight)
-        }
+        return WeightTextFormatter.format(weight)
     }
 }
 
@@ -879,6 +905,8 @@ struct AddSetButton: View {
                 
                 Text("ADD SET")
                     .font(.buttonFont)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundColor(.textInverse)
             .frame(maxWidth: .infinity)
@@ -921,6 +949,8 @@ struct SaveButton: View {
                 } else {
                     Text(isSaved ? "WORKOUT SAVED" : "SAVE WORKOUT")
                         .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .foregroundColor(isSaved ? .accentSuccess : .textInverse)
