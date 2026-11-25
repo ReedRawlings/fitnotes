@@ -2310,6 +2310,10 @@ struct PreferencesView: View {
                     }
                     .padding(.horizontal, 20)
 
+                    AboutSettingsSection()
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+
                     Spacer(minLength: 100)
                 }
             }

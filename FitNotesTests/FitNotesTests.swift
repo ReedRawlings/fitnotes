@@ -318,3 +318,28 @@ final class FitNotesTests: XCTestCase {
     }
 
 }
+
+final class DataExportServiceTests: XCTestCase {
+    func testEscapeQuotesFieldsWithCommasQuotesAndNewlines() {
+        XCTAssertEqual(DataExportService.escape("Bench"), "Bench")
+        XCTAssertEqual(DataExportService.escape("Row, Cable"), "\"Row, Cable\"")
+        XCTAssertEqual(DataExportService.escape("felt \"easy\""), "\"felt \"\"easy\"\"\"")
+        XCTAssertEqual(DataExportService.escape("line1\nline2"), "\"line1\nline2\"")
+    }
+
+    func testCSVHasHeaderAndOneRowPerSet() {
+        let exerciseId = UUID()
+        let date = Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 4, hour: 9))!
+        let sets = [
+            WorkoutSet(exerciseId: exerciseId, order: 1, reps: 5, weight: 100, unit: "kg", notes: "solid, fast", isCompleted: true, completedAt: date, date: date),
+            WorkoutSet(exerciseId: UUID(), order: 2, reps: 8, weight: 62.5, unit: "lbs", date: date)
+        ]
+        let lines = DataExportService.csv(sets: sets, exerciseById: [:])
+            .split(separator: "\n", omittingEmptySubsequences: true)
+
+        XCTAssertEqual(lines.count, 3)
+        XCTAssertTrue(lines[0].hasPrefix("Date,Time,Exercise"))
+        XCTAssertEqual(lines[1], "2026-03-04,09:00,Unknown exercise,,1,100,kg,5,,,,,Yes,\"solid, fast\"")
+        XCTAssertEqual(lines[2], "2026-03-04,,Unknown exercise,,2,62.5,lbs,8,,,,,No,")
+    }
+}

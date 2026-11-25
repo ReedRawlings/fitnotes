@@ -140,7 +140,7 @@ struct OnboardingStaticPageView: View {
         OnboardingStaticPageView(
             page: OnboardingPage(
                 type: .static,
-                title: "Welcome to FitNotes",
+                title: "Welcome to \(AppInfo.displayName)",
                 subtitle: "Your journey starts here",
                 description: "Every great transformation begins with a single step. You're not just downloading an app—you're investing in a stronger, more capable version of yourself.",
                 systemImage: "figure.walk",

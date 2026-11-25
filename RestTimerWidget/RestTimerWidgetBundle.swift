@@ -11,8 +11,6 @@ import SwiftUI
 @main
 struct RestTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
-        RestTimerWidget()
-        RestTimerWidgetControl()
         RestTimerWidgetLiveActivity()
     }
 }

@@ -61,6 +61,10 @@
 		744B6B582ED8EE6300804AB6 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B572ED8EE6300804AB6 /* PreferencesService.swift */; };
 		744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */; };
 		A83F2D7EE1B4C93B039DD942 /* NumericInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A97248D302F2B0739B2D5FB /* NumericInputField.swift */; };
+		2184832681E0B7C983CC352A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0255BD562184832681E0B7C9 /* PrivacyInfo.xcprivacy */; };
+		9BB47AFB33E0B67DCD43C687 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A5F9269BB47AFB33E0B67D /* AppInfo.swift */; };
+		BDAB33D4094C9A6CC5EEFF22 /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB23FA95BDAB33D4094C9A6C /* DataExportService.swift */; };
+		2C67B5C97B7F089C5474546F /* AboutSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B480249B2C67B5C97B7F089C /* AboutSettingsSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +165,10 @@
 		7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerActivityAttributes.swift; sourceTree = "<group>"; };
 		744B6B572ED8EE6300804AB6 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
 		744B6B5B2EDBF35F00804AB6 /* RoutineScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineScheduleView.swift; sourceTree = "<group>"; };
+		0255BD562184832681E0B7C9 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		07A5F9269BB47AFB33E0B67D /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
+		DB23FA95BDAB33D4094C9A6C /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportService.swift; sourceTree = "<group>"; };
+		B480249B2C67B5C97B7F089C /* AboutSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsSection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -239,6 +247,7 @@
 		7413250A2E9F733D0099C49A /* FitNotes */ = {
 			isa = PBXGroup;
 			children = (
+				0255BD562184832681E0B7C9 /* PrivacyInfo.xcprivacy */,
 				741325112E9F73400099C49A /* Assets.xcassets */,
 				741325162E9F73400099C49A /* FitNotes.entitlements */,
 				741325172E9F73400099C49A /* Info.plist */,
@@ -309,6 +318,7 @@
 		741C98842ECD0D9100753A55 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				DB23FA95BDAB33D4094C9A6C /* DataExportService.swift */,
 				7423C0932EF1198F00E92CA7 /* DevDataSeeder.swift */,
 				7413253E2E9F733D0099C49A /* ExerciseService.swift */,
 				741325352E9F733D0099C49A /* ExerciseDatabaseService.swift */,
@@ -325,6 +335,7 @@
 		741C98852ECD0D9100753A56 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B480249B2C67B5C97B7F089C /* AboutSettingsSection.swift */,
 				7423C7B22EF270F100E92CA7 /* Onboarding */,
 				741C98882ECD0D9100753A59 /* Exercise */,
 				741C98892ECD0D9100753A60 /* Workout */,
@@ -346,6 +357,7 @@
 		741C98872ECD0D9100753A58 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				07A5F9269BB47AFB33E0B67D /* AppInfo.swift */,
 				7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */,
 				741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */,
 				741C98F72ED1194D00753A52 /* NoKeyboardTextField.swift */,
@@ -555,6 +567,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2184832681E0B7C983CC352A /* PrivacyInfo.xcprivacy in Resources */,
 				741325152E9F73400099C49A /* Preview Assets.xcassets in Resources */,
 				741325122E9F73400099C49A /* Assets.xcassets in Resources */,
 			);
@@ -588,6 +601,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2C67B5C97B7F089C5474546F /* AboutSettingsSection.swift in Sources */,
+				BDAB33D4094C9A6CC5EEFF22 /* DataExportService.swift in Sources */,
+				9BB47AFB33E0B67DCD43C687 /* AppInfo.swift in Sources */,
 				7413250E2E9F733D0099C49A /* ContentView.swift in Sources */,
 				7413252F2E9F733D0099C49A /* Models.swift in Sources */,
 				744B6B5C2EDBF35F00804AB6 /* RoutineScheduleView.swift in Sources */,
@@ -814,17 +830,18 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
-				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Progressive Lift";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Future Selves";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -838,7 +855,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -851,17 +868,18 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"FitNotes/Preview Content\"";
-				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FitNotes/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Progressive Lift";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Future Selves";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -875,7 +893,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -892,7 +910,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FitNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FitNotes";
 			};
 			name = Debug;
@@ -910,7 +928,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FitNotes.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FitNotes";
 			};
 			name = Release;
@@ -926,7 +944,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = FitNotes;
 			};
 			name = Debug;
@@ -942,7 +960,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = FitNotes;
 			};
 			name = Release;
@@ -957,9 +975,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RestTimerWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RestTimerWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Rest Timer";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Future Selves";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -974,7 +992,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -988,9 +1006,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RestTimerWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RestTimerWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				INFOPLIST_KEY_CFBundleDisplayName = "Rest Timer";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Future Selves";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1005,7 +1023,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

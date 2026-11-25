@@ -22,19 +22,11 @@ class RestTimerManager: ObservableObject {
 
     init(appState: AppState) {
         self.appState = appState
-        requestNotificationPermissions()
     }
 
-    /// Request notification permissions on initialization
-    func requestNotificationPermissions() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Error requesting notification permissions: \(error)")
-            } else if granted {
-                print("Notification permissions granted")
-            }
-        }
-    }
+    /// Identifies the notification currently being scheduled, so a timer that is ended while the
+    /// permission prompt is still up doesn't get a stale "Rest Complete" alert afterwards.
+    private var pendingNotificationToken: UUID?
 
     /// Start periodic timer updates to check completion state.
     /// The manager starts/stops this itself around the timer's lifecycle.
@@ -152,28 +144,47 @@ class RestTimerManager: ObservableObject {
     }
 
     /// Schedule notification for timer completion
+    /// Permission is requested here, the first time the user starts a rest timer, so the system
+    /// prompt appears with obvious context instead of at app launch. Once decided, iOS returns
+    /// the stored answer immediately without prompting again.
     private func scheduleNotification(delay: TimeInterval) {
         // Cancel any existing notifications first
         cancelNotification()
 
-        let content = UNMutableNotificationContent()
-        content.title = "Rest Complete!"
-        content.sound = .default
+        let token = UUID()
+        pendingNotificationToken = token
+        let endDate = Date().addingTimeInterval(delay)
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
-        let request = UNNotificationRequest(identifier: "restTimer", content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error = error {
-                print("Error scheduling notification: \(error)")
-            } else {
-                print("Notification scheduled for \(delay) seconds from now")
+                print("Error requesting notification permissions: \(error)")
+            }
+            guard granted else { return }
+
+            Task { @MainActor [weak self] in
+                guard let self, self.pendingNotificationToken == token else { return }
+                let remaining = endDate.timeIntervalSinceNow
+                guard remaining > 0.5 else { return }
+
+                let content = UNMutableNotificationContent()
+                content.title = "Rest Complete!"
+                content.sound = .default
+
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: remaining, repeats: false)
+                let request = UNNotificationRequest(identifier: "restTimer", content: content, trigger: trigger)
+
+                UNUserNotificationCenter.current().add(request) { error in
+                    if let error = error {
+                        print("Error scheduling notification: \(error)")
+                    }
+                }
             }
         }
     }
 
     /// Cancel pending notification
     private func cancelNotification() {
+        pendingNotificationToken = nil
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["restTimer"])
     }
 

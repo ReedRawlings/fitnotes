@@ -173,7 +173,7 @@ class OnboardingState: ObservableObject {
                 type: .static,
                 title: "Watch Your Progress Grow",
                 subtitle: "We'll keep you moving forward",
-                description: "FitNotes tracks every rep and automatically suggests when it's time to increase weight. You'll get gentle nudges to push harder—and celebrate every PR along the way.",
+                description: "\(AppInfo.displayName) tracks every rep and automatically suggests when it's time to increase weight. You'll get gentle nudges to push harder—and celebrate every PR along the way.",
                 systemImage: "arrow.up.forward.circle.fill",
                 order: 4
             ),

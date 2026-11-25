@@ -102,7 +102,7 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 
 ## Common Issues
 
-- **SwiftData schema changes require database reset** - Delete app from simulator
+- **SwiftData schema changes need a migration stage** - The store is versioned (`FitNotesSchemaV1` + `FitNotesMigrationPlan` in `FitNotesApp.swift`). Any @Model change must add a new `VersionedSchema` and a migration stage. If the store can't be opened it's moved to `Documents/RecoveredStores/`; never delete user data. In the simulator you can still just delete the app.
 - **Modal dismiss timing** - Use `DispatchQueue.main.asyncAfter` when needed
 - **Exercise not found warnings** - Indicate stale UUIDs or missing relationships
 
@@ -112,4 +112,9 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 - DEBUG builds auto-seed demo data via `DevDataSeeder.seedIfNeeded()`
 - Database stored at `{Documents}/FitNotes.sqlite`
 - CloudKit disabled (`.none`)
-- RestTimerWidget provides Live Activity for rest timer notifications
+- RestTimerWidget provides only the rest-timer Live Activity (the Xcode template widget and control were removed)
+- iPhone-only, portrait-only for v1 (`TARGETED_DEVICE_FAMILY = 1`)
+- App name, support URL and privacy-policy URL live in `AppInfo` (`Utilities/AppInfo.swift`); the display name also lives in the `INFOPLIST_KEY_CFBundleDisplayName` build setting
+- Privacy manifests: `FitNotes/PrivacyInfo.xcprivacy` (UserDefaults CA92.1) and `RestTimerWidget/PrivacyInfo.xcprivacy`. Update them if you add a required-reason API
+- Settings → Preferences ends with `AboutSettingsSection` (CSV export via `DataExportService`, in-app privacy policy, support, version)
+- Notification permission is requested the first time a rest timer starts, not at launch
