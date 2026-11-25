@@ -6,13 +6,13 @@ enum AppInfo {
     /// `INFOPLIST_KEY_CFBundleDisplayName` in the project build settings.
     static let displayName = "Progressive Lift"
 
-    /// Support page or `mailto:` address. Apple requires a working support contact.
+    /// Support page (hosted from `docs/` via GitHub Pages) or a `mailto:` address. Apple requires a working support contact.
     /// While nil, the "Contact Support" row is hidden in Settings.
-    static let supportURL: URL? = URL(string: "mailto:Operations@yourfutureself.is")
+    static let supportURL: URL? = URL(string: "https://reedrawlings.github.io/fitnotes/")
 
     /// Public privacy policy page (the same text as `PrivacyPolicyView`). App Store Connect needs
     /// this URL; while nil, Settings still shows the full policy in-app.
-    static let privacyPolicyURL: URL? = nil
+    static let privacyPolicyURL: URL? = URL(string: "https://reedrawlings.github.io/fitnotes/privacy.html")
 
     static var version: String {
         let info = Bundle.main.infoDictionary

@@ -70,9 +70,9 @@ The first release of Progressive Lift. Log your sets, follow your progression, a
 
 - **Primary category:** Health & Fitness
 - **Secondary category:** Sports (optional)
-- **Support URL:** a page on yourfutureself.is with the support email on it. Apple wants a web page here, not a bare `mailto:` link.
+- **Support URL:** `https://reedrawlings.github.io/fitnotes/` (served from `docs/index.html` by GitHub Pages)
 - **Marketing URL:** optional
-- **Privacy policy URL:** wherever you upload `appstore/privacy.html`, e.g. `https://yourfutureself.is/progressive-lift/privacy`
+- **Privacy policy URL:** `https://reedrawlings.github.io/fitnotes/privacy.html` (served from `docs/privacy.html`)
 - **Copyright:** `2026 Future Selves` (confirm the name)
 
 ## App Privacy (the privacy "nutrition label")

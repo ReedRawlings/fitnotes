@@ -26,7 +26,7 @@ struct AboutSettingsSection: View {
                 row(icon: "hand.raised", title: "Privacy Policy") { showingPrivacyPolicy = true }
                 if let supportURL = AppInfo.supportURL {
                     Divider().background(Color.white.opacity(0.06)).padding(.horizontal, 16)
-                    row(icon: "envelope", title: "Contact Support") { UIApplication.shared.open(supportURL) }
+                    row(icon: "questionmark.circle", title: "Help & Support") { UIApplication.shared.open(supportURL) }
                 }
                 Divider().background(Color.white.opacity(0.06)).padding(.horizontal, 16)
                 HStack {
