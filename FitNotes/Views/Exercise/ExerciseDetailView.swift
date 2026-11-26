@@ -49,22 +49,42 @@ struct ExerciseDetailView: View {
         )
     }
 
-    private var currentVolume: Double {
-        ExerciseService.shared.calculateVolumeFromSets(todaySets)
+    /// Header stats, cached so they aren't refetched on every render. Refreshed on appear and
+    /// whenever the Track tab saves a change. Values are in the exercise's display unit (or reps
+    /// for reps-only exercises), counting checked sets only.
+    @State private var stats = SessionStats()
+
+    struct SessionStats {
+        var currentVolume: Double = 0
+        var lastVolume: Double?
+        var currentE1RM: Double?
+        var lastE1RM: Double?
     }
 
-    private var lastVolume: Double? {
-        guard let lastSession = lastSession else { return nil }
-        return ExerciseService.shared.calculateVolumeFromSets(lastSession)
-    }
-
-    private var currentE1RM: Double? {
-        E1RMCalculator.fromSession(todaySets)
-    }
-
-    private var lastE1RM: Double? {
-        guard let lastSession = lastSession else { return nil }
-        return E1RMCalculator.fromSession(lastSession)
+    private func refreshStats() {
+        let today = todaySets.filter(\.isCompleted)
+        let last = lastSession
+        if exercise.isRepsOnly {
+            let totalReps: ([WorkoutSet]) -> Double = { Double($0.compactMap(\.reps).reduce(0, +)) }
+            let bestReps: ([WorkoutSet]) -> Double? = { $0.compactMap(\.reps).max().map(Double.init) }
+            stats = SessionStats(
+                currentVolume: totalReps(today),
+                lastVolume: last.map(totalReps),
+                currentE1RM: bestReps(today),
+                lastE1RM: last.flatMap(bestReps)
+            )
+        } else {
+            // calculateVolumeFromSets works in kg; show it in the exercise's unit
+            let volume: ([WorkoutSet]) -> Double = {
+                WeightUnitConverter.fromKg(ExerciseService.shared.calculateVolumeFromSets($0), to: exercise.unit)
+            }
+            stats = SessionStats(
+                currentVolume: volume(today),
+                lastVolume: last.map(volume),
+                currentE1RM: E1RMCalculator.fromSession(today),
+                lastE1RM: last.flatMap { E1RMCalculator.fromSession($0) }
+            )
+        }
     }
 
     /// Exercises whose rest timer belongs on this screen: this one, plus the rest of its superset
@@ -164,23 +184,25 @@ struct ExerciseDetailView: View {
                 // Exercise Stats View
                 ExerciseStatsView(
                     exercise: exercise,
-                    currentVolume: currentVolume,
-                    lastVolume: lastVolume,
-                    currentE1RM: currentE1RM,
-                    lastE1RM: lastE1RM,
-                    unit: exercise.unit
+                    currentVolume: stats.currentVolume,
+                    lastVolume: stats.lastVolume,
+                    currentE1RM: stats.currentE1RM,
+                    lastE1RM: stats.lastE1RM,
+                    unit: exercise.isRepsOnly ? "reps" : exercise.unit
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
 
                 // Tab Content
                 if selectedTab == 0 {
-                    TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise)
+                    TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise, onSetsChanged: refreshStats)
                 } else {
                     HistoryTabView(exercise: exercise)
                 }
             }
         }
+        .onAppear(perform: refreshStats)
+        .onChange(of: exercise.trackingTypeRaw) { _, _ in refreshStats() }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 // When app becomes active (e.g., from notification tap), dismiss completed timers

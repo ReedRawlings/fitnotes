@@ -817,6 +817,7 @@ struct DayDetailSheet: View {
 struct StatsHeaderView: View {
     let weeksActive: Int
     let totalVolume: String
+    var volumeUnit: String = "kg"
     let daysSinceLastLift: String
 
     var body: some View {
@@ -841,7 +842,7 @@ struct StatsHeaderView: View {
                 Text(totalVolume)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundColor(.accentPrimary)
-                Text("Total Volume")
+                Text("Volume (\(volumeUnit))")
                     .font(.caption)
                     .foregroundColor(.textSecondary)
             }
@@ -921,8 +922,10 @@ struct HomeView: View {
         let completedSets = (try? modelContext.fetch(
             FetchDescriptor<WorkoutSet>(predicate: #Predicate<WorkoutSet> { $0.isCompleted })
         )) ?? []
+        // getTotalVolume is in kg; show it in the user's unit
+        let unit = appState.weightUnit
         totalVolumeFormatted = StatsService.shared.formatVolume(
-            StatsService.shared.getTotalVolume(allSets: completedSets)
+            WeightUnitConverter.fromKg(StatsService.shared.getTotalVolume(allSets: completedSets), to: unit)
         )
 
         goalProgress = InsightsService.shared.getGoalProgress(goals: activeGoals, modelContext: modelContext)
@@ -980,6 +983,7 @@ struct HomeView: View {
                             StatsHeaderView(
                                 weeksActive: weeksActive,
                                 totalVolume: totalVolumeFormatted,
+                                volumeUnit: appState.weightUnit,
                                 daysSinceLastLift: daysSinceLastLiftText
                             )
                             .padding(.horizontal, 20)
@@ -1063,6 +1067,10 @@ struct HomeView: View {
         }
         .onChange(of: routines) { _, _ in
             // Routines added/removed/renamed — keep last-used texts in sync
+            refreshHomeStats()
+        }
+        .onChange(of: appState.weightUnit) { _, _ in
+            // Total volume is shown in the preferred unit
             refreshHomeStats()
         }
     }

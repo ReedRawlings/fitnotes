@@ -107,7 +107,20 @@ public enum DevDataSeeder {
                 ],
                 modelContext: modelContext
             )
+
+            // Past days are done: check their sets off and finish the workout, so stats,
+            // PRs and "last time" numbers have something to show. Today stays to be done.
+            if date < today {
+                for exerciseId in [bench.id, squat.id] {
+                    for set in ExerciseService.shared.getSetsByDate(exerciseId: exerciseId, date: date, modelContext: modelContext) {
+                        set.isCompleted = true
+                        set.completedAt = date
+                    }
+                }
+                workout.finishedAt = date
+            }
         }
+        try? modelContext.save()
         #endif
     }
     

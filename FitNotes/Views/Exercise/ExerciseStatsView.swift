@@ -32,6 +32,62 @@ struct ExerciseStatsView: View {
         }
     }
 
+    /// True once today has at least one checked set.
+    private var hasCurrent: Bool { currentVolume > 0 || currentE1RM != nil }
+
+    /// Reps-only exercises have no weight: their "volume" is total reps and there's no E1RM.
+    private var primaryTitle: String { exercise.isRepsOnly ? "BEST SET" : "E1RM" }
+    private var volumeTitle: String { exercise.isRepsOnly ? "TOTAL REPS" : "VOLUME" }
+
+    private var headlineE1RM: Double? { hasCurrent ? currentE1RM : lastE1RM }
+    private var headlineVolume: Double? {
+        if hasCurrent { return currentVolume }
+        return lastVolume
+    }
+
+    @ViewBuilder
+    private func summaryMetric(title: String, value: Double?, change: Double?, target: Double? = nil, showDecimals: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.textTertiary)
+                .kerning(0.3)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                if let value {
+                    Text(Self.compact(value))
+                        .font(.system(size: 17, weight: .semibold).monospacedDigit())
+                        .foregroundColor(hasCurrent ? .textPrimary : .textSecondary)
+                    if let target {
+                        Text("/ \(Self.compact(target))")
+                            .font(.system(size: 13, weight: .medium).monospacedDigit())
+                            .foregroundColor(.textTertiary)
+                    }
+                    Text(unit)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.textTertiary)
+                } else {
+                    Text("—")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.textTertiary)
+                }
+                if let change {
+                    Text("\(arrow(for: change))\(String(format: "%.0f%%", abs(change)))")
+                        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                        .foregroundColor(color(for: change))
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// 12,345 style for big numbers, one decimal only when it matters (102.5).
+    static func compact(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = value >= 1000 || value.rounded() == value ? 0 : 1
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.0f", value)
+    }
+
     // Determine if tap is allowed (only for rememberLastState)
     private var canToggle: Bool {
         exercise.statsDisplayPreference == .rememberLastState
@@ -46,13 +102,36 @@ struct ExerciseStatsView: View {
                 }
             }) {
                 HStack(spacing: 12) {
-                    // Simplified stats indicator
-                    SimplifiedStatsIndicator(
-                        volumeChange: volumeChange,
-                        e1rmChange: e1rmChange
+                    // Today's numbers once a set is checked; until then, last session's
+                    summaryMetric(
+                        title: primaryTitle,
+                        value: headlineE1RM,
+                        change: hasCurrent ? e1rmChange : nil,
+                        showDecimals: false
                     )
 
-                    Spacer()
+                    Rectangle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: 1, height: 28)
+
+                    // Volume builds up over the session, so a % drop mid-workout is meaningless:
+                    // show progress toward last time until it's beaten, then the gain.
+                    summaryMetric(
+                        title: volumeTitle,
+                        value: headlineVolume,
+                        change: hasCurrent && (volumeChange ?? 0) > 0 ? volumeChange : nil,
+                        target: hasCurrent && (volumeChange ?? 0) <= 0 ? lastVolume : nil,
+                        showDecimals: false
+                    )
+
+                    Spacer(minLength: 0)
+
+                    if !hasCurrent && lastVolume != nil {
+                        Text("LAST TIME")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.textTertiary)
+                            .kerning(0.3)
+                    }
 
                     // Chevron indicator (only show if can toggle)
                     if canToggle {

@@ -8,6 +8,8 @@ struct TrackTabView: View {
     @EnvironmentObject private var appState: AppState
     var workout: Workout?
     var workoutExercise: WorkoutExercise?
+    /// Called after every save, so the parent can refresh its header stats.
+    var onSetsChanged: (() -> Void)? = nil
 
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
 
@@ -579,6 +581,7 @@ struct TrackTabView: View {
         if saved, workout == nil, setData.contains(where: { $0.isCompleted }) {
             _ = WorkoutService.shared.getOrCreateWorkoutForDate(date: targetDate, modelContext: modelContext)
         }
+        onSetsChanged?()
     }
 
     /// Handles a newly checked set. Outside a superset this just starts the rest timer.
