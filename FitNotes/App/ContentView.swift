@@ -701,7 +701,7 @@ struct DayDetailSheet: View {
 
                                 // Volume
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(StatsService.shared.formatVolume(totalVolume))
+                                    Text(StatsService.shared.formatVolume(WeightUnitConverter.fromKg(totalVolume, to: appState.weightUnit)))
                                         .font(.system(size: 24, weight: .bold, design: .monospaced))
                                         .foregroundColor(.accentPrimary)
                                     Text("Volume")
@@ -2490,14 +2490,18 @@ struct InsightsView: View {
             // All other views: weekly aggregates
             volumeData = InsightsService.shared.getWeeklyVolumeTrendForPeriod(weeks: periodWeeks, isAllTime: isAllTime, modelContext: modelContext)
         }
+        // InsightsService works in kg; show volumes in the user's unit
+        let unit = appState.weightUnit
+        volumeData = volumeData.map { (date: $0.date, volume: WeightUnitConverter.fromKg($0.volume, to: unit)) }
 
         workoutCount = InsightsService.shared.getWorkoutCount(days: days, modelContext: modelContext)
         setCount = InsightsService.shared.getSetCount(days: days, modelContext: modelContext)
         totalVolume = StatsService.shared.formatVolume(
-            InsightsService.shared.getTotalVolume(days: days, modelContext: modelContext)
+            WeightUnitConverter.fromKg(InsightsService.shared.getTotalVolume(days: days, modelContext: modelContext), to: unit)
         )
         prCount = InsightsService.shared.getPRCount(days: days, modelContext: modelContext)
         muscleBreakdown = InsightsService.shared.getMuscleGroupBreakdown(days: days, modelContext: modelContext)
+            .map { (category: $0.category, volume: WeightUnitConverter.fromKg($0.volume, to: unit), percentage: $0.percentage) }
         recentPRs = InsightsService.shared.getRecentPRs(limit: 10, unit: appState.weightUnit, modelContext: modelContext)
         muscleRecoveryStatus = InsightsService.shared.getMuscleRecoveryStatus(modelContext: modelContext)
         topExercises = InsightsService.shared.getTopExercises(limit: 5, modelContext: modelContext)

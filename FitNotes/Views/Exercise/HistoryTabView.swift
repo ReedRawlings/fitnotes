@@ -129,16 +129,21 @@ struct SessionSummaryView: View {
     let targetRepMax: Int?
     let unit: String
 
+    // Only checked-off sets count, matching the stats bar and E1RM
+    private var completedSets: [WorkoutSet] {
+        sets.filter { $0.isCompleted }
+    }
+
     private var totalSets: Int {
-        sets.filter { $0.isCompleted }.count
+        completedSets.count
     }
 
     private var totalReps: Int {
-        sets.reduce(0) { $0 + ($1.reps ?? 0) }
+        completedSets.reduce(0) { $0 + ($1.reps ?? 0) }
     }
 
     private var totalVolume: Double {
-        sets.reduce(0.0) { sum, set in
+        completedSets.reduce(0.0) { sum, set in
             guard let weight = set.weight, let reps = set.reps else { return sum }
             return sum + (weight * Double(reps))
         }
@@ -223,7 +228,7 @@ struct SessionCardView: View {
 
         // Weight and reps
         if let weight = set.weight, let reps = set.reps {
-            parts.append("\(formatWeight(weight))\(unit) × \(reps) reps")
+            parts.append("\(formatWeight(weight)) \(unit) × \(reps) reps")
         } else if let weight = set.weight {
             parts.append("\(formatWeight(weight))\(unit)")
         } else if let reps = set.reps {

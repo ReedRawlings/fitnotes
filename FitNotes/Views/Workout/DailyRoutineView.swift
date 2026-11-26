@@ -120,35 +120,30 @@ struct WorkoutView: View {
 
                         // Routine buttons - only show if workout has exercises
                         if let workout = getWorkoutForDate(displayDate), !workout.exercises.isEmpty {
-                            HStack(spacing: 8) {
-                                Button(action: {
-                                    showingSaveRoutineDialog = true
-                                }) {
-                                    Text("Save Routine")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.accentColor)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.accentColor.opacity(0.1))
-                                        )
+                            // One menu keeps the header on one line on every iPhone size
+                            Menu {
+                                Button(action: { showingSaveRoutineDialog = true }) {
+                                    Label("Save as New Routine", systemImage: "plus.square.on.square")
                                 }
-
-                                Button(action: {
-                                    showingUpdateRoutineDialog = true
-                                }) {
-                                    Text("Update Routine")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.accentColor)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.accentColor.opacity(0.1))
-                                        )
+                                Button(action: { showingUpdateRoutineDialog = true }) {
+                                    Label("Update Existing Routine", systemImage: "arrow.triangle.2.circlepath")
                                 }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("Routine")
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.1))
+                                )
                             }
+                            .accessibilityLabel("Routine options")
                         } else {
                             // Invisible spacer to maintain centering when button is hidden
                             Color.clear

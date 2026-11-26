@@ -71,6 +71,12 @@ public enum DevDataSeeder {
             modelContext: modelContext
         )
         
+        // App Store screenshots: launch with `-screenshotData` for ~13 weeks of realistic history
+        if ProcessInfo.processInfo.arguments.contains("-screenshotData") {
+            seedScreenshotHistory(modelContext: modelContext)
+            return
+        }
+
         // Create a few workouts across the last week with sets
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -124,6 +130,86 @@ public enum DevDataSeeder {
         #endif
     }
     
+    #if DEBUG
+    /// Three sessions a week (Mon/Wed/Fri) for 13 weeks with steady progressive overload, all
+    /// finished. Today is a Push session with the first bench sets checked off. Weights are in
+    /// lbs, the default unit for the seeded exercises.
+    private static func seedScreenshotHistory(modelContext: ModelContext) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        typealias Plan = [(name: String, start: Double, step: Double, reps: [Int])]
+        let push: Plan = [
+            ("Barbell Bench Press", 155, 2.5, [8, 8, 6, 6]),
+            ("Overhead Press", 85, 1.25, [8, 8, 6]),
+            ("Incline Dumbbell Press", 50, 0.5, [10, 10, 8]),
+            ("Lateral Raise", 15, 0.25, [15, 12, 12]),
+            ("Tricep Pushdown", 50, 1, [12, 12, 10])
+        ]
+        let legs: Plan = [
+            ("Barbell Squat", 205, 5, [5, 5, 5, 5]),
+            ("Romanian Deadlift", 155, 2.5, [8, 8, 8]),
+            ("Barbell Deadlift", 255, 5, [5, 5, 3])
+        ]
+        let pull: Plan = [
+            ("Barbell Row", 135, 2.5, [8, 8, 8]),
+            ("Lat Pulldown", 120, 2, [10, 10, 8]),
+            ("Face Pulls", 40, 1, [15, 15]),
+            ("Barbell Curl", 65, 1, [10, 10, 8])
+        ]
+
+        func roundToPlate(_ lbs: Double) -> Double { (lbs / 5).rounded() * 5 }
+        var exerciseCache: [String: Exercise] = [:]
+        func lookup(_ name: String) -> Exercise? {
+            if let cached = exerciseCache[name] { return cached }
+            let found = exercise(named: name, modelContext: modelContext)
+            exerciseCache[name] = found
+            return found
+        }
+        func add(_ plan: Plan, session: Double, to workout: Workout, date: Date, completed: Bool) {
+            for item in plan {
+                guard let exercise = lookup(item.name) else { continue }
+                let weight = roundToPlate(item.start + item.step * session)
+                _ = WorkoutService.shared.addExerciseToWorkoutWithSets(
+                    workout: workout,
+                    exerciseId: exercise.id,
+                    setData: item.reps.map { (reps: $0, weight: weight, duration: nil, distance: nil) },
+                    modelContext: modelContext
+                )
+                guard completed else { continue }
+                for set in ExerciseService.shared.getSetsByDate(exerciseId: exercise.id, date: date, modelContext: modelContext) {
+                    set.isCompleted = true
+                    set.completedAt = date
+                }
+            }
+        }
+
+        var dates: [Date] = []
+        for daysAgo in stride(from: 91, through: 1, by: -1) {
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            if [2, 4, 6].contains(calendar.component(.weekday, from: date)) { dates.append(date) }
+        }
+
+        for (index, date) in dates.enumerated() {
+            let workout = WorkoutService.shared.getOrCreateWorkoutForDate(date: date, modelContext: modelContext)
+            add([push, legs, pull][index % 3], session: Double(index / 3), to: workout, date: date, completed: true)
+            workout.finishedAt = date.addingTimeInterval(60 * 60 * 18)
+        }
+
+        // Today: Push, one step heavier than last time, first two bench sets done
+        let workout = WorkoutService.shared.getOrCreateWorkoutForDate(date: today, modelContext: modelContext)
+        add(push, session: Double(dates.count / 3 + 1), to: workout, date: today, completed: false)
+        if let bench = lookup("Barbell Bench Press") {
+            let sets = ExerciseService.shared.getSetsByDate(exerciseId: bench.id, date: today, modelContext: modelContext)
+                .sorted { $0.order < $1.order }
+            for set in sets.prefix(2) {
+                set.isCompleted = true
+                set.completedAt = Date()
+            }
+        }
+        try? modelContext.save()
+    }
+    #endif
+
     private static func exercise(
         named name: String,
         modelContext: ModelContext

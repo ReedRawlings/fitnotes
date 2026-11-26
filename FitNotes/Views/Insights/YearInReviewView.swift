@@ -29,7 +29,7 @@ struct YearInReviewCard: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(currentYear) Year in Review")
+                    Text(verbatim: "\(currentYear) Year in Review")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.textPrimary)
 
@@ -194,7 +194,7 @@ struct OverviewPage: View {
         VStack(spacing: 32) {
             Spacer()
 
-            Text("\(data.year)")
+            Text(verbatim: "\(data.year)")
                 .font(.system(size: 72, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
                 .scaleEffect(animate ? 1 : 0.8)
