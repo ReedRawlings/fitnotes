@@ -108,16 +108,19 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 
 ## Common Issues
 
-- **SwiftData schema changes need a migration stage** - The store is versioned: `FitNotesSchemaV1` (frozen nested model copies in `Models/SchemaV1.swift`, never edit), `FitNotesSchemaV2` (the live models) and `FitNotesMigrationPlan` in `FitNotesApp.swift`. Any @Model change must freeze the current shape of the changed models (plus any model whose relationships point at them) into a new `SchemaVN` file, add the version and a migration stage, and extend `SchemaMigrationTests`. If the store can't be opened it's moved to `Documents/RecoveredStores/`; never delete user data. In the simulator you can still just delete the app.
+- **SwiftData schema changes need a migration stage** - The store is versioned: `FitNotesSchemaV1` and `FitNotesSchemaV2` (frozen nested model copies in `Models/SchemaV1.swift` / `SchemaV2.swift`, never edit), `FitNotesSchemaV3` (the live models) and `FitNotesMigrationPlan` in `FitNotesApp.swift`. Any @Model change must freeze the current shape of the changed models (plus any model whose relationships point at them) into a new `SchemaVN` file, add the version and a migration stage, and extend `SchemaMigrationTests`. If the store can't be opened it's moved to `Documents/RecoveredStores/`; never delete user data. In the simulator you can still just delete the app.
 - **Modal dismiss timing** - Use `DispatchQueue.main.asyncAfter` when needed
 - **Exercise not found warnings** - Indicate stale UUIDs or missing relationships
 
 ## Development Notes
 
-- The app is fully free and 100% local: no premium/StoreKit gating, no accounts/auth, no backend or sync (Supabase was removed 2026-08; prefer CloudKit if sync ever returns)
+- The app is fully free with no premium/StoreKit gating, no accounts/auth and no backend of its own (Supabase was removed 2026-08). Sync goes only through the user's private iCloud
 - DEBUG builds auto-seed demo data via `DevDataSeeder.seedIfNeeded()`
 - Database stored at `{Documents}/FitNotes.sqlite`
-- CloudKit disabled (`.none`)
+- iCloud sync via SwiftData + CloudKit private database (`iCloud.Future-Selves.FitNotes`, `CloudSync` in `Services/SyncDeduplicator.swift`; off under XCTest). Models must stay CloudKit-compatible: no `@Attribute(.unique)`, a default on every non-optional property, to-many relationships optional with an explicit inverse (`Routine/Workout.exerciseItems`, wrapped by non-optional `exercises`). Test containers pass `cloudKitDatabase: .none`
+- Without uniqueness, devices can create duplicates before syncing. `SyncDeduplicator` merges same-name built-in exercises (remapping every `exerciseId`), same-day workouts and extra `UserPreferences`, keeping the oldest record so devices agree. It runs at launch, on scene activation and after remote changes
+- Every CloudKit schema change must be deployed from Development to Production in the CloudKit Console before a TestFlight/App Store build ships it
+- DEBUG demo seeding runs only in the simulator, so a debug build on a phone never syncs demo data to iCloud
 - RestTimerWidget provides only the rest-timer Live Activity (the Xcode template widget and control were removed)
 - iPhone-only, portrait-only for v1 (`TARGETED_DEVICE_FAMILY = 1`)
 - App name, support URL and privacy-policy URL live in `AppInfo` (`Utilities/AppInfo.swift`). Support and privacy pages are `docs/` served by GitHub Pages at reedrawlings.github.io/fitnotes; the display name also lives in the `INFOPLIST_KEY_CFBundleDisplayName` build setting

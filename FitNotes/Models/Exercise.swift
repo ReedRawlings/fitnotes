@@ -23,9 +23,9 @@ public enum ExerciseTrackingType: String, Codable, CaseIterable {
 
 @Model
 public final class Exercise {
-    @Attribute(.unique) public var id: UUID
-    public var name: String
-    public var primaryCategory: String // Primary muscle group
+    public var id: UUID = UUID()
+    public var name: String = ""
+    public var primaryCategory: String = "" // Primary muscle group
 
     // Persistent storage - uses comma-separated String for reliable SwiftData serialization
     @Attribute public var secondaryCategoriesRaw: String = ""
@@ -40,12 +40,12 @@ public final class Exercise {
         }
     }
 
-    public var equipment: String // e.g., "Machine", "Free Weight", "Body"
+    public var equipment: String = "Free Weight" // e.g., "Machine", "Free Weight", "Body"
     public var notes: String?
-    public var unit: String
-    public var isCustom: Bool // Whether this is a user-created exercise
-    public var rpeEnabled: Bool // Rate of Perceived Exertion tracking enabled
-    public var rirEnabled: Bool // Reps in Reserve tracking enabled
+    public var unit: String = "kg"
+    public var isCustom: Bool = false // Whether this is a user-created exercise
+    public var rpeEnabled: Bool = false // Rate of Perceived Exertion tracking enabled
+    public var rirEnabled: Bool = false // Reps in Reserve tracking enabled
     public var useRestTimer: Bool = false
     public var defaultRestSeconds: Int = 90  // Standard mode default
     public var useAdvancedRest: Bool = false
@@ -104,8 +104,8 @@ public final class Exercise {
 
     public var isRepsOnly: Bool { trackingType == .repsOnly }
 
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
 
     public init(
         id: UUID = UUID(),

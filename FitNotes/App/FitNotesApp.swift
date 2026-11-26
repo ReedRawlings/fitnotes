@@ -7,13 +7,15 @@
 
 import SwiftUI
 import SwiftData
+import CoreData
 
 @main
 struct FitNotesApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @Environment(\.scenePhase) private var scenePhase
 
     let sharedModelContainer: ModelContainer = {
-        let schema = Schema(versionedSchema: FitNotesSchemaV2.self)
+        let schema = Schema(versionedSchema: FitNotesSchemaV3.self)
 
         // Use a specific URL for the database to make it easier to manage
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -22,7 +24,7 @@ struct FitNotesApp: App {
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             url: databaseURL,
-            cloudKitDatabase: .none
+            cloudKitDatabase: CloudSync.isEnabled ? .private(CloudSync.containerIdentifier) : .none
         )
 
         func makeContainer() throws -> ModelContainer {
@@ -33,14 +35,19 @@ struct FitNotesApp: App {
             )
             let initContext = ModelContext(container)
 
-            #if DEBUG
-            // Seed development demo data the first time if the store is empty.
+            #if DEBUG && targetEnvironment(simulator)
+            // Seed development demo data the first time if the store is empty. Simulator only, so a
+            // debug build on a real phone never uploads demo workouts to the developer's iCloud.
             DevDataSeeder.seedIfNeeded(modelContext: initContext)
             #endif
 
             // Sync default exercises library (adds new exercises, updates equipment types)
             // Safe to run on every launch - only adds missing exercises
             ExerciseDatabaseService.shared.syncDefaultExercises(modelContext: initContext)
+
+            // Two devices can each create the same default exercise, today's workout or the
+            // preferences record before they have synced. Merge any such copies.
+            SyncDeduplicator.run(modelContext: initContext)
             return container
         }
 
@@ -79,6 +86,19 @@ struct FitNotesApp: App {
             // The design is dark-only; without this, sheets and nav titles render dark-on-dark
             // when the phone is in light mode
             .preferredColorScheme(.dark)
+            // Merge copies another device created before the two had synced. Imports arrive in
+            // bursts, so wait for them to settle.
+            .onReceive(
+                NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)
+                    .debounce(for: .seconds(3), scheduler: RunLoop.main)
+            ) { _ in
+                SyncDeduplicator.run(modelContext: sharedModelContainer.mainContext)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    SyncDeduplicator.run(modelContext: sharedModelContainer.mainContext)
+                }
+            }
         }
         .modelContainer(sharedModelContainer)
     }
@@ -101,8 +121,11 @@ extension Notification.Name {
 /// The current schema: the live model classes.
 /// V2 added Exercise.trackingTypeRaw (reps-only exercises) and
 /// RoutineExercise/WorkoutExercise.supersetGroupId (supersets).
-enum FitNotesSchemaV2: VersionedSchema {
-    static var versionIdentifier = Schema.Version(2, 0, 0)
+/// V3 made every model CloudKit-compatible: no unique constraints, a default on every
+/// non-optional attribute, and optional to-many relationships (Routine/Workout.exerciseItems,
+/// renamed from `exercises`) with explicit inverses.
+enum FitNotesSchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -120,14 +143,23 @@ enum FitNotesSchemaV2: VersionedSchema {
 }
 
 enum FitNotesMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [FitNotesSchemaV1.self, FitNotesSchemaV2.self] }
+    static var schemas: [any VersionedSchema.Type] {
+        [FitNotesSchemaV1.self, FitNotesSchemaV2.self, FitNotesSchemaV3.self]
+    }
 
-    static var stages: [MigrationStage] { [migrateV1toV2] }
+    static var stages: [MigrationStage] { [migrateV1toV2, migrateV2toV3] }
 
     /// Only adds properties with defaults, so a lightweight migration is enough.
     static let migrateV1toV2 = MigrationStage.lightweight(
         fromVersion: FitNotesSchemaV1.self,
         toVersion: FitNotesSchemaV2.self
+    )
+
+    /// Drops unique constraints, adds defaults, makes the to-many relationships optional and
+    /// renames them (via originalName). No data changes, so lightweight.
+    static let migrateV2toV3 = MigrationStage.lightweight(
+        fromVersion: FitNotesSchemaV2.self,
+        toVersion: FitNotesSchemaV3.self
     )
 }
 

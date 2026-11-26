@@ -348,8 +348,9 @@ final class DataExportServiceTests: XCTestCase {
 final class SchemaMigrationTests: XCTestCase {
 
     /// Builds a store with the frozen V1 schema, then reopens it the way the app does
-    /// (V2 + migration plan) and checks the data survived with the new fields defaulted.
-    func testV1StoreMigratesToV2() throws {
+    /// (current schema + migration plan, so V1 → V2 → V3) and checks the data survived with the
+    /// new fields defaulted.
+    func testV1StoreMigratesToCurrent() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -359,7 +360,7 @@ final class SchemaMigrationTests: XCTestCase {
         let workoutExerciseId = UUID()
         do {
             let v1Schema = Schema(versionedSchema: FitNotesSchemaV1.self)
-            let container = try ModelContainer(for: v1Schema, configurations: [ModelConfiguration(schema: v1Schema, url: url)])
+            let container = try ModelContainer(for: v1Schema, configurations: [ModelConfiguration(schema: v1Schema, url: url, cloudKitDatabase: .none)])
             let context = ModelContext(container)
             context.insert(FitNotesSchemaV1.Exercise(id: exerciseId, name: "Bench Press", primaryCategory: "Chest"))
             let workout = FitNotesSchemaV1.Workout(name: "Old workout")
@@ -376,13 +377,7 @@ final class SchemaMigrationTests: XCTestCase {
             try context.save()
         }
 
-        let v2Schema = Schema(versionedSchema: FitNotesSchemaV2.self)
-        let container = try ModelContainer(
-            for: v2Schema,
-            migrationPlan: FitNotesMigrationPlan.self,
-            configurations: [ModelConfiguration(schema: v2Schema, url: url)]
-        )
-        let context = ModelContext(container)
+        let context = try Self.openCurrentStore(at: url)
 
         let exercises = try context.fetch(FetchDescriptor<Exercise>())
         XCTAssertEqual(exercises.count, 1)
@@ -400,6 +395,188 @@ final class SchemaMigrationTests: XCTestCase {
 
         let sets = try context.fetch(FetchDescriptor<WorkoutSet>())
         XCTAssertEqual(sets.first?.weight, 100)
+    }
+
+    /// V2 → V3 drops unique constraints and renames the to-many relationships to the optional
+    /// `exerciseItems`. Relationships, ids and V2 fields must all survive.
+    func testV2StoreMigratesToV3() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("FitNotes.sqlite")
+
+        let exerciseId = UUID()
+        let supersetId = UUID()
+        let finishedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        do {
+            let v2Schema = Schema(versionedSchema: FitNotesSchemaV2.self)
+            let container = try ModelContainer(for: v2Schema, configurations: [ModelConfiguration(schema: v2Schema, url: url, cloudKitDatabase: .none)])
+            let context = ModelContext(container)
+            let exercise = FitNotesSchemaV2.Exercise(id: exerciseId, name: "Jump Rope", primaryCategory: "Cardio")
+            exercise.trackingTypeRaw = "repsOnly"
+            context.insert(exercise)
+            let workout = FitNotesSchemaV2.Workout(name: "Today")
+            workout.finishedAt = finishedAt
+            context.insert(workout)
+            for order in 0..<2 {
+                let item = FitNotesSchemaV2.WorkoutExercise(exerciseId: exerciseId, order: order)
+                item.supersetGroupId = supersetId
+                context.insert(item)
+                item.workout = workout
+            }
+            let routine = FitNotesSchemaV2.Routine(name: "Legs")
+            context.insert(routine)
+            let routineExercise = FitNotesSchemaV2.RoutineExercise(exerciseId: exerciseId, order: 0)
+            context.insert(routineExercise)
+            routineExercise.routine = routine
+            context.insert(FitNotesSchemaV2.WorkoutSet(exerciseId: exerciseId, order: 1, reps: 100, weight: nil, isCompleted: true))
+            context.insert(FitNotesSchemaV2.UserPreferences(defaultWeightUnit: "lbs"))
+            context.insert(FitNotesSchemaV2.FitnessGoal(typeRaw: "weekly_workouts", targetValue: 3))
+            context.insert(FitNotesSchemaV2.BodyMetric(type: "weight", value: 80))
+            try context.save()
+        }
+
+        let context = try Self.openCurrentStore(at: url)
+
+        let exercise = try XCTUnwrap(context.fetch(FetchDescriptor<Exercise>()).first)
+        XCTAssertEqual(exercise.id, exerciseId)
+        XCTAssertEqual(exercise.trackingType, .repsOnly)
+
+        let workout = try XCTUnwrap(context.fetch(FetchDescriptor<Workout>()).first)
+        XCTAssertEqual(workout.finishedAt, finishedAt)
+        XCTAssertEqual(workout.exercises.count, 2)
+        XCTAssertEqual(Set(workout.exercises.map(\.supersetGroupId)), [supersetId])
+        XCTAssertEqual(workout.exercises.first?.workout?.id, workout.id)
+
+        let routine = try XCTUnwrap(context.fetch(FetchDescriptor<Routine>()).first)
+        XCTAssertEqual(routine.exercises.map(\.exerciseId), [exerciseId])
+
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutSet>()).first?.reps, 100)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<UserPreferences>()).first?.defaultWeightUnit, "lbs")
+        XCTAssertEqual(try context.fetch(FetchDescriptor<FitnessGoal>()).first?.targetValue, 3)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<BodyMetric>()).first?.value, 80)
+
+        // Deleting a workout still cascades to its exercises through the renamed relationship.
+        context.delete(workout)
+        try context.save()
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<WorkoutExercise>()), 0)
+    }
+
+    private static func openCurrentStore(at url: URL) throws -> ModelContext {
+        let schema = Schema(versionedSchema: FitNotesSchemaV3.self)
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: FitNotesMigrationPlan.self,
+            configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)]
+        )
+        return ModelContext(container)
+    }
+}
+
+final class SyncDeduplicatorTests: XCTestCase {
+    private var context: ModelContext!
+    private var aliases: ExerciseAliasStore!
+
+    override func setUpWithError() throws {
+        let schema = Schema(versionedSchema: FitNotesSchemaV3.self)
+        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
+        context = ModelContext(container)
+        let suite = "SyncDeduplicatorTests-\(UUID().uuidString)"
+        aliases = ExerciseAliasStore(defaults: UserDefaults(suiteName: suite)!, key: "aliases")
+    }
+
+    private let old = Date(timeIntervalSince1970: 1_700_000_000)
+    private let new = Date(timeIntervalSince1970: 1_800_000_000)
+
+    func testDuplicateDefaultExercisesMergeIntoTheOldestAndKeepEverySet() throws {
+        let original = Exercise(name: "Barbell Bench Press", primaryCategory: "Chest", targetRepMin: 5, createdAt: old)
+        let copy = Exercise(name: "Barbell Bench Press", primaryCategory: "Chest", createdAt: new)
+        context.insert(original)
+        context.insert(copy)
+        context.insert(WorkoutSet(exerciseId: original.id, order: 1, reps: 5, weight: 100))
+        context.insert(WorkoutSet(exerciseId: copy.id, order: 1, reps: 5, weight: 105))
+        let routineExercise = RoutineExercise(exerciseId: copy.id, order: 0)
+        context.insert(routineExercise)
+        try context.save()
+
+        XCTAssertTrue(SyncDeduplicator.run(modelContext: context, aliases: aliases))
+
+        let exercises = try context.fetch(FetchDescriptor<Exercise>())
+        XCTAssertEqual(exercises.map(\.id), [original.id])
+        XCTAssertEqual(exercises.first?.targetRepMin, 5)
+        XCTAssertEqual(Set(try context.fetch(FetchDescriptor<WorkoutSet>()).map(\.exerciseId)), [original.id])
+        XCTAssertEqual(routineExercise.exerciseId, original.id)
+    }
+
+    func testCustomExercisesWithTheSameNameAreLeftAlone() throws {
+        context.insert(Exercise(name: "My Lift", primaryCategory: "Back", isCustom: true, createdAt: old))
+        context.insert(Exercise(name: "My Lift", primaryCategory: "Back", isCustom: true, createdAt: new))
+        try context.save()
+
+        XCTAssertFalse(SyncDeduplicator.run(modelContext: context, aliases: aliases))
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Exercise>()), 2)
+    }
+
+    func testSetsArrivingLaterForAMergedExerciseAreRemapped() throws {
+        let original = Exercise(name: "Barbell Squat", primaryCategory: "Legs", createdAt: old)
+        let copy = Exercise(name: "Barbell Squat", primaryCategory: "Legs", createdAt: new)
+        context.insert(original)
+        context.insert(copy)
+        try context.save()
+        SyncDeduplicator.run(modelContext: context, aliases: aliases)
+
+        let late = WorkoutSet(exerciseId: copy.id, order: 1, reps: 5, weight: 140)
+        context.insert(late)
+        try context.save()
+        SyncDeduplicator.run(modelContext: context, aliases: aliases)
+
+        XCTAssertEqual(late.exerciseId, original.id)
+    }
+
+    func testTwoWorkoutsOnOneDayMergeWithoutDuplicatingExercises() throws {
+        let bench = UUID(), squat = UUID(), row = UUID()
+        let day = Calendar.current.startOfDay(for: new)
+        let first = Workout(name: "Push", date: day.addingTimeInterval(3600), createdAt: old)
+        let second = Workout(name: "Workout", date: day.addingTimeInterval(7200), createdAt: new)
+        context.insert(first)
+        context.insert(second)
+        for (workout, ids) in [(first, [bench, squat]), (second, [squat, row])] {
+            for (order, id) in ids.enumerated() {
+                let item = WorkoutExercise(exerciseId: id, order: order)
+                context.insert(item)
+                item.workout = workout
+            }
+        }
+        second.finishedAt = new
+        try context.save()
+
+        XCTAssertTrue(SyncDeduplicator.run(modelContext: context, aliases: aliases))
+
+        let workouts = try context.fetch(FetchDescriptor<Workout>())
+        XCTAssertEqual(workouts.map(\.id), [first.id])
+        XCTAssertEqual(first.exercises.sorted { $0.order < $1.order }.map(\.exerciseId), [bench, squat, row])
+        XCTAssertEqual(first.finishedAt, new)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<WorkoutExercise>()), 3)
+    }
+
+    func testWorkoutsOnDifferentDaysAreKept() throws {
+        context.insert(Workout(name: "A", date: old))
+        context.insert(Workout(name: "B", date: new))
+        try context.save()
+
+        XCTAssertFalse(SyncDeduplicator.run(modelContext: context, aliases: aliases))
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Workout>()), 2)
+    }
+
+    func testOnlyTheOldestPreferencesSurvive() throws {
+        let original = UserPreferences(defaultWeightUnit: "lbs", createdAt: old)
+        context.insert(original)
+        context.insert(UserPreferences(defaultWeightUnit: "kg", createdAt: new))
+        try context.save()
+
+        SyncDeduplicator.run(modelContext: context, aliases: aliases)
+
+        XCTAssertEqual(try context.fetch(FetchDescriptor<UserPreferences>()).map(\.id), [original.id])
     }
 }
 
@@ -538,8 +715,8 @@ final class ReviewPromptTests: XCTestCase {
 final class RepsOnlyTests: XCTestCase {
 
     func testRepsOnlyExerciseNeverRecommendsWeight() throws {
-        let schema = Schema(versionedSchema: FitNotesSchemaV2.self)
-        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+        let schema = Schema(versionedSchema: FitNotesSchemaV3.self)
+        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)])
         let context = ModelContext(container)
         let exercise = Exercise(name: "Jump Squats", primaryCategory: "Cardio", targetRepMin: 10, targetRepMax: 15, trackingType: .repsOnly)
         context.insert(exercise)

@@ -35,14 +35,14 @@ public enum GoalType: String, Codable, CaseIterable {
 // MARK: - FitnessGoal Model
 @Model
 public final class FitnessGoal {
-    @Attribute(.unique) public var id: UUID
-    public var typeRaw: String              // GoalType raw value
-    public var targetValue: Double          // Target number (workouts, volume, or weight)
+    public var id: UUID = UUID()
+    public var typeRaw: String = "weekly_workouts"              // GoalType raw value
+    public var targetValue: Double = 0          // Target number (workouts, volume, or weight)
     public var exerciseId: UUID?            // Only for specificLift type
     public var exerciseName: String?        // Cached exercise name for display
     public var weightUnit: String?          // For specificLift type (kg or lbs)
-    public var isActive: Bool
-    public var createdAt: Date
+    public var isActive: Bool = true
+    public var createdAt: Date = Date()
     public var achievedAt: Date?
 
     public var goalType: GoalType {
@@ -76,12 +76,12 @@ public final class FitnessGoal {
 // MARK: - BodyMetric Model
 @Model
 public final class BodyMetric {
-    @Attribute(.unique) public var id: UUID
-    public var date: Date
-    public var type: String
-    public var value: Double
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var id: UUID = UUID()
+    public var date: Date = Date()
+    public var type: String = ""
+    public var value: Double = 0
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
 
     public init(
         id: UUID = UUID(),
@@ -103,17 +103,17 @@ public final class BodyMetric {
 // MARK: - UserPreferences Model
 @Model
 public final class UserPreferences {
-    @Attribute(.unique) public var id: UUID
-    public var defaultWeightUnit: String
-    public var defaultRestSeconds: Int
-    public var defaultStatsDisplayPreferenceRaw: String
-    public var keepCurrentRoutineView: Bool
-    public var keepCurrentWorkoutView: Bool
-    public var useWarmupSets: Bool
-    public var autoProgress: Bool  // Global setting to auto-apply progression recommendations
-    public var hasViewedYearInReview2024: Bool
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var id: UUID = UUID()
+    public var defaultWeightUnit: String = "kg"
+    public var defaultRestSeconds: Int = 90
+    public var defaultStatsDisplayPreferenceRaw: String = "rememberLastState"
+    public var keepCurrentRoutineView: Bool = false
+    public var keepCurrentWorkoutView: Bool = false
+    public var useWarmupSets: Bool = false
+    public var autoProgress: Bool = false  // Global setting to auto-apply progression recommendations
+    public var hasViewedYearInReview2024: Bool = false
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
     
     // Computed property for stats display preference
     public var defaultStatsDisplayPreference: StatsDisplayPreference {

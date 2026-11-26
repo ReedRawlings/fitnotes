@@ -15,7 +15,7 @@ struct AboutSettingsSection: View {
         VStack(spacing: 12) {
             card(title: "Your Data") {
                 row(icon: "square.and.arrow.up", title: "Export Workouts (CSV)") { export() }
-                Text("Your workouts are stored only on this device. Export a CSV to back them up or move them to another app.")
+                Text("Your workouts are stored on this device and synced through your own iCloud. Export a CSV to move them to another app.")
                     .font(.system(size: 13, weight: .regular))
                     .foregroundColor(.textTertiary)
                     .padding(.horizontal, 16)
@@ -122,11 +122,11 @@ struct PrivacyPolicyView: View {
 
     private let sections: [(String, String)] = [
         ("Summary", "\(AppInfo.displayName) does not collect, transmit, or sell any personal data. There are no accounts, ads, analytics, or tracking."),
-        ("Data stored on your device", "Your workouts, exercises, routines, goals, and preferences are stored only on your device. They never leave it unless you choose to export them."),
+        ("Where your data is stored", "Your workouts, exercises, routines, goals, and preferences are stored on your device. If you are signed in to iCloud, they are also synced through your own private iCloud database so they appear on your other devices. That database belongs to your Apple Account: the developer cannot see or access it, and no other server is involved."),
         ("Exports", "If you use Export Workouts, a CSV file is created and handed to the iOS share sheet. Where it goes next (Files, AirDrop, email, another app) is entirely your choice."),
-        ("Notifications and Live Activities", "Rest timer alerts are scheduled locally on your device. No push notification service or server is involved."),
+        ("Notifications and Live Activities", "Rest timer alerts are scheduled locally on your device. The only notifications the app receives are silent ones from iCloud telling it new data has synced."),
         ("Backups", "Your data may be included in your own iCloud or computer device backups, which are controlled by your Apple settings, not by this app."),
-        ("Deleting your data", "Deleting the app removes all of its data from your device."),
+        ("Deleting your data", "Deleting the app removes its data from that device. Synced copies stay in your iCloud until you delete them in your iCloud storage settings."),
         ("Children", "The app does not knowingly collect information from anyone, including children."),
         ("Changes", "If this policy changes, the updated version will appear in the app and on the App Store listing."),
     ]
@@ -135,7 +135,7 @@ struct PrivacyPolicyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Effective November 25, 2026")
+                    Text("Effective November 26, 2026")
                         .font(.system(size: 13))
                         .foregroundColor(.textTertiary)
                     ForEach(sections, id: \.0) { title, body in

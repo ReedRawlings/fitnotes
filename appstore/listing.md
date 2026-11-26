@@ -54,7 +54,7 @@ INSIGHTS THAT ANSWER "AM I GETTING STRONGER?"
 • Your Year in Review
 
 PRIVATE BY DESIGN
-• Your data never leaves your iPhone. No account, no sign-in, no tracking
+• Private by design: your data lives on your iPhone and in your own iCloud. No account, no sign-in, no tracking
 • Export your full history to CSV at any time, so your data stays yours
 
 A large exercise library is included, and you can add your own.

@@ -73,12 +73,20 @@ public enum RoutineColor: String, CaseIterable, Codable {
 // MARK: - Routine Model (Reusable Templates)
 @Model
 public final class Routine {
-    @Attribute(.unique) public var id: UUID
-    public var name: String
+    public var id: UUID = UUID()
+    public var name: String = ""
     public var routineDescription: String?
-    public var createdAt: Date
-    public var updatedAt: Date
-    @Relationship(deleteRule: .cascade) public var exercises: [RoutineExercise] = []
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
+    /// Stored optional because CloudKit requires every relationship to be optional. Use `exercises`.
+    @Relationship(deleteRule: .cascade, originalName: "exercises", inverse: \RoutineExercise.routine)
+    public var exerciseItems: [RoutineExercise]? = []
+
+    /// The routine exercises in this routine, in no particular order (sort by `order`).
+    public var exercises: [RoutineExercise] {
+        get { exerciseItems ?? [] }
+        set { exerciseItems = newValue }
+    }
 
     // MARK: - Appearance
 
@@ -255,14 +263,22 @@ public final class Routine {
 // MARK: - Workout Model (Individual Day's Exercises)
 @Model
 public final class Workout {
-    @Attribute(.unique) public var id: UUID
-    public var name: String
-    public var date: Date
+    public var id: UUID = UUID()
+    public var name: String = ""
+    public var date: Date = Date()
     public var notes: String?
     public var routineTemplateId: UUID? // Reference to the template routine
-    public var createdAt: Date
-    public var updatedAt: Date
-    @Relationship(deleteRule: .cascade) public var exercises: [WorkoutExercise] = []
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
+    /// Stored optional because CloudKit requires every relationship to be optional. Use `exercises`.
+    @Relationship(deleteRule: .cascade, originalName: "exercises", inverse: \WorkoutExercise.workout)
+    public var exerciseItems: [WorkoutExercise]? = []
+
+    /// The workout exercises in this workout, in no particular order (sort by `order`).
+    public var exercises: [WorkoutExercise] {
+        get { exerciseItems ?? [] }
+        set { exerciseItems = newValue }
+    }
     /// When the user tapped Finish Workout. Nil while the workout is still in progress.
     /// Finishing is always the user's choice; checking off the last set never finishes it.
     public var finishedAt: Date? = nil
@@ -291,15 +307,15 @@ public final class Workout {
 // MARK: - RoutineExercise (for Routine templates)
 @Model
 public final class RoutineExercise {
-    @Attribute(.unique) public var id: UUID
-    public var exerciseId: UUID
-    public var order: Int
+    public var id: UUID = UUID()
+    public var exerciseId: UUID = UUID()
+    public var order: Int = 0
     public var notes: String?
     /// Added in schema V2. Adjacent exercises (by `order`) sharing a group id form a superset.
     /// See `SupersetLayout` for how runs are resolved.
     public var supersetGroupId: UUID? = nil
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
     public var routine: Routine?
 
     public init(
@@ -322,22 +338,22 @@ public final class RoutineExercise {
 // MARK: - WorkoutSet (Individual Set Data)
 @Model
 public final class WorkoutSet {
-    @Attribute(.unique) public var id: UUID
-    public var exerciseId: UUID       // Which exercise
-    public var order: Int             // Set number (1, 2, 3...)
+    public var id: UUID = UUID()
+    public var exerciseId: UUID = UUID()       // Which exercise
+    public var order: Int = 0             // Set number (1, 2, 3...)
     public var reps: Int?
     public var weight: Double?
-    public var unit: String           // Weight unit (kg or lbs) - stored when set was logged
+    public var unit: String = "kg"           // Weight unit (kg or lbs) - stored when set was logged
     public var duration: Int?         // For cardio/timed
     public var distance: Double?      // For distance-based
     public var notes: String?
-    public var isCompleted: Bool
+    public var isCompleted: Bool = false
     public var completedAt: Date?
-    public var date: Date             // When this was logged (used for grouping by day)
+    public var date: Date = Date()             // When this was logged (used for grouping by day)
     public var rpe: Int?               // Rate of Perceived Exertion (0-10)
     public var rir: Int?               // Reps in Reserve (0-10)
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
 
     public init(
         id: UUID = UUID(),
@@ -388,15 +404,15 @@ public final class WorkoutSet {
 // MARK: - WorkoutExercise (for individual workouts)
 @Model
 public final class WorkoutExercise {
-    @Attribute(.unique) public var id: UUID
-    public var exerciseId: UUID
-    public var order: Int
+    public var id: UUID = UUID()
+    public var exerciseId: UUID = UUID()
+    public var order: Int = 0
     public var notes: String?
     /// Added in schema V2. Adjacent exercises (by `order`) sharing a group id form a superset.
     /// See `SupersetLayout` for how runs are resolved.
     public var supersetGroupId: UUID? = nil
-    public var createdAt: Date
-    public var updatedAt: Date
+    public var createdAt: Date = Date()
+    public var updatedAt: Date = Date()
     public var workout: Workout?
 
     public init(

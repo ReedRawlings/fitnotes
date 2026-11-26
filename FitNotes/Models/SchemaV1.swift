@@ -5,8 +5,8 @@ import SwiftData
 //
 // A snapshot of the models that changed after V1 shipped, exactly as they were stored in V1.
 // SwiftData identifies an existing store's version by hashing these definitions, so they must
-// NEVER be edited. Models that have not changed since V1 (BodyMetric, WorkoutSet,
-// UserPreferences, FitnessGoal) are shared with the live schema.
+// NEVER be edited. Models that did not change between V1 and V2 (BodyMetric, WorkoutSet,
+// UserPreferences, FitnessGoal) are shared with the frozen V2 copies in SchemaV2.swift.
 //
 // Routine and Workout are frozen too, even though their own properties did not change, because
 // their relationships point at the frozen RoutineExercise / WorkoutExercise.
@@ -18,13 +18,13 @@ enum FitNotesSchemaV1: VersionedSchema {
         [
             Exercise.self,
             Workout.self,
-            BodyMetric.self,
+            FitNotesSchemaV2.BodyMetric.self,
             WorkoutExercise.self,
-            WorkoutSet.self,
+            FitNotesSchemaV2.WorkoutSet.self,
             RoutineExercise.self,
             Routine.self,
-            UserPreferences.self,
-            FitnessGoal.self
+            FitNotesSchemaV2.UserPreferences.self,
+            FitNotesSchemaV2.FitnessGoal.self
         ]
     }
 
