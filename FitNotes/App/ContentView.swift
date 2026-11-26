@@ -1642,8 +1642,16 @@ struct RoutineDetailView: View {
                             .padding(.bottom, 4)
 
                         // Exercises List with reordering support
-                        ForEach(cachedExercises, id: \.id) { routineExercise in
-                            RoutineTemplateExerciseRowView(routineExercise: routineExercise)
+                        let supersetSlots = SupersetLayout.slots(for: cachedExercises)
+                        ForEach(Array(cachedExercises.enumerated()), id: \.element.id) { index, routineExercise in
+                            RoutineTemplateExerciseRowView(
+                                routineExercise: routineExercise,
+                                supersetSlot: supersetSlots[routineExercise.id],
+                                linkToNext: index < cachedExercises.count - 1
+                                    ? SupersetLinkButton.LinkState(isLinked: SupersetLayout.isLinkedToNext(at: index, in: cachedExercises))
+                                    : nil,
+                                onToggleLink: { toggleSuperset(at: index) }
+                            )
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets())
                         }
@@ -1715,7 +1723,18 @@ struct RoutineDetailView: View {
         }
     }
     
+    /// Links or unlinks the exercise at `index` with the one below it (in the on-screen order).
+    private func toggleSuperset(at index: Int) {
+        withAnimation(.standardSpring) {
+            SupersetLayout.toggleLink(at: index, in: cachedExercises)
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        commitReorder()
+    }
+
     private func commitReorder() {
+        // Reordering can strand a superset member away from its partners; clear those
+        SupersetLayout.normalize(cachedExercises)
         // Update order values in the actual routine.exercises array
         for (index, cachedExercise) in cachedExercises.enumerated() {
             if let actualExercise = routine.exercises.first(where: { $0.id == cachedExercise.id }) {
@@ -1735,6 +1754,10 @@ struct RoutineDetailView: View {
 
 struct RoutineTemplateExerciseRowView: View {
     let routineExercise: RoutineExercise
+    var supersetSlot: SupersetSlot? = nil
+    /// nil hides the link button (last exercise in the list)
+    var linkToNext: SupersetLinkButton.LinkState? = nil
+    var onToggleLink: () -> Void = {}
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     
@@ -1745,12 +1768,21 @@ struct RoutineTemplateExerciseRowView: View {
     var body: some View {
         HStack(spacing: 16) {
             // Exercise Info
-            Text(exercise?.name ?? "Unknown Exercise")
-                .font(.headline)
-                .foregroundColor(.textPrimary)
-                
+            VStack(alignment: .leading, spacing: 2) {
+                if let supersetSlot {
+                    SupersetBadge(slot: supersetSlot)
+                }
+                Text(exercise?.name ?? "Unknown Exercise")
+                    .font(.headline)
+                    .foregroundColor(.textPrimary)
+            }
+
             Spacer()
-            
+
+            if let linkToNext {
+                SupersetLinkButton(state: linkToNext, action: onToggleLink)
+            }
+
             // Delete Button
             Button(action: {
                 RoutineService.shared.removeExerciseFromRoutine(
@@ -1773,6 +1805,11 @@ struct RoutineTemplateExerciseRowView: View {
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
         )
+        .overlay(alignment: .leading) {
+            if supersetSlot != nil {
+                SupersetStripe()
+            }
+        }
     }
 }
 
@@ -2622,7 +2659,7 @@ struct ContentView: View {
             let workoutExercise = workoutForDate?.exercises.first { $0.exerciseId == exercise.id }
 
             NavigationStack {
-                ExerciseDetailView(exercise: exercise, workout: workoutForDate, workoutExercise: workoutExercise, shouldDismissOnSave: true, appState: appState)
+                ExerciseDetailView(exercise: exercise, workout: workoutForDate, workoutExercise: workoutExercise, appState: appState)
                     .environmentObject(appState)
             }
         }

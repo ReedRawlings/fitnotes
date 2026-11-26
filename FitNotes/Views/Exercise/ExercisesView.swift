@@ -150,6 +150,7 @@ struct AddExerciseView: View {
     @State private var selectedCategory = "Chest"
     @State private var selectedEquipment = "Free Weight"
     @State private var selectedUnit: String
+    @State private var trackingType: ExerciseTrackingType = .weightAndReps
     @State private var notes = ""
     @FocusState private var focusedField: Bool
     
@@ -187,7 +188,12 @@ struct AddExerciseView: View {
                         )
                     }
 
+                    FormSectionCard(title: "What to Track") {
+                        TrackingTypePicker(selection: $trackingType)
+                    }
+
                     // Weight Unit Card
+                    if trackingType == .weightAndReps {
                     FormSectionCard(title: "Weight Unit") {
                         HStack(spacing: 0) {
                             ForEach(["kg", "lbs"], id: \.self) { unit in
@@ -212,6 +218,7 @@ struct AddExerciseView: View {
                         .padding(4)
                         .background(Color.secondaryBg)
                         .cornerRadius(12)
+                    }
                     }
 
                     // Notes Card
@@ -263,6 +270,12 @@ struct AddExerciseView: View {
             // Set default unit from preferences
             selectedUnit = PreferencesService.shared.getDefaultWeightUnit(modelContext: modelContext)
         }
+        .onChange(of: selectedCategory) { _, category in
+            // Cardio moves (jump rope, burpees) are almost always counted in reps
+            if category == "Cardio" {
+                withAnimation(.standardSpring) { trackingType = .repsOnly }
+            }
+        }
     }
     
     private func saveExercise() {
@@ -292,6 +305,7 @@ struct AddExerciseView: View {
             incrementValue: 5.0,
             statsDisplayPreference: defaultStatsDisplay,
             statsIsExpanded: false,
+            trackingType: trackingType,
             createdAt: Date(),
             updatedAt: Date()
         )

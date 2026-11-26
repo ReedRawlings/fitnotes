@@ -442,6 +442,7 @@ public final class RoutineService {
                 order: templateExercise.order,
                 notes: templateExercise.notes
             )
+            workoutExercise.supersetGroupId = templateExercise.supersetGroupId
             workoutExercise.workout = workout
             workout.exercises.append(workoutExercise)  // Explicitly maintain bidirectional relationship
             modelContext.insert(workoutExercise)
@@ -488,6 +489,7 @@ public final class RoutineService {
                 order: currentExerciseCount + orderOffset + 1,
                 notes: templateExercise.notes
             )
+            workoutExercise.supersetGroupId = templateExercise.supersetGroupId
             workoutExercise.workout = workout
             workout.exercises.append(workoutExercise)  // Explicitly maintain bidirectional relationship
             modelContext.insert(workoutExercise)
@@ -735,7 +737,7 @@ public final class RoutineService {
         } else {
             // No history - use defaults based on exercise type
             let setCount = 3
-            if exercise?.equipment == "Body" || exercise?.primaryCategory == "Cardio" {
+            if exercise?.isRepsOnly == true || exercise?.equipment == "Body" || exercise?.primaryCategory == "Cardio" {
                 setsData = (0..<setCount).map { _ in
                     (weight: nil, reps: nil, rpe: nil, rir: nil, isCompleted: false)
                 }

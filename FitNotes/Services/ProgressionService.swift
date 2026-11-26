@@ -302,6 +302,12 @@ class ProgressionService {
         guard let minReps = exercise.targetRepMin,
               let maxReps = exercise.targetRepMax else { return nil }
 
+        // Reps-only exercises have no weight to add, so progression is always one more rep
+        if exercise.isRepsOnly {
+            guard let typicalReps = latestSession.typicalReps, typicalReps >= minReps else { return nil }
+            return .readyToIncreaseReps(recommendedReps: typicalReps + 1)
+        }
+
         // Only add weight once EVERY working set reached the top of the range.
         // 12/12/8 in an 8-12 range still has work to do at this weight.
         if latestSession.hitTopOfRange, let topWeightKg = latestSession.topWeightKg {

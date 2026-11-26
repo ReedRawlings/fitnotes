@@ -7,6 +7,20 @@ public enum StatsDisplayPreference: String, Codable {
     case rememberLastState
 }
 
+/// What a set of this exercise records. Reps-only exercises (jump rope, jump squats, burpees)
+/// hide the weight column and progress/PR on reps instead of weight.
+public enum ExerciseTrackingType: String, Codable, CaseIterable {
+    case weightAndReps
+    case repsOnly
+
+    public var displayName: String {
+        switch self {
+        case .weightAndReps: return "Weight & Reps"
+        case .repsOnly: return "Reps Only"
+        }
+    }
+}
+
 @Model
 public final class Exercise {
     @Attribute(.unique) public var id: UUID
@@ -80,6 +94,16 @@ public final class Exercise {
         }
     }
 
+    // Added in schema V2. Stored as a String for reliable SwiftData serialization.
+    @Attribute public var trackingTypeRaw: String = "weightAndReps"
+
+    public var trackingType: ExerciseTrackingType {
+        get { ExerciseTrackingType(rawValue: trackingTypeRaw) ?? .weightAndReps }
+        set { trackingTypeRaw = newValue.rawValue }
+    }
+
+    public var isRepsOnly: Bool { trackingType == .repsOnly }
+
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -107,6 +131,7 @@ public final class Exercise {
         autoProgress: Bool = false,
         statsDisplayPreference: StatsDisplayPreference = StatsDisplayPreference.rememberLastState,
         statsIsExpanded: Bool = false,
+        trackingType: ExerciseTrackingType = .weightAndReps,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -145,6 +170,7 @@ public final class Exercise {
         self.autoProgress = autoProgress
         self.statsDisplayPreferenceRaw = statsDisplayPreference.rawValue
         self.statsIsExpanded = statsIsExpanded
+        self.trackingTypeRaw = trackingType.rawValue
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

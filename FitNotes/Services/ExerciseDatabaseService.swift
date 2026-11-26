@@ -8,7 +8,7 @@ public final class ExerciseDatabaseService {
     // Comprehensive list of muscle groups
     public static let muscleGroups = [
         "Chest", "Back", "Shoulders", "Biceps", "Triceps",
-        "Quads", "Hamstrings", "Glutes", "Calves", "Abs", "Forearms"
+        "Quads", "Hamstrings", "Glutes", "Calves", "Abs", "Forearms", "Cardio"
     ]
     
     
@@ -67,6 +67,7 @@ public final class ExerciseDatabaseService {
                 incrementValue: 5.0,
                 statsDisplayPreference: defaultStatsDisplay,
                 statsIsExpanded: false,
+                trackingType: exerciseData.trackingType,
                 createdAt: Date(),
                 updatedAt: Date()
             )
@@ -133,6 +134,7 @@ public final class ExerciseDatabaseService {
                 incrementValue: 5.0,
                 statsDisplayPreference: defaultStatsDisplay,
                 statsIsExpanded: false,
+                trackingType: exerciseData.trackingType,
                 createdAt: Date(),
                 updatedAt: Date()
             )
@@ -345,7 +347,16 @@ public final class ExerciseDatabaseService {
             ExerciseData(name: "Farmer's Walk", primaryCategory: "Forearms", secondaryCategories: ["Shoulders"], equipment: "free-weight"),
             ExerciseData(name: "Dead Hang", primaryCategory: "Forearms", secondaryCategories: [], equipment: "bodyweight"),
             ExerciseData(name: "Plate Pinch", primaryCategory: "Forearms", secondaryCategories: [], equipment: "free-weight"),
-            ExerciseData(name: "Behind the Back Wrist Curl", primaryCategory: "Forearms", secondaryCategories: [], equipment: "free-weight")
+            ExerciseData(name: "Behind the Back Wrist Curl", primaryCategory: "Forearms", secondaryCategories: [], equipment: "free-weight"),
+
+            // MARK: - Cardio Exercises (7, reps only)
+            ExerciseData(name: "Jump Rope", primaryCategory: "Cardio", secondaryCategories: ["Calves"], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "Jump Squats", primaryCategory: "Cardio", secondaryCategories: ["Quads", "Glutes"], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "Burpees", primaryCategory: "Cardio", secondaryCategories: ["Chest", "Quads"], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "Box Jumps", primaryCategory: "Cardio", secondaryCategories: ["Quads", "Glutes"], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "Jumping Jacks", primaryCategory: "Cardio", secondaryCategories: [], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "High Knees", primaryCategory: "Cardio", secondaryCategories: ["Quads"], equipment: "bodyweight", trackingType: .repsOnly),
+            ExerciseData(name: "Jumping Lunges", primaryCategory: "Cardio", secondaryCategories: ["Quads", "Glutes"], equipment: "bodyweight", trackingType: .repsOnly)
         ]
     }
 }
@@ -355,4 +366,5 @@ private struct ExerciseData {
     let primaryCategory: String
     let secondaryCategories: [String]
     let equipment: String
+    var trackingType: ExerciseTrackingType = .weightAndReps
 }

@@ -21,6 +21,7 @@ struct ExerciseSettingsView: View {
     @State private var isWeightUnitExpanded = false
     @State private var isKeyboardIncrementExpanded = false
     @State private var isStatsDisplayExpanded = false
+    @State private var isTrackingTypeExpanded = false
 
     // Whether this exercise already has progression tracking enabled
     private var hasProgressionTracking: Bool {
@@ -63,6 +64,31 @@ struct ExerciseSettingsView: View {
             
             ScrollView {
                         VStack(spacing: 12) {
+                    // What to Track Section
+                    ExpandableSettingsSection(
+                        title: "What to Track",
+                        isExpanded: isTrackingTypeExpanded,
+                        onToggle: { isTrackingTypeExpanded.toggle() }
+                    ) {
+                        VStack(spacing: 12) {
+                            TrackingTypePicker(selection: Binding(
+                                get: { exercise.trackingType },
+                                set: { newValue in
+                                    exercise.trackingType = newValue
+                                    saveExercise()
+                                }
+                            ))
+
+                            Text(exercise.isRepsOnly
+                                 ? "Sets log reps only. Progress and PRs are based on reps."
+                                 : "Sets log weight and reps.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                    }
+
                     // Rest Timer Section
                     ExpandableSettingsSection(
                         title: "Rest Timer",
@@ -454,7 +480,8 @@ struct ExerciseSettingsView: View {
                         }
                     }
 
-                    // Weight Unit Section
+                    // Weight Unit Section (not relevant for reps-only exercises)
+                    if !exercise.isRepsOnly {
                     ExpandableSettingsSection(
                         title: "Lbs or KGs",
                         isExpanded: isWeightUnitExpanded,
@@ -493,8 +520,10 @@ struct ExerciseSettingsView: View {
                                 .padding(.top, 4)
                         }
                     }
+                    }
 
-                    // Keyboard Increment Section
+                    // Keyboard Increment Section (weight only)
+                    if !exercise.isRepsOnly {
                     ExpandableSettingsSection(
                         title: "Keyboard Increment",
                         isExpanded: isKeyboardIncrementExpanded,
@@ -552,6 +581,7 @@ struct ExerciseSettingsView: View {
                         }
                     }
 
+                    }
                     // Stats Display Section
                     ExpandableSettingsSection(
                         title: "Stats Display",

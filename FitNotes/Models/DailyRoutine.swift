@@ -263,6 +263,11 @@ public final class Workout {
     public var createdAt: Date
     public var updatedAt: Date
     @Relationship(deleteRule: .cascade) public var exercises: [WorkoutExercise] = []
+    /// When the user tapped Finish Workout. Nil while the workout is still in progress.
+    /// Finishing is always the user's choice; checking off the last set never finishes it.
+    public var finishedAt: Date? = nil
+
+    public var isFinished: Bool { finishedAt != nil }
 
     public init(
         id: UUID = UUID(),
@@ -290,6 +295,9 @@ public final class RoutineExercise {
     public var exerciseId: UUID
     public var order: Int
     public var notes: String?
+    /// Added in schema V2. Adjacent exercises (by `order`) sharing a group id form a superset.
+    /// See `SupersetLayout` for how runs are resolved.
+    public var supersetGroupId: UUID? = nil
     public var createdAt: Date
     public var updatedAt: Date
     public var routine: Routine?
@@ -384,6 +392,9 @@ public final class WorkoutExercise {
     public var exerciseId: UUID
     public var order: Int
     public var notes: String?
+    /// Added in schema V2. Adjacent exercises (by `order`) sharing a group id form a superset.
+    /// See `SupersetLayout` for how runs are resolved.
+    public var supersetGroupId: UUID? = nil
     public var createdAt: Date
     public var updatedAt: Date
     public var workout: Workout?

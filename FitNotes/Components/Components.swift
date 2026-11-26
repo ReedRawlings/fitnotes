@@ -1001,3 +1001,88 @@ struct E1RMComparisonIndicatorView: View {
         .cornerRadius(6)
     }
 }
+
+// MARK: - Tracking Type Picker
+/// Segmented choice between logging weight + reps or reps only (jump rope, jump squats).
+struct TrackingTypePicker: View {
+    @Binding var selection: ExerciseTrackingType
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(ExerciseTrackingType.allCases, id: \.self) { type in
+                Button(action: {
+                    withAnimation(.standardSpring) { selection = type }
+                }) {
+                    Text(type.displayName)
+                        .font(.system(size: 15, weight: selection == type ? .semibold : .medium))
+                        .foregroundColor(selection == type ? .textPrimary : .textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selection == type ? Color.tertiaryBg : Color.clear)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityAddTraits(selection == type ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(Color.secondaryBg)
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Superset UI
+
+/// "SUPERSET A1" label shown above an exercise name.
+struct SupersetBadge: View {
+    let slot: SupersetSlot
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "link")
+                .font(.system(size: 10, weight: .bold))
+            Text("SUPERSET \(slot.label)")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .kerning(0.3)
+        }
+        .foregroundColor(.accentPrimary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Superset \(slot.label)")
+    }
+}
+
+/// Accent bar along the leading edge of a card that belongs to a superset.
+struct SupersetStripe: View {
+    var body: some View {
+        Capsule()
+            .fill(Color.accentPrimary)
+            .frame(width: 3)
+            .padding(.vertical, 12)
+            .padding(.leading, 6)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Toggles whether an exercise is supersetted with the one below it.
+struct SupersetLinkButton: View {
+    struct LinkState: Equatable {
+        let isLinked: Bool
+    }
+
+    let state: LinkState
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: state.isLinked ? "link.circle.fill" : "link.circle")
+                .font(.system(size: 20))
+                .foregroundColor(state.isLinked ? .accentPrimary : .textTertiary)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .accessibilityLabel(state.isLinked ? "Unlink from next exercise" : "Superset with next exercise")
+    }
+}

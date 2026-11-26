@@ -65,6 +65,10 @@
 		9BB47AFB33E0B67DCD43C687 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A5F9269BB47AFB33E0B67D /* AppInfo.swift */; };
 		BDAB33D4094C9A6CC5EEFF22 /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB23FA95BDAB33D4094C9A6C /* DataExportService.swift */; };
 		2C67B5C97B7F089C5474546F /* AboutSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B480249B2C67B5C97B7F089C /* AboutSettingsSection.swift */; };
+		2A8717807F723449DAB7D561 /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = A956A7622A8717807F723449 /* SchemaV1.swift */; };
+		67406CA0C1F1AE8CDCB3B850 /* Superset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F1C48F67406CA0C1F1AE8C /* Superset.swift */; };
+		BDCB360E3A95C9D4B2010215 /* PlateCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86E553A3BDCB360E3A95C9D4 /* PlateCalculator.swift */; };
+		DE159BDE68734F89059FBD0E /* ReviewPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64AA51DCDE159BDE68734F89 /* ReviewPrompt.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -169,6 +173,10 @@
 		07A5F9269BB47AFB33E0B67D /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		DB23FA95BDAB33D4094C9A6C /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportService.swift; sourceTree = "<group>"; };
 		B480249B2C67B5C97B7F089C /* AboutSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSettingsSection.swift; sourceTree = "<group>"; };
+		A956A7622A8717807F723449 /* SchemaV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
+		62F1C48F67406CA0C1F1AE8C /* Superset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Superset.swift; sourceTree = "<group>"; };
+		86E553A3BDCB360E3A95C9D4 /* PlateCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculator.swift; sourceTree = "<group>"; };
+		64AA51DCDE159BDE68734F89 /* ReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -306,6 +314,8 @@
 		741C98832ECD0D9100753A54 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				62F1C48F67406CA0C1F1AE8C /* Superset.swift */,
+				A956A7622A8717807F723449 /* SchemaV1.swift */,
 				7423C7BB2EF271F900E92CA7 /* OnboardingModels.swift */,
 				7423C7BC2EF271F900E92CA7 /* OnboardingState.swift */,
 				7413252E2E9F733D0099C49A /* Models.swift */,
@@ -357,6 +367,8 @@
 		741C98872ECD0D9100753A58 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				64AA51DCDE159BDE68734F89 /* ReviewPrompt.swift */,
+				86E553A3BDCB360E3A95C9D4 /* PlateCalculator.swift */,
 				07A5F9269BB47AFB33E0B67D /* AppInfo.swift */,
 				7423C88A2EF68B5200E92CA7 /* RestTimerActivityAttributes.swift */,
 				741C98F62ED1194D00753A52 /* CustomNumericKeyboard.swift */,
@@ -601,6 +613,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE159BDE68734F89059FBD0E /* ReviewPrompt.swift in Sources */,
+				BDCB360E3A95C9D4B2010215 /* PlateCalculator.swift in Sources */,
+				67406CA0C1F1AE8CDCB3B850 /* Superset.swift in Sources */,
+				2A8717807F723449DAB7D561 /* SchemaV1.swift in Sources */,
 				2C67B5C97B7F089C5474546F /* AboutSettingsSection.swift in Sources */,
 				BDAB33D4094C9A6CC5EEFF22 /* DataExportService.swift in Sources */,
 				9BB47AFB33E0B67DCD43C687 /* AppInfo.swift in Sources */,

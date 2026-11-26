@@ -13,7 +13,7 @@ struct FitNotesApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
 
     let sharedModelContainer: ModelContainer = {
-        let schema = Schema(versionedSchema: FitNotesSchemaV1.self)
+        let schema = Schema(versionedSchema: FitNotesSchemaV2.self)
 
         // Use a specific URL for the database to make it easier to manage
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -76,6 +76,9 @@ struct FitNotesApp: App {
                         }
                 }
             }
+            // The design is dark-only; without this, sheets and nav titles render dark-on-dark
+            // when the phone is in light mode
+            .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
     }
@@ -89,13 +92,17 @@ extension Notification.Name {
 // MARK: - Schema versioning
 //
 // Every future change to a @Model (added/removed/renamed property, new model) must:
-//   1. add FitNotesSchemaV2 (copy the models into it as nested types, Apple's recommended pattern),
-//   2. append it to `schemas`, and
+//   1. freeze the current shape of each changed model (and any model whose relationships
+//      point at one) as nested types in a new FitNotesSchemaVN file, like SchemaV1.swift,
+//   2. add the new version below, append it to `schemas`, and
 //   3. add a .lightweight or .custom stage to `stages`.
 // Shipping a model change without this means existing users' stores fail to open.
 
-enum FitNotesSchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
+/// The current schema: the live model classes.
+/// V2 added Exercise.trackingTypeRaw (reps-only exercises) and
+/// RoutineExercise/WorkoutExercise.supersetGroupId (supersets).
+enum FitNotesSchemaV2: VersionedSchema {
+    static var versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -113,8 +120,15 @@ enum FitNotesSchemaV1: VersionedSchema {
 }
 
 enum FitNotesMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [FitNotesSchemaV1.self] }
-    static var stages: [MigrationStage] { [] }
+    static var schemas: [any VersionedSchema.Type] { [FitNotesSchemaV1.self, FitNotesSchemaV2.self] }
+
+    static var stages: [MigrationStage] { [migrateV1toV2] }
+
+    /// Only adds properties with defaults, so a lightweight migration is enough.
+    static let migrateV1toV2 = MigrationStage.lightweight(
+        fromVersion: FitNotesSchemaV1.self,
+        toVersion: FitNotesSchemaV2.self
+    )
 }
 
 enum DatabaseRecovery {

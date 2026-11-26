@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct WorkoutView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
     @EnvironmentObject private var appState: AppState
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
     @State private var showingAddExercise = false
@@ -12,6 +14,9 @@ struct WorkoutView: View {
     @State private var routineName = ""
     @State private var routineDescription = ""
     @State private var dismissedScheduledRoutineId: UUID? // Track if user dismissed today's prompt
+    @State private var showingFinishConfirmation = false
+    @State private var pendingFinishWorkout: Workout?
+    @State private var uncheckedSetCount = 0
 
     // Track the last workout count to force refresh
     private var workoutCount: Int { workouts.count }
@@ -64,6 +69,10 @@ struct WorkoutView: View {
                             .onAppear {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                                     appState.showWorkoutFinishedBanner = false
+                                    // Just finished a workout: a good moment to ask for a rating
+                                    if ReviewPrompt.consumeRequestIfDue(workoutCount: workouts.count) {
+                                        requestReview()
+                                    }
                                 }
                             }
                     }
@@ -189,14 +198,69 @@ struct WorkoutView: View {
                     
                     Spacer()
                     
-                    // V2 Gradient Add Exercise button
-                    PrimaryActionButton(title: "Add Exercise") {
-                        showingAddExercise = true
+                    // Finishing is the user's call: today's workout gets a Finish button once it
+                    // has exercises, and Add Exercise steps back to a secondary button beside it.
+                    if let workout = finishableWorkout {
+                        HStack(spacing: 12) {
+                            Button(action: { showingAddExercise = true }) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.textPrimary)
+                                    .frame(width: 56, height: 56)
+                                    .background(Color.secondaryBg)
+                                    .cornerRadius(16)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .accessibilityLabel("Add Exercise")
+
+                            Button(action: { requestFinish(workout) }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("Finish Workout")
+                                        .font(.buttonFont)
+                                }
+                                .foregroundColor(.textInverse)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    LinearGradient(
+                                        colors: [.accentPrimary, .accentSecondary],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                                .shadow(color: .accentPrimary.opacity(0.3), radius: 16, x: 0, y: 4)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    } else {
+                        if let finishedAt = getWorkoutForDate(displayDate)?.finishedAt {
+                            Label("Finished at \(finishedAt.formatted(date: .omitted, time: .shortened))",
+                                  systemImage: "checkmark.circle.fill")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.textSecondary)
+                                .padding(.bottom, 8)
+                        }
+                        PrimaryActionButton(title: "Add Exercise") {
+                            showingAddExercise = true
+                        }
+                        .padding(.bottom, 20) // 20pt from safe area
                     }
-                    .padding(.bottom, 20) // 20pt from safe area
                 }
             }
             .navigationBarHidden(true)
+        }
+        .alert("Finish workout?", isPresented: $showingFinishConfirmation, presenting: pendingFinishWorkout) { workout in
+            Button("Finish") { finish(workout) }
+            Button("Keep Going", role: .cancel) { }
+        } message: { _ in
+            Text(uncheckedSetCount == 1
+                 ? "1 set isn't checked off. It won't count toward your stats."
+                 : "\(uncheckedSetCount) sets aren't checked off. They won't count toward your stats.")
         }
         .sheet(isPresented: $showingAddExercise) {
             if let workout = getWorkoutForDate(displayDate) {
@@ -239,6 +303,45 @@ struct WorkoutView: View {
         }
     }
     
+    /// Today's workout, when it has exercises and hasn't been finished yet.
+    private var finishableWorkout: Workout? {
+        guard Calendar.current.isDateInToday(displayDate),
+              let workout = getWorkoutForDate(displayDate),
+              !workout.exercises.isEmpty,
+              !workout.isFinished else { return nil }
+        return workout
+    }
+
+    /// Finishes straight away when every set is checked; otherwise asks first.
+    private func requestFinish(_ workout: Workout) {
+        let unchecked = workout.exercises.reduce(0) { count, workoutExercise in
+            let sets = ExerciseService.shared.getSetsByDate(
+                exerciseId: workoutExercise.exerciseId,
+                date: workout.date,
+                modelContext: modelContext
+            )
+            return count + sets.filter { !$0.isCompleted }.count
+        }
+        if unchecked == 0 {
+            finish(workout)
+        } else {
+            uncheckedSetCount = unchecked
+            pendingFinishWorkout = workout
+            showingFinishConfirmation = true
+        }
+    }
+
+    private func finish(_ workout: Workout) {
+        workout.finishedAt = Date()
+        workout.updatedAt = Date()
+        try? modelContext.save()
+        appState.cancelRestTimer()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        withAnimation(.standardSpring) {
+            appState.showWorkoutFinishedBanner = true
+        }
+    }
+
     private func goToPreviousDay() {
         selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
     }
@@ -328,10 +431,19 @@ struct WorkoutDetailView: View {
                 .padding(.top, 12)
             } else {
                 List {
-                    ForEach(cachedExercises, id: \.id) { workoutExercise in
-                        WorkoutExerciseRowView(workoutExercise: workoutExercise, workout: workout)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
+                    let supersetSlots = SupersetLayout.slots(for: cachedExercises)
+                    ForEach(Array(cachedExercises.enumerated()), id: \.element.id) { index, workoutExercise in
+                        WorkoutExerciseRowView(
+                            workoutExercise: workoutExercise,
+                            workout: workout,
+                            supersetSlot: supersetSlots[workoutExercise.id],
+                            linkToNext: index < cachedExercises.count - 1
+                                ? SupersetLinkButton.LinkState(isLinked: SupersetLayout.isLinkedToNext(at: index, in: cachedExercises))
+                                : nil,
+                            onToggleLink: { toggleSuperset(at: index) }
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
                     }
                     .onMove { indices, newOffset in
                         // Update UI immediately with animation
@@ -394,7 +506,19 @@ struct WorkoutDetailView: View {
         }
     }
 
+    /// Links or unlinks the exercise at `index` with the one below it (in the on-screen order).
+    private func toggleSuperset(at index: Int) {
+        withAnimation(.standardSpring) {
+            SupersetLayout.toggleLink(at: index, in: cachedExercises)
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        // Persist the current on-screen order along with the link so they can't disagree
+        commitReorder()
+    }
+
     private func commitReorder() {
+        // Reordering can strand a superset member away from its partners; clear those
+        SupersetLayout.normalize(cachedExercises)
         // Update order values in the actual workout.exercises array
         for (index, cachedExercise) in cachedExercises.enumerated() {
             if let actualExercise = workout.exercises.first(where: { $0.id == cachedExercise.id }) {
@@ -415,15 +539,28 @@ struct WorkoutDetailView: View {
 struct WorkoutExerciseRowView: View {
     let workoutExercise: WorkoutExercise
     let workout: Workout
+    var supersetSlot: SupersetSlot? = nil
+    /// nil hides the link button (last exercise in the list)
+    var linkToNext: SupersetLinkButton.LinkState? = nil
+    var onToggleLink: () -> Void = {}
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var appState: AppState
     @Query private var exercises: [Exercise]
     @Query private var allSets: [WorkoutSet]
 
     // Custom initializer to filter sets by exercise ID at the database level
-    init(workoutExercise: WorkoutExercise, workout: Workout) {
+    init(
+        workoutExercise: WorkoutExercise,
+        workout: Workout,
+        supersetSlot: SupersetSlot? = nil,
+        linkToNext: SupersetLinkButton.LinkState? = nil,
+        onToggleLink: @escaping () -> Void = {}
+    ) {
         self.workoutExercise = workoutExercise
         self.workout = workout
+        self.supersetSlot = supersetSlot
+        self.linkToNext = linkToNext
+        self.onToggleLink = onToggleLink
 
         // Filter sets by exercise ID at the database level instead of fetching all sets
         let exerciseId = workoutExercise.exerciseId
@@ -449,31 +586,35 @@ struct WorkoutExerciseRowView: View {
         return exerciseSets.sorted { $0.order < $1.order }
     }
 
-    // ✅ Calculate ONCE per exercise, not per set
-    private var bestPreviousSetByVolume: Double? {
-        let calendar = Calendar.current
-        let todayStart = calendar.startOfDay(for: workout.date)
+    // MARK: - PR detection
+    // A PR is a new best WEIGHT (kg-normalized), not set volume: 225×2 outranks 150×20.
+    // Reps-only exercises have no weight, so their PR is a new best rep count.
 
-        let historicalSets = allSets.filter {
-            $0.isCompleted &&
-            $0.date < todayStart &&
-            $0.weight != nil &&
-            $0.reps != nil
+    private func prScore(_ set: WorkoutSet) -> Double? {
+        if exercise?.isRepsOnly == true {
+            return set.reps.map(Double.init)
         }
+        guard let weight = set.weight, weight > 0, (set.reps ?? 0) > 0 else { return nil }
+        return WeightUnitConverter.toKg(weight, from: set.unit)
+    }
 
-        return historicalSets
-            .map { ($0.weight ?? 0) * Double($0.reps ?? 0) }
+    /// Best score from completed sets before this workout's day. Calculated once per row.
+    private var bestPreviousScore: Double? {
+        let todayStart = Calendar.current.startOfDay(for: workout.date)
+        return allSets
+            .filter { $0.isCompleted && $0.date < todayStart }
+            .compactMap(prScore)
             .max()
     }
 
-    private var todaysBestSetByVolume: WorkoutSet? {
-        return sortedSets
-            .filter { $0.isCompleted }
-            .max { set1, set2 in
-                let vol1 = (set1.weight ?? 0) * Double(set1.reps ?? 0)
-                let vol2 = (set2.weight ?? 0) * Double(set2.reps ?? 0)
-                return vol1 < vol2
-            }
+    /// The single best completed set today (first one wins ties, so only one trophy shows).
+    private var todaysBestSet: WorkoutSet? {
+        var best: (set: WorkoutSet, score: Double)?
+        for set in sortedSets where set.isCompleted {
+            guard let score = prScore(set) else { continue }
+            if best == nil || score > best!.score { best = (set, score) }
+        }
+        return best?.set
     }
 
     // MARK: - Volume Comparison Computed Properties
@@ -525,6 +666,9 @@ struct WorkoutExerciseRowView: View {
             // Header with exercise name and delete
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
+                    if let supersetSlot {
+                        SupersetBadge(slot: supersetSlot)
+                    }
                     Text(exercise?.name ?? "Unknown Exercise")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.textPrimary)
@@ -538,6 +682,10 @@ struct WorkoutExerciseRowView: View {
                 }
 
                 Spacer()
+
+                if let linkToNext {
+                    SupersetLinkButton(state: linkToNext, action: onToggleLink)
+                }
 
                 Button(action: { deleteExercise() }) {
                     Image(systemName: "trash.fill")
@@ -560,11 +708,12 @@ struct WorkoutExerciseRowView: View {
                     GridItem(.flexible(), alignment: .leading),
                     GridItem(.flexible(), alignment: .leading)
                 ], spacing: 8) {
+                    let todaysBest = todaysBestSet
+                    let previousBest = bestPreviousScore
                     ForEach(sortedSets, id: \.id) { set in
                         HStack(spacing: 6) {
                             if set.isCompleted {
-                                // ✅ OPTIMIZED: Just compare against cached value
-                                if isPR(set: set) {
+                                if isPR(set: set, todaysBest: todaysBest, previousBest: previousBest) {
                                     PRBadge()
                                 } else {
                                     SetCompletionBadge()
@@ -593,6 +742,11 @@ struct WorkoutExerciseRowView: View {
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
         )
+        .overlay(alignment: .leading) {
+            if supersetSlot != nil {
+                SupersetStripe()
+            }
+        }
         .onTapGesture {
             if let exercise = exercise {
                 appState.selectedExerciseDate = workout.date
@@ -637,16 +791,12 @@ struct WorkoutExerciseRowView: View {
         print("Delete operation completed")
     }
 
-    // ✅ OPTIMIZED: Simple comparison, no database queries
-    private func isPR(set: WorkoutSet) -> Bool {
-        guard let bestToday = todaysBestSetByVolume,
-              bestToday.id == set.id,
-              let bestHistorical = bestPreviousSetByVolume else {
+    private func isPR(set: WorkoutSet, todaysBest: WorkoutSet?, previousBest: Double?) -> Bool {
+        guard let todaysBest, todaysBest.id == set.id,
+              let previousBest, let score = prScore(set) else {
             return false
         }
-
-        let todayVolume = (set.weight ?? 0) * Double(set.reps ?? 0)
-        return todayVolume > bestHistorical
+        return score > previousBest
     }
 }
 
@@ -1217,12 +1367,13 @@ struct SaveWorkoutAsRoutineView: View {
         // Copy exercises from workout to routine
         let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
         for workoutExercise in sortedExercises {
-            _ = RoutineService.shared.addExerciseToRoutine(
+            let routineExercise = RoutineService.shared.addExerciseToRoutine(
                 routine: routine,
                 exerciseId: workoutExercise.exerciseId,
                 notes: workoutExercise.notes,
                 modelContext: modelContext
             )
+            routineExercise.supersetGroupId = workoutExercise.supersetGroupId
         }
 
         // Save to database
@@ -1324,6 +1475,7 @@ struct UpdateRoutineFromWorkoutView: View {
                 order: index + 1,
                 notes: workoutExercise.notes
             )
+            routineExercise.supersetGroupId = workoutExercise.supersetGroupId
             routine.exercises.append(routineExercise)
             modelContext.insert(routineExercise)
         }

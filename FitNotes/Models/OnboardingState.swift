@@ -141,7 +141,7 @@ class OnboardingState: ObservableObject {
             // Screen 1: Welcome
             OnboardingPage(
                 type: .static,
-                title: "Welcome to LiftLog",
+                title: "Welcome to \(AppInfo.displayName)",
                 subtitle: "A Progressive Overload Training App",
                 description: "Every great transformation begins with incremental improvement. By downloading this app you're investing in a stronger, more capable version of yourself. \n\n We're here to guide you every rep of the way.",
                 systemImage: "figure.walk",

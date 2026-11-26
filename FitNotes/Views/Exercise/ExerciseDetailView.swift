@@ -5,7 +5,6 @@ struct ExerciseDetailView: View {
     @Bindable var exercise: Exercise
     var workout: Workout?
     var workoutExercise: WorkoutExercise?
-    var shouldDismissOnSave: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
@@ -13,15 +12,15 @@ struct ExerciseDetailView: View {
 
     @State private var selectedTab = 0
     @State private var showSettings = false
+    @State private var showPlateCalculator = false
     // Observes the single shared manager on AppState — a per-view instance would
     // split completion state from the Live Activity owner
     @ObservedObject private var timerManager: RestTimerManager
 
-    init(exercise: Exercise, workout: Workout? = nil, workoutExercise: WorkoutExercise? = nil, shouldDismissOnSave: Bool = false, appState: AppState) {
+    init(exercise: Exercise, workout: Workout? = nil, workoutExercise: WorkoutExercise? = nil, appState: AppState) {
         self.exercise = exercise
         self.workout = workout
         self.workoutExercise = workoutExercise
-        self.shouldDismissOnSave = shouldDismissOnSave
         _timerManager = ObservedObject(wrappedValue: appState.restTimerManager)
     }
 
@@ -68,6 +67,19 @@ struct ExerciseDetailView: View {
         return E1RMCalculator.fromSession(lastSession)
     }
 
+    /// Exercises whose rest timer belongs on this screen: this one, plus the rest of its superset
+    /// (the round's rest is started by the last exercise but taken before the first one).
+    private var restTimerExerciseIds: Set<UUID> {
+        guard let workout, let workoutExercise,
+              let run = SupersetLayout.run(
+                containing: workoutExercise.id,
+                in: workout.exercises.sorted { $0.order < $1.order }
+              ) else {
+            return [exercise.id]
+        }
+        return Set(run.map(\.exerciseId))
+    }
+
     var body: some View {
         ZStack {
             // Dark charcoal background
@@ -85,7 +97,27 @@ struct ExerciseDetailView: View {
                         .kerning(-0.5) // Tighter letter spacing for large display text
                     
                     Spacer()
-                    
+
+                    // Plate calculator for barbell-style lifts
+                    if exercise.equipment == "Free Weight" && !exercise.isRepsOnly {
+                        Button(action: { showPlateCalculator = true }) {
+                            Image(systemName: "scalemass.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.textSecondary)
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel("Plate calculator")
+                        .sheet(isPresented: $showPlateCalculator) {
+                            NavigationStack {
+                                PlateCalculatorView(
+                                    unit: exercise.unit,
+                                    initialWeight: (todaySets + (lastSession ?? [])).compactMap(\.weight).max()
+                                )
+                            }
+                            .presentationDetents([.medium, .large])
+                        }
+                    }
+
                     // Settings Button (inline with title)
                     Button(action: {
                         showSettings = true
@@ -107,7 +139,7 @@ struct ExerciseDetailView: View {
                 .padding(.bottom, 12)
                 
                 // Rest Timer Banner
-                if let timer = appState.activeRestTimer, timer.exerciseId == exercise.id {
+                if let timer = appState.activeRestTimer, restTimerExerciseIds.contains(timer.exerciseId) {
                     RestTimerBannerView(
                         timer: timer,
                         showCompletionState: $timerManager.showCompletionState,
@@ -143,9 +175,7 @@ struct ExerciseDetailView: View {
 
                 // Tab Content
                 if selectedTab == 0 {
-                    TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise, onSaveSuccess: shouldDismissOnSave ? {
-                        dismiss()
-                    } : nil)
+                    TrackTabView(exercise: exercise, workout: workout, workoutExercise: workoutExercise)
                 } else {
                     HistoryTabView(exercise: exercise)
                 }

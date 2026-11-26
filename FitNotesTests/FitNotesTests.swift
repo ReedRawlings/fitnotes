@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import SwiftData
 @testable import FitNotes
 
 final class E1RMCalculatorTests: XCTestCase {
@@ -341,5 +342,220 @@ final class DataExportServiceTests: XCTestCase {
         XCTAssertTrue(lines[0].hasPrefix("Date,Time,Exercise"))
         XCTAssertEqual(lines[1], "2026-03-04,09:00,Unknown exercise,,1,100,kg,5,,,,,Yes,\"solid, fast\"")
         XCTAssertEqual(lines[2], "2026-03-04,,Unknown exercise,,2,62.5,lbs,8,,,,,No,")
+    }
+}
+
+final class SchemaMigrationTests: XCTestCase {
+
+    /// Builds a store with the frozen V1 schema, then reopens it the way the app does
+    /// (V2 + migration plan) and checks the data survived with the new fields defaulted.
+    func testV1StoreMigratesToV2() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("FitNotes.sqlite")
+
+        let exerciseId = UUID()
+        let workoutExerciseId = UUID()
+        do {
+            let v1Schema = Schema(versionedSchema: FitNotesSchemaV1.self)
+            let container = try ModelContainer(for: v1Schema, configurations: [ModelConfiguration(schema: v1Schema, url: url)])
+            let context = ModelContext(container)
+            context.insert(FitNotesSchemaV1.Exercise(id: exerciseId, name: "Bench Press", primaryCategory: "Chest"))
+            let workout = FitNotesSchemaV1.Workout(name: "Old workout")
+            context.insert(workout)
+            let workoutExercise = FitNotesSchemaV1.WorkoutExercise(id: workoutExerciseId, exerciseId: exerciseId, order: 1)
+            context.insert(workoutExercise)
+            workoutExercise.workout = workout
+            let routine = FitNotesSchemaV1.Routine(name: "Push")
+            context.insert(routine)
+            let routineExercise = FitNotesSchemaV1.RoutineExercise(exerciseId: exerciseId, order: 1)
+            context.insert(routineExercise)
+            routineExercise.routine = routine
+            context.insert(WorkoutSet(exerciseId: exerciseId, order: 1, reps: 5, weight: 100, isCompleted: true))
+            try context.save()
+        }
+
+        let v2Schema = Schema(versionedSchema: FitNotesSchemaV2.self)
+        let container = try ModelContainer(
+            for: v2Schema,
+            migrationPlan: FitNotesMigrationPlan.self,
+            configurations: [ModelConfiguration(schema: v2Schema, url: url)]
+        )
+        let context = ModelContext(container)
+
+        let exercises = try context.fetch(FetchDescriptor<Exercise>())
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises.first?.id, exerciseId)
+        XCTAssertEqual(exercises.first?.trackingType, .weightAndReps)
+
+        let workoutExercises = try context.fetch(FetchDescriptor<WorkoutExercise>())
+        XCTAssertEqual(workoutExercises.map(\.id), [workoutExerciseId])
+        XCTAssertNil(workoutExercises.first?.supersetGroupId)
+        XCTAssertEqual(workoutExercises.first?.workout?.name, "Old workout")
+
+        let routines = try context.fetch(FetchDescriptor<Routine>())
+        XCTAssertEqual(routines.first?.exercises.count, 1)
+        XCTAssertNil(routines.first?.exercises.first?.supersetGroupId)
+
+        let sets = try context.fetch(FetchDescriptor<WorkoutSet>())
+        XCTAssertEqual(sets.first?.weight, 100)
+    }
+}
+
+final class SupersetLayoutTests: XCTestCase {
+
+    private func makeItems(_ count: Int) -> [WorkoutExercise] {
+        (1...count).map { WorkoutExercise(exerciseId: UUID(), order: $0) }
+    }
+
+    func testLinkingTwoExercisesMakesOneSuperset() {
+        let items = makeItems(3)
+        SupersetLayout.toggleLink(at: 0, in: items)
+
+        XCTAssertEqual(SupersetLayout.runs(in: items), [0..<2])
+        XCTAssertTrue(SupersetLayout.isLinkedToNext(at: 0, in: items))
+        XCTAssertFalse(SupersetLayout.isLinkedToNext(at: 1, in: items))
+        let slots = SupersetLayout.slots(for: items)
+        XCTAssertEqual(slots[items[0].id]?.label, "A1")
+        XCTAssertEqual(slots[items[1].id]?.label, "A2")
+        XCTAssertEqual(slots[items[1].id]?.position, .last)
+        XCTAssertNil(slots[items[2].id])
+    }
+
+    func testLinkingOntoAnExistingSupersetExtendsIt() {
+        let items = makeItems(4)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        SupersetLayout.toggleLink(at: 1, in: items)
+        XCTAssertEqual(SupersetLayout.runs(in: items), [0..<3])
+        XCTAssertEqual(SupersetLayout.slots(for: items)[items[1].id]?.position, .middle)
+    }
+
+    func testLinkingTwoSupersetsMergesThem() {
+        let items = makeItems(4)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        SupersetLayout.toggleLink(at: 2, in: items)
+        XCTAssertEqual(SupersetLayout.runs(in: items), [0..<2, 2..<4])
+        XCTAssertEqual(SupersetLayout.slots(for: items)[items[2].id]?.label, "B1")
+
+        SupersetLayout.toggleLink(at: 1, in: items)
+        XCTAssertEqual(SupersetLayout.runs(in: items), [0..<4])
+    }
+
+    func testUnlinkingInTheMiddleSplitsIntoTwoSupersets() {
+        let items = makeItems(4)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        SupersetLayout.toggleLink(at: 1, in: items)
+        SupersetLayout.toggleLink(at: 2, in: items)
+
+        SupersetLayout.toggleLink(at: 1, in: items)
+        XCTAssertEqual(SupersetLayout.runs(in: items), [0..<2, 2..<4])
+        XCTAssertNotEqual(items[0].supersetGroupId, items[2].supersetGroupId)
+    }
+
+    func testUnlinkingAPairClearsBoth() {
+        let items = makeItems(2)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        XCTAssertTrue(SupersetLayout.runs(in: items).isEmpty)
+        XCTAssertNil(items[0].supersetGroupId)
+        XCTAssertNil(items[1].supersetGroupId)
+    }
+
+    func testMembersSeparatedByReorderAreNotASuperset() {
+        let items = makeItems(3)
+        SupersetLayout.toggleLink(at: 0, in: items)
+        // Simulate moving the second member to the end: [A1, plain, A2]
+        let reordered = [items[0], items[2], items[1]]
+        XCTAssertTrue(SupersetLayout.runs(in: reordered).isEmpty)
+        XCTAssertNil(SupersetLayout.run(containing: items[0].id, in: reordered))
+
+        SupersetLayout.normalize(reordered)
+        XCTAssertNil(items[0].supersetGroupId)
+        XCTAssertNil(items[1].supersetGroupId)
+    }
+
+    func testRunContainingReturnsTheWholeSuperset() {
+        let items = makeItems(3)
+        SupersetLayout.toggleLink(at: 1, in: items)
+        XCTAssertEqual(SupersetLayout.run(containing: items[2].id, in: items)?.map(\.id), [items[1].id, items[2].id])
+        XCTAssertNil(SupersetLayout.run(containing: items[0].id, in: items))
+    }
+}
+
+final class PlateCalculatorTests: XCTestCase {
+
+    func testLoadsStandardPoundPlates() {
+        let result = PlateCalculator.plates(target: 225, bar: 45, available: PlateCalculator.standardPlates(unit: "lbs"))
+        XCTAssertEqual(result.perSide, [45, 45])
+        XCTAssertEqual(result.remainder, 0)
+        XCTAssertEqual(result.loadedWeight, 225)
+    }
+
+    func testMixedPlatesHeaviestFirst() {
+        let result = PlateCalculator.plates(target: 185, bar: 45, available: PlateCalculator.standardPlates(unit: "lbs"))
+        XCTAssertEqual(result.perSide, [45, 25])
+    }
+
+    func testFractionalKilogramPlates() {
+        let result = PlateCalculator.plates(target: 102.5, bar: 20, available: PlateCalculator.standardPlates(unit: "kg"))
+        XCTAssertEqual(result.perSide, [25, 15, 1.25])
+        XCTAssertEqual(result.remainder, 0)
+    }
+
+    func testReportsWhatCannotBeLoaded() {
+        let result = PlateCalculator.plates(target: 136, bar: 45, available: PlateCalculator.standardPlates(unit: "lbs"))
+        XCTAssertEqual(result.perSide, [45])
+        XCTAssertEqual(result.loadedWeight, 135)
+        XCTAssertEqual(result.remainder, 1, accuracy: 0.001)
+    }
+
+    func testTargetAtOrBelowBarLoadsNothing() {
+        XCTAssertEqual(PlateCalculator.plates(target: 45, bar: 45, available: [45]).perSide, [])
+        XCTAssertEqual(PlateCalculator.plates(target: 30, bar: 45, available: [45]).perSide, [])
+    }
+}
+
+final class ReviewPromptTests: XCTestCase {
+
+    func testWaitsForEnoughWorkouts() {
+        XCTAssertFalse(ReviewPrompt.shouldRequest(workoutCount: 2, lastRequestDate: nil, lastRequestVersion: nil, currentVersion: "1.0"))
+        XCTAssertTrue(ReviewPrompt.shouldRequest(workoutCount: 3, lastRequestDate: nil, lastRequestVersion: nil, currentVersion: "1.0"))
+    }
+
+    func testAsksOncePerVersion() {
+        let longAgo = Date(timeIntervalSinceNow: -365 * 86_400)
+        XCTAssertFalse(ReviewPrompt.shouldRequest(workoutCount: 10, lastRequestDate: longAgo, lastRequestVersion: "1.0", currentVersion: "1.0"))
+        XCTAssertTrue(ReviewPrompt.shouldRequest(workoutCount: 10, lastRequestDate: longAgo, lastRequestVersion: "1.0", currentVersion: "1.1"))
+    }
+
+    func testSpacesRequestsApart() {
+        let recent = Date(timeIntervalSinceNow: -30 * 86_400)
+        XCTAssertFalse(ReviewPrompt.shouldRequest(workoutCount: 10, lastRequestDate: recent, lastRequestVersion: "1.0", currentVersion: "1.1"))
+    }
+}
+
+final class RepsOnlyTests: XCTestCase {
+
+    func testRepsOnlyExerciseNeverRecommendsWeight() throws {
+        let schema = Schema(versionedSchema: FitNotesSchemaV2.self)
+        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+        let context = ModelContext(container)
+        let exercise = Exercise(name: "Jump Squats", primaryCategory: "Cardio", targetRepMin: 10, targetRepMax: 15, trackingType: .repsOnly)
+        context.insert(exercise)
+        let calendar = Calendar.current
+        for daysAgo in [2, 1] {
+            let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date())!
+            for order in 1...3 {
+                context.insert(WorkoutSet(exerciseId: exercise.id, order: order, reps: 15, weight: nil, isCompleted: true, date: date))
+            }
+        }
+        try context.save()
+
+        let status = ProgressionService.analyzeProgressionStatus(exercise: exercise, modelContext: context)
+        guard case .readyToIncreaseReps(let reps) = status else {
+            return XCTFail("Expected a rep increase, got \(status)")
+        }
+        XCTAssertEqual(reps, 16)
     }
 }

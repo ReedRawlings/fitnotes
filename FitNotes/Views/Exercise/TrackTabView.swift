@@ -8,11 +8,8 @@ struct TrackTabView: View {
     @EnvironmentObject private var appState: AppState
     var workout: Workout?
     var workoutExercise: WorkoutExercise?
-    var onSaveSuccess: (() -> Void)? = nil
 
     @State private var sets: [(id: UUID, weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isChecked: Bool)] = []
-    @State private var isSaving = false
-    @State private var isSaved = false
 
     enum InputFocus: Hashable {
         case weight(UUID)
@@ -35,6 +32,19 @@ struct TrackTabView: View {
     /// falls back to the app-level selected exercise date (set by tap sites when browsing a
     /// non-today date), and only then to today. Keeping load/save on the same date prevents
     /// phantom sessions being written to today while viewing a past date.
+    /// "Superset A1 · then Pull-ups" when this exercise is in a superset in the current workout.
+    private var supersetBannerText: String? {
+        guard let workout, let workoutExercise else { return nil }
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+        guard let slot = SupersetLayout.slots(for: sortedExercises)[workoutExercise.id],
+              let run = SupersetLayout.run(containing: workoutExercise.id, in: sortedExercises),
+              let position = run.firstIndex(where: { $0.id == workoutExercise.id }) else { return nil }
+        let nextMember = run[(position + 1) % run.count]
+        let nextName = ExerciseService.shared.getExercise(by: nextMember.exerciseId, modelContext: modelContext)?.name
+        let thenText = position == run.count - 1 ? "rest, then" : "then"
+        return "Superset \(slot.label) · \(thenText) \(nextName ?? "next exercise")"
+    }
+
     private var targetDate: Date {
         workout?.date ?? appState.selectedExerciseDate ?? Date()
     }
@@ -44,6 +54,21 @@ struct TrackTabView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
+                    if let supersetText = supersetBannerText {
+                        HStack(spacing: 6) {
+                            Image(systemName: "link")
+                                .font(.system(size: 11, weight: .bold))
+                            Text(supersetText)
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
+                            Spacer()
+                        }
+                        .foregroundColor(.accentPrimary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                        .accessibilityElement(children: .combine)
+                    }
+
                     // Current Sets
                     if !sets.isEmpty {
                         // Header Row
@@ -93,9 +118,11 @@ struct TrackTabView: View {
                                         sets[index].isChecked.toggle()
                                         persistCurrentSets()
 
-                                        // Always trigger rest timer when checking a set (cancel any existing timer)
                                         if sets[index].isChecked {
-                                            triggerRestTimer(forSet: index + 1)
+                                            // Supersets rest only after the last exercise of each round
+                                            if handleSupersetSetChecked(setNumber: index + 1) {
+                                                return
+                                            }
                                         }
 
                                         handleSetCompletion()
@@ -114,21 +141,12 @@ struct TrackTabView: View {
                     .padding(.bottom, 100) // Space for fixed bottom action bar
                 }
 
-                // Fixed bottom action bar: Add Set + Save side-by-side
-                HStack(spacing: 12) {
-                    AddSetButton {
-                        addSet()
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    SaveButton(
-                        isEnabled: !sets.isEmpty,
-                        isSaving: isSaving,
-                        isSaved: isSaved,
-                        onSave: saveSets
-                    )
-                    .frame(maxWidth: .infinity)
+                // Fixed bottom action bar. Sets save on every change, so there is no save button;
+                // finishing the workout happens from the Workout tab.
+                AddSetButton {
+                    addSet()
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 34) // Safe area + padding
                 .background(Color.primaryBg) // Ensure background matches
@@ -488,7 +506,7 @@ struct TrackTabView: View {
             // Pre-populate with (potentially progressed) data
             sets = lastSession.map { set in
                 (id: UUID(),
-                 weight: prefillWeight ?? set.weight,
+                 weight: exercise.isRepsOnly ? nil : (prefillWeight ?? set.weight),
                  reps: prefillReps ?? set.reps,
                  rpe: nil,
                  rir: nil,
@@ -541,61 +559,74 @@ struct TrackTabView: View {
         persistCurrentSets()
     }
     
-    private func saveSets() {
-        isSaving = true
-        let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
+    /// Reps-only exercises never store a weight, even if one was logged before the switch.
+    private func setDataForSaving() -> [(weight: Double?, reps: Int?, rpe: Int?, rir: Int?, isCompleted: Bool)] {
+        let repsOnly = exercise.isRepsOnly
+        return sets.map { (weight: repsOnly ? nil : $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
+    }
 
-        let success = ExerciseService.shared.saveSets(
+    private func persistCurrentSets() {
+        let setData = setDataForSaving()
+        let saved = ExerciseService.shared.saveSets(
             exerciseId: exercise.id,
             date: targetDate,
             unit: exercise.unit,
             sets: setData,
             modelContext: modelContext
         )
-
-        if success {
-            // Also ensure we have a workout for the target date
-            _ = WorkoutService.shared.getOrCreateWorkoutForDate(
-                date: targetDate,
-                modelContext: modelContext
-            )
-            
-            // Success haptic feedback
-            let notificationFeedback = UINotificationFeedbackGenerator()
-            notificationFeedback.notificationOccurred(.success)
-            
-            // Immediately show saved state without delay
-            isSaving = false
-            isSaved = true
-            
-            // Call onSaveSuccess callback if provided (e.g., when opening from workout tab)
-            if let onSaveSuccess = onSaveSuccess {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    onSaveSuccess()
-                }
-            } else {
-                // Reset after animation when no callback
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    isSaved = false
-                }
-            }
-        } else {
-            // Error haptic feedback
-            let notificationFeedback = UINotificationFeedbackGenerator()
-            notificationFeedback.notificationOccurred(.error)
-            isSaving = false
+        // Tracking from the exercise library (outside a workout): make sure the day has a workout
+        // once a set is actually done, so it shows up in the calendar and history.
+        if saved, workout == nil, setData.contains(where: { $0.isCompleted }) {
+            _ = WorkoutService.shared.getOrCreateWorkoutForDate(date: targetDate, modelContext: modelContext)
         }
     }
-    
-    private func persistCurrentSets() {
-        let setData = sets.map { (weight: $0.weight, reps: $0.reps, rpe: $0.rpe, rir: $0.rir, isCompleted: $0.isChecked) }
-        _ = ExerciseService.shared.saveSets(
-            exerciseId: exercise.id,
-            date: targetDate,
-            unit: exercise.unit,
-            sets: setData,
-            modelContext: modelContext
-        )
+
+    /// Handles a newly checked set. Outside a superset this just starts the rest timer.
+    /// Inside one, it skips the rest and moves to the next exercise of the round, or, on the last
+    /// exercise of the round, starts the rest and goes back to the first exercise with sets left.
+    /// Returns true when it navigated, so the caller must not also run `handleSetCompletion`.
+    private func handleSupersetSetChecked(setNumber: Int) -> Bool {
+        guard let workout, let workoutExercise else {
+            triggerRestTimer(forSet: setNumber)
+            return false
+        }
+        let sortedExercises = workout.exercises.sorted { $0.order < $1.order }
+        guard let run = SupersetLayout.run(containing: workoutExercise.id, in: sortedExercises),
+              let position = run.firstIndex(where: { $0.id == workoutExercise.id }) else {
+            triggerRestTimer(forSet: setNumber)
+            return false
+        }
+
+        let hasSetsLeft: (WorkoutExercise) -> Bool = { member in
+            let memberSets = ExerciseService.shared.getSetsByDate(
+                exerciseId: member.exerciseId,
+                date: workout.date,
+                modelContext: modelContext
+            )
+            return memberSets.isEmpty || !memberSets.allSatisfy { $0.isCompleted }
+        }
+
+        // Mid-round: no rest, straight on to the next exercise in the superset
+        if let next = run[(position + 1)...].first(where: hasSetsLeft) {
+            appState.cancelRestTimer()
+            openWorkoutExercise(next)
+            return true
+        }
+
+        // End of the round: rest, then start the next round from the top
+        triggerRestTimer(forSet: setNumber)
+        if let first = run[..<position].first(where: hasSetsLeft) {
+            openWorkoutExercise(first)
+            return true
+        }
+        return false
+    }
+
+    private func openWorkoutExercise(_ workoutExercise: WorkoutExercise) {
+        guard let next = ExerciseService.shared.getExercise(by: workoutExercise.exerciseId, modelContext: modelContext) else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            appState.selectedExercise = next
+        }
     }
 
     private func handleSetCompletion() {
@@ -612,16 +643,17 @@ struct TrackTabView: View {
             return
         }
 
-        let nextWorkoutExercise = sortedExercises
-            .suffix(from: currentIndex + 1)
-            .first { nextExercise in
-                let sets = ExerciseService.shared.getSetsByDate(
-                    exerciseId: nextExercise.exerciseId,
-                    date: workout.date,
-                    modelContext: modelContext
-                )
-                return sets.isEmpty || !sets.allSatisfy { $0.isCompleted }
-            }
+        // Next exercise with sets left: look below this one first, then wrap around to any
+        // earlier exercise that was skipped.
+        let searchOrder = sortedExercises.suffix(from: currentIndex + 1) + sortedExercises.prefix(upTo: currentIndex)
+        let nextWorkoutExercise = searchOrder.first { nextExercise in
+            let sets = ExerciseService.shared.getSetsByDate(
+                exerciseId: nextExercise.exerciseId,
+                date: workout.date,
+                modelContext: modelContext
+            )
+            return sets.isEmpty || !sets.allSatisfy { $0.isCompleted }
+        }
 
         if let nextWorkoutExercise = nextWorkoutExercise {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -635,16 +667,16 @@ struct TrackTabView: View {
                     appState.selectedExercise = nextExercise
                 }
             }
-        } else {
-            // No more exercises, workout is finished
+        } else if !workout.isFinished {
+            // Every set is checked. Don't finish the workout for the user: go back to the workout
+            // list, where Finish Workout is waiting (they may still want to add an exercise).
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                appState.selectedExercise = nil // Dismiss the sheet
-                appState.showWorkoutFinishedBanner = true
-                appState.selectedTab = 2 // Switch to workout tab
+                appState.selectedExercise = nil
+                appState.selectedTab = 2
             }
         }
     }
-    
+
     private func triggerRestTimer(forSet setNumber: Int) {
         // Check if rest timer is enabled for this exercise
         guard exercise.useRestTimer else { return }
@@ -684,7 +716,8 @@ struct SetHeaderRowView: View {
     
     var body: some View {
         HStack(spacing: 20) {
-            // Weight Column Header
+            // Weight Column Header (hidden for reps-only exercises)
+            if !exercise.isRepsOnly {
             HStack(spacing: 4) {
                 Text("WEIGHT")
                     .font(.sectionHeader)
@@ -696,7 +729,8 @@ struct SetHeaderRowView: View {
                     .foregroundColor(.textTertiary.opacity(0.6))
             }
             .frame(maxWidth: .infinity)
-            
+            }
+
             // Reps Column Header
             Text("REPS")
                 .font(.sectionHeader)
@@ -762,7 +796,8 @@ struct SetRowView: View {
                     .padding(.trailing, -12)
             }
 
-            // Weight Column
+            // Weight Column (hidden for reps-only exercises)
+            if !exercise.isRepsOnly {
             NumericInputField(
                 text: Binding<String>(
                     get: {
@@ -785,6 +820,7 @@ struct SetRowView: View {
             )
             .accessibilityLabel("Weight input")
             .accessibilityHint("Double tap to enter weight")
+            }
             
             // Reps Column
             NumericInputField(
@@ -926,48 +962,6 @@ struct AddSetButton: View {
         .accessibilityLabel("Add new set")
         .scaleEffect(1.0)
         .animation(.buttonPress, value: false)
-    }
-}
-
-// MARK: - Save Button
-struct SaveButton: View {
-    let isEnabled: Bool
-    let isSaving: Bool
-    let isSaved: Bool
-    let onSave: () -> Void
-    
-    var body: some View {
-        Button(action: onSave) {
-            HStack {
-                if isSaving {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .textInverse))
-                        .scaleEffect(0.8)
-                } else {
-                    Text(isSaved ? "WORKOUT SAVED" : "SAVE WORKOUT")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-            }
-            .foregroundColor(isSaved ? .accentSuccess : .textInverse)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                isSaved ? Color.white : (isEnabled ? Color.accentSuccess : Color.disabledOverlay)
-            )
-            .cornerRadius(16)
-            .shadow(
-                color: isSaved ? .clear : (isEnabled ? .accentSuccess.opacity(0.4) : .clear),
-                radius: 20,
-                x: 0,
-                y: 6
-            )
-        }
-        .accessibilityLabel("Save workout")
-        .disabled(!isEnabled || isSaving || isSaved)
-        .scaleEffect(1.0)
-        .animation(.buttonPress, value: isSaved)
     }
 }
 

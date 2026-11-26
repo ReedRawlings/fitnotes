@@ -71,7 +71,7 @@ Sets save immediately on every change via `persistCurrentSets()`. No manual save
 HomeView, InsightsView, and PreferencesView cache expensive aggregations (volume, PRs, streaks) in `@State`, refreshed on appear/tab-switch/period-change. Computing them in `body` or computed properties re-runs full-history fetches on every AppState publish (i.e., every tap) and was the cause of app-wide tap latency. Keep `@Query` properties predicate-filtered—never fetch whole tables.
 
 ### E1RM and PRs
-`E1RMCalculator.fromSession` returns the best (highest) E1RM among completed sets; a 1-rep set's E1RM is the weight itself; >10 reps yields no estimate (Epley validity). A PR is a new best WEIGHT for an exercise (kg-normalized) — not set volume: 225×2 outranks 150×20. Covered by unit tests in `FitNotesTests`. There is no "needs rest" recommendation — deliberately lighter sessions are not a failure state.
+`E1RMCalculator.fromSession` returns the best (highest) E1RM among completed sets; a 1-rep set's E1RM is the weight itself; >10 reps yields no estimate (Epley validity). A PR is a new best WEIGHT for an exercise (kg-normalized) — not set volume: 225×2 outranks 150×20. Reps-only exercises (`Exercise.trackingType == .repsOnly`, e.g. jump rope) never store a weight; their PR is best reps and progression only ever recommends +1 rep. Insights PR lists are still weight-only. Covered by unit tests in `FitNotesTests`. There is no "needs rest" recommendation — deliberately lighter sessions are not a failure state.
 
 ### SwiftData Predicates
 ```swift
@@ -88,6 +88,12 @@ HomeView, InsightsView, and PreferencesView cache expensive aggregations (volume
 }
 ```
 
+### Supersets
+`WorkoutExercise`/`RoutineExercise.supersetGroupId`: ADJACENT exercises (by `order`) sharing an id form a superset. All grouping logic lives in `SupersetLayout` (`Models/Superset.swift`, unit-tested); never compare group ids directly in views. The link button on a row toggles "superset with the next exercise". In TrackTabView, checking a set mid-round skips the rest timer and opens the next member; the last member starts the rest and goes back to the first member with sets left. Links are copied routine ↔ workout.
+
+### Finishing a Workout
+Workouts are only finished by the user tapping Finish Workout in WorkoutView, which sets `Workout.finishedAt` (and asks first if sets are unchecked). Checking the last set never finishes a workout: TrackTabView opens the next exercise with sets left (below first, then wrapping to earlier ones), or returns to the workout list when everything is checked.
+
 ### Reordering
 Uses cached arrays for immediate UI updates. Commits to database only on view disappear.
 
@@ -102,7 +108,7 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 
 ## Common Issues
 
-- **SwiftData schema changes need a migration stage** - The store is versioned (`FitNotesSchemaV1` + `FitNotesMigrationPlan` in `FitNotesApp.swift`). Any @Model change must add a new `VersionedSchema` and a migration stage. If the store can't be opened it's moved to `Documents/RecoveredStores/`; never delete user data. In the simulator you can still just delete the app.
+- **SwiftData schema changes need a migration stage** - The store is versioned: `FitNotesSchemaV1` (frozen nested model copies in `Models/SchemaV1.swift`, never edit), `FitNotesSchemaV2` (the live models) and `FitNotesMigrationPlan` in `FitNotesApp.swift`. Any @Model change must freeze the current shape of the changed models (plus any model whose relationships point at them) into a new `SchemaVN` file, add the version and a migration stage, and extend `SchemaMigrationTests`. If the store can't be opened it's moved to `Documents/RecoveredStores/`; never delete user data. In the simulator you can still just delete the app.
 - **Modal dismiss timing** - Use `DispatchQueue.main.asyncAfter` when needed
 - **Exercise not found warnings** - Indicate stale UUIDs or missing relationships
 
@@ -114,7 +120,7 @@ All numeric data uses monospaced fonts. Primary actions use coral-orange gradien
 - CloudKit disabled (`.none`)
 - RestTimerWidget provides only the rest-timer Live Activity (the Xcode template widget and control were removed)
 - iPhone-only, portrait-only for v1 (`TARGETED_DEVICE_FAMILY = 1`)
-- App name, support URL and privacy-policy URL live in `AppInfo` (`Utilities/AppInfo.swift`); the display name also lives in the `INFOPLIST_KEY_CFBundleDisplayName` build setting
+- App name, support URL and privacy-policy URL live in `AppInfo` (`Utilities/AppInfo.swift`). Support and privacy pages are `docs/` served by GitHub Pages at reedrawlings.github.io/fitnotes; the display name also lives in the `INFOPLIST_KEY_CFBundleDisplayName` build setting
 - Privacy manifests: `FitNotes/PrivacyInfo.xcprivacy` (UserDefaults CA92.1) and `RestTimerWidget/PrivacyInfo.xcprivacy`. Update them if you add a required-reason API
 - Settings → Preferences ends with `AboutSettingsSection` (CSV export via `DataExportService`, in-app privacy policy, support, version)
 - Notification permission is requested the first time a rest timer starts, not at launch
