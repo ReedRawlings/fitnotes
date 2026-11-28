@@ -7,22 +7,25 @@ This is a draft of everything App Store Connect asks for. Copy each field in as 
 | Field | Value | Length |
 |---|---|---|
 | **App name** (30 max) | `Progressive Lift: Gym Log` | 25 |
-| **Subtitle** (30 max) | `Private Workout & PR Tracker` | 28 |
-| **Keywords** (100 max) | `weightlifting,strength,overload,1rm,max,sets,reps,powerlifting,bodybuilding,routine,journal,offline` | 99 |
+| **Subtitle** (30 max) | `Weight Lifting Workout Tracker` | 30 |
+| **Keywords** (100 max) | `strength,overload,1rm,sets,reps,powerlifting,bodybuilding,routine,planner,journal,training,program` | 98 |
+
+_Draft 2026-11-27, not yet approved by the owner, not entered in App Store Connect. The previous version was subtitle `Private Workout & PR Tracker` (28) and keywords `weightlifting,strength,overload,1rm,max,sets,reps,powerlifting,bodybuilding,routine,journal,offline` (99). Why it changed: the subtitle now carries "workout tracker" and "weight lifting", the words Hevy and Strong lead with (`marketing/brand/app-store-naming-research-2026-11-27.md`); `weightlifting` left the keywords because the subtitle covers it; `offline` left because the app now syncs with iCloud; `max` made room for `planner`, `training` and `program`. "Private" and "PR" leave the subtitle; privacy stays in the promo text and the first line of the description._
 
 Rules the keywords follow:
 - No word repeats one already in the name or subtitle. Apple indexes those already, so a repeat wastes characters.
 - There are no spaces after the commas.
 - No competitor names are included, since Apple rejects those.
-- Apple combines words across the three fields. So the listing can match searches such as "gym workout log", "strength tracker", "1rm calculator" and "progressive overload".
+- Apple combines words across the three fields. So the listing can match searches such as "gym workout log", "weight lifting tracker", "strength training planner", "workout journal" and "progressive overload".
+- `lift` (name) and `lifting` (subtitle) are different words to Apple's index as far as is known; it isn't settled whether Apple stems them.
 
-Other words you could swap in later: `training`, `planner`, `notebook`, `hypertrophy`, `split`, `program`, `barbell`, `weight`.
+Other words you could swap in later: `max`, `notebook`, `hypertrophy`, `split`, `barbell`, `private`.
 
 ## Promotional text (170 max; you can change it anytime without a review; it doesn't affect search)
 
-> Free, no account, no ads. Log every set in seconds, see your next weight, and watch your PRs climb. Your workouts stay on your iPhone.
+> Free, no account, no ads. Log every set in seconds, see your next weight, and watch your PRs climb. Your workouts stay on your iPhone and sync through your own iCloud.
 
-(134 characters)
+(167 characters)
 
 ## Description (4,000 max; only the first lines show before "more", so they carry the pitch)
 
@@ -54,7 +57,8 @@ INSIGHTS THAT ANSWER "AM I GETTING STRONGER?"
 • Your Year in Review
 
 PRIVATE BY DESIGN
-• Private by design: your data lives on your iPhone and in your own iCloud. No account, no sign-in, no tracking
+• Your data lives on your iPhone and syncs through your own private iCloud, so it's on your other devices too. No account, no sign-in, no tracking
+• The developer never sees your workouts: there's no server of ours involved
 • Export your full history to CSV at any time, so your data stays yours
 
 A large exercise library is included, and you can add your own.
@@ -104,10 +108,13 @@ The app already sets `ITSAppUsesNonExemptEncryption = NO`, so App Store Connect 
 ## App Review notes
 
 ```
-Progressive Lift is fully offline: no account or login is required, and there is no server. To review: complete the short onboarding, then go to the Workout tab, start a routine or add an exercise, and log sets. A rest timer starts after completing a set (local notification + Live Activity). Settings > Preferences contains the CSV export, privacy policy, and support contact.
+Progressive Lift has no account, no login and no server of its own. Workouts are stored on the device and, when the device is signed in to iCloud, synced through the user's private iCloud (CloudKit) database. The developer cannot access that data, and the app works fully without iCloud. To review: complete the short onboarding, then go to the Workout tab, start a routine or add an exercise, and log sets. A rest timer starts after completing a set (local notification + Live Activity). Settings > Preferences contains the CSV export, privacy policy, and support contact.
 ```
 
 ## Screenshots (6.9" iPhone required; the first 3 show in search results)
+
+_2026-11-27: the existing six shots were checked against build 19; verdict and recommended order are in `release-checklist.md`._
+
 
 1. **Logging a set** (the core screen). Caption: "Log a set in seconds"
 2. **Progression suggestion / PR celebration.** Caption: "Know when to add weight"

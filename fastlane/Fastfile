@@ -1,0 +1,94 @@
+# Progressive Lift (FitNotes repo): build and upload to App Store Connect / TestFlight.
+#
+# No secrets live in this repo. The App Store Connect API key is read at run time from
+# ~/.wellness-studio/asc.json (override the path with ASC_CONFIG), which holds:
+#   issuer_id, app_manager_key_id, key_dir   (the .p8 is <key_dir>/AuthKey_<key_id>.p8)
+#
+#   fastlane check    # proves the key loads and prints the latest TestFlight build number. No upload.
+#   fastlane upload   # archives the FitNotes scheme (Release) and uploads it to TestFlight.
+#
+# Bump CURRENT_PROJECT_VERSION in every build config of project.pbxproj (and commit) before `upload`;
+# the lane refuses to run if the build number isn't higher than the latest one in App Store Connect.
+
+require "json"
+
+default_platform(:ios)
+
+PROJECT = "FitNotes.xcodeproj"
+SCHEME = "FitNotes"
+OUTPUT_DIR = "build/fastlane"
+
+platform :ios do
+  # Loads the API key into lane context and returns the values needed for xcodebuild signing.
+  private_lane :asc_key do
+    config_path = File.expand_path(ENV["ASC_CONFIG"] || "~/.wellness-studio/asc.json")
+    UI.user_error!("Missing #{config_path}") unless File.exist?(config_path)
+    config = JSON.parse(File.read(config_path))
+
+    key_id = config["app_manager_key_id"]
+    issuer_id = config["issuer_id"]
+    key_dir = config["key_dir"]
+    UI.user_error!("asc.json needs issuer_id, app_manager_key_id and key_dir") if [key_id, issuer_id, key_dir].any? { |v| v.to_s.empty? }
+
+    key_path = File.join(File.expand_path(key_dir), "AuthKey_#{key_id}.p8")
+    UI.user_error!("No API key file at #{key_path}") unless File.exist?(key_path)
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_path, # read from disk, never copied into the repo
+      in_house: false
+    )
+    { key_id: key_id, issuer_id: issuer_id, key_path: key_path }
+  end
+
+  # Reads CURRENT_PROJECT_VERSION from the project and checks every build config agrees.
+  private_lane :project_build_number do
+    # fastlane runs lanes from inside fastlane/, so the project is one level up.
+    path = ["../#{PROJECT}/project.pbxproj", "#{PROJECT}/project.pbxproj"].find { |p| File.exist?(p) }
+    UI.user_error!("Can't find #{PROJECT}") unless path
+    pbxproj = File.read(path)
+    numbers = pbxproj.scan(/CURRENT_PROJECT_VERSION = (\d+);/).flatten.uniq
+    UI.user_error!("Build configs disagree on CURRENT_PROJECT_VERSION: #{numbers.join(', ')}") unless numbers.size == 1
+    numbers.first.to_i
+  end
+
+  desc "Check the API key works and compare build numbers. Uploads nothing."
+  lane :check do
+    asc_key
+    latest = latest_testflight_build_number(initial_build_number: 0)
+    local = project_build_number
+    UI.message("Latest build in App Store Connect: #{latest}. Project build number: #{local}.")
+    UI.important("Bump CURRENT_PROJECT_VERSION before uploading.") if local <= latest
+  end
+
+  desc "Archive a Release build and upload it to TestFlight"
+  lane :upload do
+    key = asc_key
+    local = project_build_number
+    latest = latest_testflight_build_number(initial_build_number: 0)
+    UI.user_error!("Build #{local} is not higher than #{latest} in App Store Connect. Bump CURRENT_PROJECT_VERSION in all configs first.") if local <= latest
+
+    # Automatic signing: let xcodebuild fetch profiles with the same API key (no Xcode login needed).
+    auth = "-allowProvisioningUpdates " \
+           "-authenticationKeyPath '#{key[:key_path]}' " \
+           "-authenticationKeyID #{key[:key_id]} " \
+           "-authenticationKeyIssuerID #{key[:issuer_id]}"
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true,
+      output_directory: OUTPUT_DIR,
+      xcargs: auth,
+      export_xcargs: auth
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      skip_submission: true # never sends to beta review or external testers
+    )
+  end
+end

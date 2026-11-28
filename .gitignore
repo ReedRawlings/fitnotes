@@ -32,3 +32,7 @@ fastlane/test_output
 
 # Local build output (xcodebuild -derivedDataPath .deriveddata)
 .deriveddata/
+
+# App Store Connect API keys live in ~/.wellness-studio, never here
+*.p8
+fastlane/api_key.json
